@@ -1,0 +1,238 @@
+/*
+ 	Copyright (c) 2009 Alan Chandler
+    This file is part of AKCMoney.
+
+    AKCMoney is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    AKCMoney is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+.currency {
+	color:red;
+	font-weight:bold;
+}
+
+.amount {
+	text-align:right;
+	width:70px;
+}
+
+.rate {
+	text-align:right;
+	color:blue;
+}
+
+
+span#aname{color:red; font-weight:bold;}
+
+div#accountsel {float:left;width:240px;}
+
+div#accountsel span {padding:5px 0;}
+
+div#accountinfo{width:300px;float:right;}
+
+div#positive, div#currency {
+	background-color:#E8F2FE;
+	margin:5px;
+	padding:5px;
+}
+div#positive {
+	width:300px;
+	font-style:oblique;
+}
+
+div#currency {
+	width:300px;
+	font-weight:bolder;
+}
+
+.balance {background-color:#e4e4e4;}
+	
+
+.odd {
+	background-color:White;
+}
+
+a {
+	text-decoration:none;
+}
+
+.clear {
+	color:blue;
+}
+
+.clear a {
+	background-color:#99FFFF;
+	color:black;
+	font-weight:bold;
+}
+
+.unclear a:hover, passed a:hover {
+	background-color:#99FFFF;
+	color:black;
+}
+.clear a:hover{
+	background-color:white;
+	color:black;
+}
+
+.passed a {
+	background-color:#CCCC66
+}
+
+.repeat a {
+	background-color:#FFFF33
+}
+
+.repeat {
+	color:#669900
+}
+
+.dual {
+	font-weight:bold;
+}
+
+.description {width:260px;}
+.ref {width:30px;}
+.date {width:70px;}
+
+div#date {
+	padding:20px;
+	background-color:#FEFEBB;
+	width:250px;
+}
+
+div#description {
+	padding:20px;
+	width:410px;
+}
+div#description input {
+	margin:5px 1px 5px 1px;
+}
+
+div#localcur, div#normcur, div#estcur, div#misc {
+	padding-left:20px;
+	width:410px;
+}
+
+div#localcur, div#misc {
+	padding-top:10px;
+	background-color:#FEFEBB;
+}
+
+div#localcur, div#estcur, div#misc {
+	padding-bottom:10px;
+}
+
+div#normcur, div#estcur {
+	background-color:#e4e4e4;
+}
+
+div#amountfield, div#normfield {
+	float:left;
+	width:100px;
+}
+
+div#amountfield input, div#normfield input, div#ref input, div#repeat select{
+	margin-top:5px;
+}
+
+div#currencyselect {
+	float:left;
+	width:80px;
+	padding-top:22px;
+}
+
+div#balancefield {
+	float:left;
+	width:100px;
+}
+
+div#balancefield .amount {
+	padding-top:10px;
+	width:70px;
+}
+
+div#accountcur{
+	float:left;
+	padding-top:26px;
+	font-weight:bold;
+}
+
+div#defaultcur {
+	float:left;
+	padding-top:26px;
+	font-weight:bold;
+	width:80px;
+}
+
+div#rateset {
+	float:left;
+	width:100px;
+	padding-top:20px;
+}
+
+div#estvalue {
+	float:left;
+	width:180px;
+}
+
+div#estvalue .amount {
+	padding-top:5px;
+	width:75px;
+}
+
+div#rateest {
+	float:left;
+	width:80px;
+}
+
+div#rateest label {
+	padding-left:10px;
+}
+
+div#actrate {
+	padding-top:5px;
+}
+
+div#srcdst {
+	padding:20px 0px;
+	width:470px;
+}
+
+div.account {
+	float:left;
+	width:200px;
+	background-color:#E8F2FE;
+	margin:5px;
+	padding:10px;
+}
+
+div.account select {
+	width:190px;
+	margin:5px 0;
+}
+
+div#ref {
+	float:left;
+	width:170px;
+}
+
+div#repeat{
+	float:left;
+	width:200px;
+}
+
+.newaccount {background:#e4e4e4;}
+
+
