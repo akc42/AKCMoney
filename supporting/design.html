@@ -592,13 +592,20 @@ I have chosen [[JQuery|http://jquery.com]] for the framework used to build this 
 * DefaultTiddlers: Contains the names of the tiddlers that you want to appear when the TiddlyWiki is opened
 You'll also need to enter your username for signing your edits: &lt;&lt;option txtUserName&gt;&gt;</pre>
 </div>
-<div title="Main Index Page" modifier="AlanChandler" created="200906180747" changecount="1">
+<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="200906182212" changecount="5">
 <pre>The main index page is where the user will perform their main activities.  It comprises three main sections.
 
-#  Account selection; 
-#  Account summary
-# Transaction List
-</pre>
+;  Account selection
+: This provides a drop down selection button to select from the range of available accounts.  It includes the default currency for the account and whether the account is primarily debit or credit
+ 
+; Account summary
+: This provides a summary of the account which include
+:* either the minimum balance for debit accounts or maximum balance for credit accounts 
+:* the cleared balance
+:* the opening balance 
+
+; Transaction List
+: This is a list of transactions, ordered by date described on the account</pre>
 </div>
 <div title="Main Index Page (Design)" modifier="AlanChandler" created="200906151609" modified="200906180743" changecount="6">
 <pre>This is going to be the common page which sits in place throughout the life of the application.  Ajax requests will fetch appropriate content dependent on the user peceived page that is on display.
@@ -634,8 +641,12 @@ The decision is that I have chosen ''[[JQuery|http://jquery.com/]]''
 <div title="SiteTitle" modifier="AlanChandler" created="200906111826" changecount="1">
 <pre>AKCMoney</pre>
 </div>
-<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="200906180745" changecount="4">
-<pre>There are three main screens in AKC Money
+<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="200906182240" changecount="5">
+<pre>! Basic Concepts
+The whole concept of AKC Money is based around the concept of two key entities.  //Accounts// which have an opening balance and which contain (one side of) //transactions//.  Each transaction can either increase or increase the balance on the account, so that over time the account balance can reach a maximum or minimum amount.
+
+
+There are three main screens in AKC Money
 
 * [[Main Index Page]] which is the initial screen on start up.  This is where the majority of the action takes place
 * [[Account Manager Page]] where you can define the accounts that are used in the system (including the account which is the first to be selected on the [[Main Index Page]]
