@@ -563,7 +563,7 @@ When a transaction is dragged down the list it operates in the anagolous manner 
 UserDocumentation
 </pre>
 </div>
-<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="200906151600" changecount="5">
+<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="200906180735" changecount="11">
 <pre>!Overview
 
 This project is a copy of my Java based [[AKCmoney|#]] application re-implemented using PHP and Javascript.  My motivation for doing so was to 
@@ -572,12 +572,16 @@ This project is a copy of my Java based [[AKCmoney|#]] application re-implemente
 
 The software will use [[Postgresql|http://www.postgresql.org]] as the main database engine, with the database design copied from the existing application.  There will some changes to this specified in DatabaseDesign
 
-The complete application will run in three separate pages:-
-* [[The Main Index Page]] as the main user display
-* [[Account Manager Page]] to manage the accounts that are used
-* [[Currency Manager Page]] to manage which currencies are availble for selection, and in which order
+In order to keep the look and feel of the site for all pages, the application will, regardless of which function it is executing be routed through a [[Main Index Page (Design)]] with parameters which control which content page gets displayed.  The index page (index.php) will be responsible for outputting the header, the page menu and the footer before running some javascript which will decide which subsidiary page(s) to call up.
 
-I still have to decide on [[Mootools v JQuery]] for the framework used to build this application
+There will be subsidiary pages, whose role it is to transmit the key content for each of the user perceived pages (the javascript loading this content onto the page) they will be:-
+
+* [[accounts.php]] to provide a &quot;select list&quot; for the accounts that exist, with the particular account requested selected.
+* [[transactions.php]] which displays the transactions for a given account
+* [[accmgr.php]] which provides a page in which to manage the accounts that exist
+* [[currency.php]] to provide a page which manages currencies are availble for selection, and in which order
+
+I have chosen [[JQuery|http://jquery.com]] for the framework used to build this application. See [[Mootools v JQuery]] for the reasons.
 
 </pre>
 </div>
@@ -588,11 +592,41 @@ I still have to decide on [[Mootools v JQuery]] for the framework used to build 
 * DefaultTiddlers: Contains the names of the tiddlers that you want to appear when the TiddlyWiki is opened
 You'll also need to enter your username for signing your edits: &lt;&lt;option txtUserName&gt;&gt;</pre>
 </div>
+<div title="Main Index Page" modifier="AlanChandler" created="200906180747" changecount="1">
+<pre>The main index page is where the user will perform their main activities.  It comprises three main sections.
+
+#  Account selection; 
+#  Account summary
+# Transaction List
+</pre>
+</div>
+<div title="Main Index Page (Design)" modifier="AlanChandler" created="200906151609" modified="200906180743" changecount="6">
+<pre>This is going to be the common page which sits in place throughout the life of the application.  Ajax requests will fetch appropriate content dependent on the user peceived page that is on display.
+
+A separate [[money.js]] script will control everything.
+
+This page responsibility will be to collect initial start up parameters from the database (default account) and then to display the core header and footer of the applications, put up the menu (with initial classes to define the selected menu item) and to start up the javascript.</pre>
+</div>
 <div title="MainMenu" modifier="AlanChandler" created="200906111831" modified="200906141434" changecount="4">
 <pre>DesignDocumentation
 UserDocumentation
 
 CopyRight</pre>
+</div>
+<div title="Mootools v JQuery" modifier="AlanChandler" created="200906180731" modified="200906180734" changecount="3">
+<pre>!!The Pro for [[Mootools|http://www.mootools.net]]
+
+* small
+* I already know it
+
+!!The Pro for [[JQuery|http://jquery.com/]]
+
+* seems to be the in-thing - I would benefit by knowing it
+* there are some stunning UI components (data picker, a whole range of fancy icons, sortables and accordian) which I can make good use of
+* there is a unit test suite ([[QUnit|http://docs.jquery.com/QUnit]]) which will enable me to unit test the code first 
+
+The decision is that I have chosen ''[[JQuery|http://jquery.com/]]''
+</pre>
 </div>
 <div title="SiteSubtitle" modifier="AlanChandler" created="200906111827" changecount="1">
 <pre>A personal money management application</pre>
@@ -600,17 +634,14 @@ CopyRight</pre>
 <div title="SiteTitle" modifier="AlanChandler" created="200906111826" changecount="1">
 <pre>AKCMoney</pre>
 </div>
-<div title="The Main Index Page" modifier="AlanChandler" created="200906151609" changecount="1">
-<pre>It uses the standard [[Header Page]] and [[Footer Page]]
+<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="200906180745" changecount="4">
+<pre>There are three main screens in AKC Money
 
-WIthin the main content area are
+* [[Main Index Page]] which is the initial screen on start up.  This is where the majority of the action takes place
+* [[Account Manager Page]] where you can define the accounts that are used in the system (including the account which is the first to be selected on the [[Main Index Page]]
+* [[Currency Manager Page]] where you can define both which currencies appear in selection lists, and in which order.
 
-* Header for Selecting Account to be used (along with data about the account - currency and whether it is a debit or a credit account)
-* Financial Header comprising Minimum Balance and Current Opening Balance.  Can Select Cleared Balance as an option (should we always show both minumum and cleared balances at all times?)
-* Accordian like list of transactions (click on the transaction for the accordian to expand and allow [[editing of the transaction]]).  This list should support Drag and Drop sorting functionaility, with appropriate [[Adjustments to Transaction Date]] as a result</pre>
-</div>
-<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" changecount="1">
-<pre>Type the text for 'UserDocumentation'</pre>
+There will be a small menu bar across the top of each page in order to select which page is displayed.</pre>
 </div>
 <div title="editing of the transaction" modifier="AlanChandler" created="200906151617" modified="200906151631" changecount="3">
 <pre>when a transaction is closed for editing it contains
