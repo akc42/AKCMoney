@@ -531,6 +531,19 @@ Also see [[AdvancedOptions]]</pre>
 </div>
 <!--POST-SHADOWAREA-->
 <div id="storeArea">
+<div title="Account Manager Page" modifier="AlanChandler" created="200906191700" changecount="1">
+<pre>The account manage page is where accounts may be set up or modified.  It consists of an empty box (for creating a new account), and a list of existing lines, each of which represents an existing account.  Any field is updated immediately it is changed (via Ajax) except the new account line, where a &quot;tick&quot; icon is used to create the new entry, and the &quot;cross&quot; icon is used to delete (after a prompt) the account.
+
+Each account contains 
+
+* account name
+* a selection of either debit or credi account (which defaults on creation to debit).
+* the currency account (which defaults on creation to the current default currency)
+
+It is an error to attempt to create a blank account or one with the same name as an existing account, or to edit the existing account name to either be blank, or the name of another account.
+
+</pre>
+</div>
 <div title="Adjustments to Transaction Date" modifier="AlanChandler" created="200906151614" changecount="1">
 <pre>When a transaction is dragged up the list, it takes its date from one day prior to the item it was dropped in front of, unless the item ahead of it is also the the same date as the item after it - in which case it takes that date also
 
@@ -555,6 +568,15 @@ When a transaction is dragged down the list it operates in the anagolous manner 
 
 </pre>
 </div>
+<div title="Currency Manager Page" modifier="AlanChandler" created="200906191712" changecount="1">
+<pre>The currency manager page is used to edit the list of currencies that will be presented to the user when he is in a position to select a currency.
+
+The list of currencies are predefined according to standards, and the system holds all of them, with the approved 3 letter abbreviation.  They are presented in two lists - those that are selected (in order of selection), and those that are not (alphabetically).  Those that are not have a &quot;check&quot; icon, so they may be selected (at which point the currency line moves up to the top in the &quot;selected&quot; section.  The selected list may be sorted into order below the default currency (which is always first) by dragging it.
+
+
+The default currency is selected from amongst those in the selected list with a radio button.
+The default currency must always be selected, and there is no mechanism to deselect it (the deselection item is removed). </pre>
+</div>
 <div title="DatabaseDesign" modifier="YourName" created="200906142300" changecount="1">
 <pre>Currently the database is exactly the same as the Java equivalent</pre>
 </div>
@@ -563,7 +585,7 @@ When a transaction is dragged down the list it operates in the anagolous manner 
 UserDocumentation
 </pre>
 </div>
-<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="200906180735" changecount="11">
+<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="200906192102" changecount="12">
 <pre>!Overview
 
 This project is a copy of my Java based [[AKCmoney|#]] application re-implemented using PHP and Javascript.  My motivation for doing so was to 
@@ -576,10 +598,10 @@ In order to keep the look and feel of the site for all pages, the application wi
 
 There will be subsidiary pages, whose role it is to transmit the key content for each of the user perceived pages (the javascript loading this content onto the page) they will be:-
 
-* [[accounts.php]] to provide a &quot;select list&quot; for the accounts that exist, with the particular account requested selected.
-* [[transactions.php]] which displays the transactions for a given account
-* [[accmgr.php]] which provides a page in which to manage the accounts that exist
-* [[currency.php]] to provide a page which manages currencies are availble for selection, and in which order
+* accounts.php to provide a &quot;select list&quot; for the accounts that exist, with the particular account requested selected.
+* transactions.php which displays the transactions for a given account
+* accmgr.php which provides a page in which to manage the accounts that exist
+* currency.php to provide a page which manages currencies are available for selection, and in which order
 
 I have chosen [[JQuery|http://jquery.com]] for the framework used to build this application. See [[Mootools v JQuery]] for the reasons.
 
@@ -592,7 +614,7 @@ I have chosen [[JQuery|http://jquery.com]] for the framework used to build this 
 * DefaultTiddlers: Contains the names of the tiddlers that you want to appear when the TiddlyWiki is opened
 You'll also need to enter your username for signing your edits: &lt;&lt;option txtUserName&gt;&gt;</pre>
 </div>
-<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="200906182212" changecount="5">
+<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="200906191914" changecount="9">
 <pre>The main index page is where the user will perform their main activities.  It comprises three main sections.
 
 ;  Account selection
@@ -603,9 +625,15 @@ You'll also need to enter your username for signing your edits: &lt;&lt;option t
 :* either the minimum balance for debit accounts or maximum balance for credit accounts 
 :* the cleared balance
 :* the opening balance 
+:* a rebalance from cleared (with confirmation dialog) button to allow the cleared balance to be transfered to the opening balance and all the cleared transactions deleted from that account (they remain on the other account if there is one).
 
 ; Transaction List
-: This is a list of transactions, ordered by date described on the account</pre>
+: This is a list of transactions, ordered by date described on the account.  This list is like an accordian, in that if you click on the description of the transaction it grows large, and the [[transaction can be edited|EditTransaction]].  
+
+: You can also drag transactions up and down the list to change their date (by dragging the date portion of the transaction).  If the transaction is dragged down the list it will have a date one day after the transaction immediately above it (unless the transaction below it is the same date as the transaction above).  If the transaction is dragged up the list it will take a date one day before the transaction below it, unless the one above has the same date, in which case it will take the same date. 
+
+: Clicking on the amount toggles whether the transaction is cleared
+</pre>
 </div>
 <div title="Main Index Page (Design)" modifier="AlanChandler" created="200906151609" modified="200906180743" changecount="6">
 <pre>This is going to be the common page which sits in place throughout the life of the application.  Ajax requests will fetch appropriate content dependent on the user peceived page that is on display.
@@ -662,6 +690,9 @@ date, reference, description, amount, cumulative amount (with ''amount'' coloure
 When expanded, data becomes an entry box that when you click on it it puts up an data picker, reference allows input, description allows input, amount allows input - and if currency not same as account then the currency amount is shown below
 
 Need also to display &quot;cleared&quot; check boxes, and the other account (with selection box)</pre>
+</div>
+<div title="money.js" modifier="AlanChandler" created="200906192105" changecount="1">
+<pre>This is the core script and will control every thing.</pre>
 </div>
 </div>
 <!--POST-STOREAREA-->

@@ -27,107 +27,33 @@ require_once('db.php');
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>AKC Money</title>
+	<title>AKC Money Account Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-	<link type="text/css" href="css/redmond/jquery-ui-1.7.2.custom.css" rel="stylesheet" />	
-	<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-	<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
+	<link type="text/css" href="/css/redmond/jquery-ui-1.7.2.custom.css" rel="stylesheet" />	
+	<script type="text/javascript" src="/js/jquery-1.3.2.min.js"></script>
+	<script type="text/javascript" src="/js/jquery-ui-1.7.2.custom.min.js"></script>
+	<script type="text/javascript" src="money.js" ></script>
+<!-- include site css -->
+	<link rel="stylesheet" type="text/css" href="/css/site.css"/>
 </head>
 <body>
-<!-- container START -->
-<div id="container" >
-
-<!-- header START -->
-    <div id="header">
-        <h1><a href="http://www.chandlerfamily.org.uk/">Chandler&#039;s Zen</a></h1>
-		<div class="description">A Glimpse Into My Thoughts</div>
-		<a href="http://www.chandlerfamily.org.uk"><img id="title" src="http://www.chandlerfamily.org.uk/wp-content/themes/chandlerszen/img/chandlers_zen.png" alt="Chandler&#039;s Zen - A Glimpse Into My Thoughts" /></a>
-    </div>
-<!-- header END -->
-
-
-<div class="actionblock">
-<dl class="action">
-	<dt>Form Action Block</dt>
-	<dd jwcid="@For" source="ognl:actionItems" value="ognl:actionItem" index="ognl:index" element="dd">
-		<div class="gg">
-			<div class="ff">
-				<div class="ee">
-					<div class="dd">
-						<div class="cc">
-							<span jwcid="@If" condition="ognl:confirmAction">
-								<a jwcid="@ConfirmSubmit" selected="ognl:selected" tag="ognl:(index+1)*(-1)" msg="ognl:msg">
-									<span jwcid="@If" condition="ognl:index == 0">
-										<span class="bbc">
-											<span jwcid="@Any" class="aac" tabindex="ognl:index+1">
-												<span jwcid="@Insert" value="ognl:actionItemText">Action</span>
-											</span>
-										</span>
-									</span>
-									<span jwcid="@Else" condition="ognl:index == 0">
-										<span class="bb">
-											<span jwcid="@Any" class="aa" tabindex="ognl:index+1">
-												<span jwcid="@Insert" value="ognl:actionItemText">Action</span>
-											</span>
-										</span>
-									</span>
-								</a>
-							</span>
-							<span jwcid="@Else" condition="ognl:confirmAction">
-								<a jwcid="@LinkSubmit" selected="ognl:selected" tag="ognl:(index+1)*(-1)">
-									<span jwcid="@If" condition="ognl:index == 0">
-										<span class="bbc">
-											<span jwcid="@Any" class="aac" tabindex="ognl:index+1">
-												<span jwcid="@Insert" value="ognl:actionItemText">Action</span>
-											</span>
-										</span>
-									</span>
-									<span jwcid="@Else" condition="ognl:index == 0">
-										<span class="bb">
-											<span jwcid="@Any" class="aa" tabindex="ognl:index+1">
-												<span jwcid="@Insert" value="ognl:actionItemText">Action</span>
-											</span>
-										</span>
-									</span>
-								</a>
-							</span>								
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</dd>
-</dl>
-<div class="clear"></div>
-
-</div>
-<!-- footer START -->
-<div id="footer">
-	<img id="logo" src="http://www.chandlerfamily.org.uk/wp-content/themes/chandlerszen/img/chandlerfamily.jpg" alt="chandlerfamily logo" />
-	<div id="copyright">
-		<p>Unless otherwise stated the content of this site is copyright copyright &copy; 2003-2009 Alan Chandler. Please see <a href="/licences/">licence conditions</a> for details on copying.</p>
-
-	</div>
-	<div id="version"><?php include version.php;?></div>
-</div>
-<!-- footer END -->
-
-</div>
-<!-- container END -->
-
 <script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    var version = '<?php include('version.txt');?>' ;
+    $(document).ready(function () {
+        $('#version').append(version);
+    });
 </script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-xxxxxxx-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
 
+<?php include($_SERVER['DOCUMENT_ROOT'].'/header.html'); ?>
+
+<div id="navigation"><a href="#">Transactions</a> <a href="accmgr.php">Accounts Manager</a> <a href="currmgr.php">Currency Manager</a></div> 
+
+<div id="content" class="loading"></div>
+
+<?php include($_SERVER['DOCUMENT_ROOT'].'/footer.html'); ?>
 
 </body>
 </html>
