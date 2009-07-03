@@ -25,14 +25,6 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 	if (!defined('MONEY'))
 		die('Hacking attempt...');
 
-//define online types
-define('OFFLINE',				0);  //user is offline
-define('SPECTATOR',				1);  //user is only spectating
-define('ANYONE',				2); // user will immediately accept an invite, and will invite anyone who says they are of this type
-define('INVITE',				3); // user will only play after an accepted invite
-define('ACCEPTED',				4); // another user has indicated he is expecting to play you - you have just not noticed yet
-define('MATCH',					5); // in a match
-define('PRACTICE',				6); // practicing alone
 
 	
 	$db_server = 'localhost';

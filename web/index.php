@@ -23,6 +23,15 @@ error_reporting(E_ALL);
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
+if(!isset($_GET['account'])) {
+	$result = dbQuery('SELECT start_account FROM config;');
+	$row = dbFetch($result);
+	$account = $row['start_account'];
+	dbFree($result);
+} else {
+	$account = $_GET['account'];
+}
+
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
