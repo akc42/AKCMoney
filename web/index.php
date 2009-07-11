@@ -18,18 +18,19 @@
 
 */
 error_reporting(E_ALL);
-
+session_start();
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-if(!isset($_GET['account'])) {
-	$result = dbQuery('SELECT start_account FROM config;');
+if(!isset($_SESSION['account'])) {
+// if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
+    $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
+	$result = dbQuery('SELECT '.$at.'_account AS account, demo FROM config;');
 	$row = dbFetch($result);
-	$account = $row['start_account'];
+	$_SESSION['account'] = $row['account'];
+	$_SESSION['demo'] = ($row['demo'] == 't');
 	dbFree($result);
-} else {
-	$account = $_GET['account'];
 }
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -60,7 +61,28 @@ if(!isset($_GET['account'])) {
 
 <div id="navigation"><a href="#">Transactions</a> <a href="accmgr.php">Accounts Manager</a> <a href="currmgr.php">Currency Manager</a></div> 
 
-<div id="content" class="loading"></div>
+<div id="content">
+    <h1>Account Data</h1>
+<?php if ($_SESSION['demo']) {
+?>		<div class="ui-widget">
+			<div class="ui-state-highlight ui-corner-all" style="margin-top: 20px; padding: 0 .7em;"> 
+				<p><span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span>
+				<strong>Beware - Demo</strong> Do not use real data, as others may have access to it.</p>
+			</div>
+		</div>
+		<br/>
+<?php }
+?>			<div id="accountsel">
+				<form id="accountselect">
+					<span jwcid="@Insert" value="message:account-name">Account Name</span>:
+					<input jwcid="@PropertySelection" model="ognl:accountList" value="ognl:accountName" onchange="javascript:this.form.submit()" />	
+				</form>	
+			</div>				
+
+<?php
+
+?>
+</div>
 
 <?php include($_SERVER['DOCUMENT_ROOT'].'/footer.html'); ?>
 

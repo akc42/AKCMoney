@@ -27,14 +27,6 @@ CREATE SEQUENCE version
 
 SELECT pg_catalog.setval('version', 1, true);
 
-CREATE TABLE config (
-    start_account character varying(25),
-    repeat_days integer,
-    default_currency character(3)
-);
-
-INSERT INTO config VALUES ('Cash', 90, 'GBP');
-
 CREATE TABLE xaction_type (
     type smallint NOT NULL,
     description character varying(100)
@@ -311,6 +303,22 @@ ALTER TABLE ONLY transaction
 
 ALTER TABLE ONLY transaction
     ADD CONSTRAINT "$4" FOREIGN KEY (repeat) REFERENCES repeat(rkey);
+
+CREATE TABLE config (
+    home_account character varying(25),
+    extn_account character varying(25),
+    repeat_days integer,
+    default_currency character(3),
+    demo boolean DEFAULT false NOT NULL
+);
+
+INSERT INTO config VALUES ('Cash','Cash', 90, 'GBP');
+ALTER TABLE ONLY config
+    ADD CONSTRAINT "$1" FOREIGN KEY (home_account) REFERENCES account(name) ON UPDATE CASCADE;
+ALTER TABLE ONLY config
+    ADD CONSTRAINT "$2" FOREIGN KEY (extn_account) REFERENCES account(name) ON UPDATE CASCADE;
+ALTER TABLE ONLY config
+    ADD CONSTRAINT "$3" FOREIGN KEY (default_currency) REFERENCES currency(name) ON UPDATE CASCADE;
 
 
 --
