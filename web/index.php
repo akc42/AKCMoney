@@ -63,22 +63,23 @@ if(!isset($_SESSION['account'])) {
 
 <div id="content">
     <h1>Account Data</h1>
-<?php if ($_SESSION['demo']) {
-?>		<div class="ui-widget">
+<?php if ($_SESSION['demo']) {?>    <div class="ui-widget">
 			<div class="ui-state-highlight ui-corner-all" style="margin-top: 20px; padding: 0 .7em;"> 
 				<p><span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span>
 				<strong>Beware - Demo</strong> Do not use real data, as others may have access to it.</p>
 			</div>
 		</div>
 		<br/>
-<?php }
-?>			<div id="accountsel">
-				<form id="accountselect">
-					<span jwcid="@Insert" value="message:account-name">Account Name</span>:
-					<input jwcid="@PropertySelection" model="ognl:accountList" value="ognl:accountName" onchange="javascript:this.form.submit()" />	
-				</form>	
-			</div>				
-
+<?php } ?>		<form id="accountsel">
+            <select>
+<?php
+$result = dbQuery('SELECT name FROM account ORDER BY name ASC;'
+while ($row = dbFetch($result) ) {
+?>              <option <?php echo ($_SESSION['account'] == $row['name'])?'selected = "selected"':'' ; ?> >
+<?php
+}
+?>           </select>
+	    </form>	
 <?php
 
 ?>

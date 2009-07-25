@@ -246,7 +246,7 @@ CREATE TABLE account (
     dversion bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     currency character(3),
     atype smallint DEFAULT 0 NOT NULL,
-    bmoneyce real DEFAULT 0 NOT NULL,
+    balance bigint DEFAULT 0 NOT NULL,
     date date DEFAULT now()
 );
 

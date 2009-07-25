@@ -577,8 +577,13 @@ The list of currencies are predefined according to standards, and the system hol
 The default currency is selected from amongst those in the selected list with a radio button.
 The default currency must always be selected, and there is no mechanism to deselect it (the deselection item is removed). </pre>
 </div>
-<div title="DatabaseDesign" modifier="YourName" created="200906142300" changecount="1">
-<pre>Currently the database is exactly the same as the Java equivalent</pre>
+<div title="DatabaseDesign" modifier="AlanChandler" created="200906142300" modified="200907232133" changecount="2">
+<pre>The database will be mainly the same as the previous version of the application except
+* The credit/debit type for an account will be actually specified as text rather than using the 0 1 ids as now
+* All money amounts will be held as BIGINT at 1/100 of of the currency for the account
+* There will be different default accounts for clients coming in over the internet and for internal clients
+* The version of the database will be held in the config table. An update from an earlier version to a later version will be automatic
+</pre>
 </div>
 <div title="DefaultTiddlers" modifier="AlanChandler" created="200906111844" changecount="1">
 <pre>DesignDocumentation
