@@ -16,7 +16,7 @@
 --    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 
-COMMENT ON DATABASE money IS 'AKC Money Test Database';
+COMMENT ON DATABASE money IS 'AKC Money Database';
 
 CREATE SEQUENCE version
     INCREMENT BY 1
@@ -27,16 +27,16 @@ CREATE SEQUENCE version
 
 SELECT pg_catalog.setval('version', 1, true);
 
-CREATE TABLE xaction_type (
-    type smallint NOT NULL,
+CREATE TABLE account_type (
+    atype char(6) NOT NULL,
     description character varying(100)
 );
 
-ALTER TABLE ONLY xaction_type
-    ADD CONSTRAINT xaction_type_pkey PRIMARY KEY (type);
+ALTER TABLE ONLY account_type
+    ADD CONSTRAINT account_type_pkey PRIMARY KEY (atype);
 
-INSERT INTO xaction_type VALUES (0, 'This account is normally the source of a transaction');
-INSERT INTO xaction_type VALUES (1, 'This account is normally the destination of a transaction');
+INSERT INTO account_type VALUES ('Debit ', 'This account is normally the source of a transaction');
+INSERT INTO account_type VALUES ('Credit', 'This account is normally the destination of a transaction');
 
 CREATE TABLE repeat (
     rkey integer NOT NULL,
@@ -245,21 +245,17 @@ CREATE TABLE account (
     bversion bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     dversion bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     currency character(3),
-    atype smallint DEFAULT 0 NOT NULL,
+    atype character(6) DEFAULT 'Debit ' NOT NULL,
     balance bigint DEFAULT 0 NOT NULL,
     date date DEFAULT now()
 );
 
 ALTER TABLE ONLY account
-    ADD CONSTRAINT account_pkey PRIMARY KEY (name);
+    ADD CONSTRAINT account_pkey PRIMARY KEY (name),
+    ADD CONSTRAINT account_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
+    ADD CONSTRAINT account_atype_fkey FOREIGN KEY (atype) REFERENCES account_type(atype);
 
-ALTER TABLE ONLY account
-    ADD CONSTRAINT "$1" FOREIGN KEY (currency) REFERENCES currency(name);
-
-ALTER TABLE ONLY account
-    ADD CONSTRAINT "$2" FOREIGN KEY (atype) REFERENCES xaction_type(type);
-
-INSERT INTO account VALUES ('Cash', DEFAULT, DEFAULT, 'GBP', 0, 0, DEFAULT);
+INSERT INTO account VALUES ('Cash', DEFAULT, DEFAULT, 'GBP', 'Debit ', 0, DEFAULT);
 
 CREATE SEQUENCE transaction_id_seq
     INCREMENT BY 1
@@ -278,10 +274,10 @@ CREATE TABLE transaction (
     rno character(4),
     srcclear boolean DEFAULT false NOT NULL,
     dstclear boolean DEFAULT false NOT NULL,
-    namount real,
+    namount bigint,
     repeat integer DEFAULT 0 NOT NULL,
     currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
-    amount real DEFAULT 0 NOT NULL,
+    amount bigint DEFAULT 0 NOT NULL,
     description character varying(100) NOT NULL
 );
 
@@ -293,18 +289,13 @@ CREATE INDEX transaction_idx_dst ON transaction USING btree (dst);
 CREATE INDEX transaction_idx_src ON transaction USING btree (src);
 
 ALTER TABLE ONLY transaction
-    ADD CONSTRAINT "$1" FOREIGN KEY (src) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE ONLY transaction
-    ADD CONSTRAINT "$2" FOREIGN KEY (dst) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE ONLY transaction
-    ADD CONSTRAINT "$3" FOREIGN KEY (currency) REFERENCES currency(name);
-
-ALTER TABLE ONLY transaction
-    ADD CONSTRAINT "$4" FOREIGN KEY (repeat) REFERENCES repeat(rkey);
+    ADD CONSTRAINT transaction_src_fkey FOREIGN KEY (src) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT transaction_dst_fkey FOREIGN KEY (dst) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT transaction_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
+    ADD CONSTRAINT transaction_repeat_fkey FOREIGN KEY (repeat) REFERENCES repeat(rkey);
 
 CREATE TABLE config (
+    db_version integer,
     home_account character varying(25),
     extn_account character varying(25),
     repeat_days integer,
@@ -312,24 +303,10 @@ CREATE TABLE config (
     demo boolean DEFAULT false NOT NULL
 );
 
-INSERT INTO config VALUES ('Cash','Cash', 90, 'GBP');
+INSERT INTO config VALUES (2,'Cash','Cash', 90, 'GBP');
 ALTER TABLE ONLY config
-    ADD CONSTRAINT "$1" FOREIGN KEY (home_account) REFERENCES account(name) ON UPDATE CASCADE;
-ALTER TABLE ONLY config
-    ADD CONSTRAINT "$2" FOREIGN KEY (extn_account) REFERENCES account(name) ON UPDATE CASCADE;
-ALTER TABLE ONLY config
-    ADD CONSTRAINT "$3" FOREIGN KEY (default_currency) REFERENCES currency(name) ON UPDATE CASCADE;
+    ADD CONSTRAINT config_home_account_fkey FOREIGN KEY (home_account) REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
+    ADD CONSTRAINT config_extn_account_fkey FOREIGN KEY (extn_account) REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
+    ADD CONSTRAINT config_default_currency_fkey FOREIGN KEY (default_currency) REFERENCES currency(name) ON UPDATE CASCADE;
 
-
---
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-GRANT ALL ON SEQUENCE version TO money;
-GRANT ALL ON TABLE config TO money;
-GRANT ALL ON TABLE currency TO money;
-GRANT ALL ON TABLE xaction_type TO money;
-GRANT ALL ON TABLE repeat TO money;
-GRANT ALL ON TABLE account TO money;
-GRANT ALL ON TABLE transaction TO money;
-GRANT ALL ON SEQUENCE transaction_id_seq TO money;
-
+ 

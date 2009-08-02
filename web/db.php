@@ -18,21 +18,16 @@
 
 */
 
-//This is a convenient place to force everything we output to not be cached (even 
+//This is a convenient place to force everything we output to not be cached 
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
 	if (!defined('MONEY'))
 		die('Hacking attempt...');
 
-
-	
-	$db_server = 'localhost';
-	$db_name = 'money';
-	$db_user = 'money';
-	$db_password = 'xxxxxx';
-	pg_connect("host=$db_server dbname=$db_name user=$db_user
-		password=$db_password") 
+    require_once('settings.php');
+    
+	pg_connect("host=$dbserver dbname=$dbname user=$dbuser password=$dbpassword") 
 			or die('Could not connect to database: ' . pg_last_error());
 	function dbQuery($sql) {
 		$result = pg_query($sql);
@@ -46,7 +41,7 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 			echo pg_last_error();
 			echo "<br/><br/>\n\n";
 			echo '</tt>';
-			die('<p>Please inform <i>webmaster@melindasbackups.com</i> that a database query failed in the airhockey and include the above text.<br/><br/>Thank You</p>');
+			die('<p>Please inform <i>xxx@yyy.com</i> that a database query failed and include the above text.<br/><br/>Thank You</p>');
 		}
 		return $result;
 	}

@@ -37,16 +37,19 @@ require_once('db.php');
 	<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
 </head>
 <body>
-<!-- container START -->
-<div id="container" >
+<script type="text/javascript">
+    var version = '<?php include('version.txt');?>' ;
+    $(document).ready(function () {
+        $('#version').append(version);
+    });
+</script>
 
-<!-- header START -->
-    <div id="header">
-        <h1><a href="http://www.chandlerfamily.org.uk/">Chandler&#039;s Zen</a></h1>
-		<div class="description">A Glimpse Into My Thoughts</div>
-		<a href="http://www.chandlerfamily.org.uk"><img id="title" src="http://www.chandlerfamily.org.uk/wp-content/themes/chandlerszen/img/chandlers_zen.png" alt="Chandler&#039;s Zen - A Glimpse Into My Thoughts" /></a>
-    </div>
-<!-- header END -->
+    <div id="header"></div>
+    <ul id="menu">
+        <li><a href="index.php" target="_self" title="Account" >Account</a></li>
+        <li><a href="accounts.php" target="_self" title="Account Manager" class="current">Account Manager</a></li>
+        <li><a href="currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
+    </ul>
 
 <!-- footer START -->
 <div id="footer">

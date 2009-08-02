@@ -18,6 +18,10 @@
 
 */
 error_reporting(E_ALL);
+
+//Can't start if we haven't setup settings.php
+if (!file_exists(dirname(__FILE__) . '/settings.php')) header('Location: install.php'); //So install it
+
 session_start();
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
@@ -46,20 +50,19 @@ if(!isset($_SESSION['account'])) {
 	<script type="text/javascript" src="/js/jquery-1.3.2.min.js"></script>
 	<script type="text/javascript" src="/js/jquery-ui-1.7.2.custom.min.js"></script>
 	<script type="text/javascript" src="money.js" ></script>
-<!-- include site css -->
-	<link rel="stylesheet" type="text/css" href="/css/site.css"/>
 </head>
 <body>
 <script type="text/javascript">
-    var version = '<?php include('version.txt');?>' ;
     $(document).ready(function () {
-        $('#version').append(version);
     });
 </script>
 
-<?php include($_SERVER['DOCUMENT_ROOT'].'/header.html'); ?>
-
-<div id="navigation"><a href="#">Transactions</a> <a href="accmgr.php">Accounts Manager</a> <a href="currmgr.php">Currency Manager</a></div> 
+    <div id="header"></div>
+    <ul id="menu">
+        <li><a href="index.php" target="_self" title="Account" class="current">Account</a></li>
+        <li><a href="accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
+        <li><a href="currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
+    </ul>
 
 <div id="content">
     <h1>Account Data</h1>
@@ -73,9 +76,9 @@ if(!isset($_SESSION['account'])) {
 <?php } ?>		<form id="accountsel">
             <select>
 <?php
-$result = dbQuery('SELECT name FROM account ORDER BY name ASC;'
+$result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
 while ($row = dbFetch($result) ) {
-?>              <option <?php echo ($_SESSION['account'] == $row['name'])?'selected = "selected"':'' ; ?> >
+?>              <option <?php echo ($_SESSION['account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
 ?>           </select>
@@ -85,7 +88,13 @@ while ($row = dbFetch($result) ) {
 ?>
 </div>
 
-<?php include($_SERVER['DOCUMENT_ROOT'].'/footer.html'); ?>
+<div id="footer">
+	<div id="copyright">
+		<p>AKCMoney is copyright &copy; 2003-2009 Alan Chandler. Visit
+		<a href="http://www.chandlerfamily.org.uk/software/">http://www.chandlerfamily.org.uk/software/</a> to obtain a copy</p>
+	</div>
+	<div id="version"><?php include('version.php');?></div>
+</div>
 
 </body>
 </html>
