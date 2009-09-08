@@ -30,6 +30,9 @@ ALTER TABLE account
     ALTER COLUMN atype TYPE char(6) USING CASE WHEN atype=0 THEN 'Debit ' ELSE 'Credit' END,
     ALTER COLUMN atype SET DEFAULT 'Debit ',
     ALTER COLUMN balance TYPE bigint USING balance*100,
+    ALTER COLUMN date DROP DEFAULT,
+    ALTER COLUMN date TYPE bigint USING date_part('epoch'::text,date),
+    ALTER COLUMN date SET DEFAULT date_part('epoch'::text,now()),
     ADD CONSTRAINT account_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
     ADD CONSTRAINT account_atype_fkey FOREIGN KEY (atype) REFERENCES account_type(atype);
 
@@ -40,6 +43,9 @@ ALTER TABLE transaction
     DROP CONSTRAINT "$4",
     ALTER COLUMN namount TYPE bigint USING namount*100,
     ALTER COLUMN amount TYPE bigint USING amount*100,
+    ALTER COLUMN date DROP DEFAULT,
+    ALTER COLUMN date TYPE bigint USING date_part('epoch'::text,date),
+    ALTER COLUMN date SET DEFAULT date_part('epoch'::text,now()),
     ADD CONSTRAINT transaction_src_fkey FOREIGN KEY (src) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
     ADD CONSTRAINT transaction_dst_fkey FOREIGN KEY (dst) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
     ADD CONSTRAINT transaction_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),

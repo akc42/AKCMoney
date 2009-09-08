@@ -247,7 +247,7 @@ CREATE TABLE account (
     currency character(3),
     atype character(6) DEFAULT 'Debit ' NOT NULL,
     balance bigint DEFAULT 0 NOT NULL,
-    date date DEFAULT now()
+    date bigint DEFAULT date_part('epoch'::text,now())
 );
 
 ALTER TABLE ONLY account
@@ -267,7 +267,7 @@ SELECT pg_catalog.setval('transaction_id_seq', 1, true);
 
 CREATE TABLE transaction (
     id integer DEFAULT nextval('transaction_id_seq'::regclass) NOT NULL,
-    date date DEFAULT now(),
+    date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
     src character varying(25),
     dst character varying(25),
     version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
