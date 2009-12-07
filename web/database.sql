@@ -59,7 +59,7 @@ CREATE TABLE currency (
     rate real DEFAULT 1.0 NOT NULL,
     display boolean DEFAULT false,
     priority smallint,
-    description character varying(100),
+    description character varying,
     version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL
 );
 
@@ -241,7 +241,7 @@ INSERT INTO currency VALUES ('EUR', 0.93041664, true, 1, 'Euro Member Countries,
 INSERT INTO currency VALUES ('USD', 0.63499999, true, 2, 'United States of America, Dollars', 1);
 
 CREATE TABLE account (
-    name character varying(25) NOT NULL,
+    name character varying NOT NULL,
     bversion bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     dversion bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     currency character(3),
@@ -268,17 +268,18 @@ SELECT pg_catalog.setval('transaction_id_seq', 1, true);
 CREATE TABLE transaction (
     id integer DEFAULT nextval('transaction_id_seq'::regclass) NOT NULL,
     date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
-    src character varying(25),
-    dst character varying(25),
+    src character varying,
+    dst character varying,
     version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     rno character(4),
     srcclear boolean DEFAULT false NOT NULL,
     dstclear boolean DEFAULT false NOT NULL,
     namount bigint,
+    actual boolean NOT NULL DEFAULT false,
     repeat integer DEFAULT 0 NOT NULL,
     currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
     amount bigint DEFAULT 0 NOT NULL,
-    description character varying(100) NOT NULL
+    description character varying NOT NULL
 );
 
 ALTER TABLE ONLY transaction
@@ -296,8 +297,8 @@ ALTER TABLE ONLY transaction
 
 CREATE TABLE config (
     db_version integer,
-    home_account character varying(25),
-    extn_account character varying(25),
+    home_account character varying,
+    extn_account character varying,
     repeat_days integer,
     default_currency character(3),
     demo boolean DEFAULT false NOT NULL

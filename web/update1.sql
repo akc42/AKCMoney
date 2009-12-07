@@ -30,6 +30,7 @@ ALTER TABLE account
     ALTER COLUMN atype TYPE char(6) USING CASE WHEN atype=0 THEN 'Debit ' ELSE 'Credit' END,
     ALTER COLUMN atype SET DEFAULT 'Debit ',
     ALTER COLUMN balance TYPE bigint USING balance*100,
+    ALTER COLUMN name TYPE character varying,
     ALTER COLUMN date DROP DEFAULT,
     ALTER COLUMN date TYPE bigint USING date_part('epoch'::text,date),
     ALTER COLUMN date SET DEFAULT date_part('epoch'::text,now()),
@@ -43,6 +44,10 @@ ALTER TABLE transaction
     DROP CONSTRAINT "$4",
     ALTER COLUMN namount TYPE bigint USING namount*100,
     ALTER COLUMN amount TYPE bigint USING amount*100,
+    ALTER COLUMN src TYPE character varying,
+    ALTER COLUMN dst TYPE character varying,
+    ALTER COLUMN description character varying,
+    ADD COLUMN actual boolean NOT NULL DEFAULT false,
     ALTER COLUMN date DROP DEFAULT,
     ALTER COLUMN date TYPE bigint USING date_part('epoch'::text,date),
     ALTER COLUMN date SET DEFAULT date_part('epoch'::text,now()),
@@ -50,11 +55,15 @@ ALTER TABLE transaction
     ADD CONSTRAINT transaction_dst_fkey FOREIGN KEY (dst) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
     ADD CONSTRAINT transaction_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
     ADD CONSTRAINT transaction_repeat_fkey FOREIGN KEY (repeat) REFERENCES repeat(rkey);
+    
+ALTER TABLE currency
+    ALTER COLUMN descriptopn TYPE character varying;
 
 ALTER TABLE config  RENAME COLUMN start_account TO extn_account;
 
 ALTER TABLE config
-    ADD COLUMN home_account character varying(25), 
+    ADD COLUMN home_account character varying,
+    ALTER COLUMN extn_account TYPE character varying, 
     ADD COLUMN db_version integer,
     ADD demo boolean,
     ALTER COLUMN demo SET DEFAULT false,

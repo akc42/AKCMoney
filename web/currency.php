@@ -19,62 +19,46 @@
 */
 error_reporting(E_ALL);
 
+//Can't start if we haven't setup settings.php
+session_start();
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
+
+
+
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>AKC Money</title>
+	<title>AKC Money Account Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-	<link type="text/css" href="css/redmond/jquery-ui-1.7.2.custom.css" rel="stylesheet" />	
-	<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-	<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
+	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
+	<script type="text/javascript" src="/js/DateUtils.js"></script>
+	<script type="text/javascript" src="money.js" ></script>
 </head>
 <body>
-<script type="text/javascript">
-    var version = '<?php include('version.txt');?>' ;
-    $(document).ready(function () {
-        $('#version').append(version);
-    });
-</script>
-
     <div id="header"></div>
     <ul id="menu">
-        <li><a href="index.php" target="_self" title="Account" >Account</a></li>
+        <li><a href="index.php" target="_self" title="Account">Account</a></li>
         <li><a href="accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
         <li><a href="currency.php" target="_self" title="Currency Manager" class="current">Currency Manager</a></li>
     </ul>
 
-<!-- footer START -->
+<div id="main">
+
+</div>
 <div id="footer">
-	<img id="logo" src="http://www.chandlerfamily.org.uk/wp-content/themes/chandlerszen/img/chandlerfamily.jpg" alt="chandlerfamily logo" />
 	<div id="copyright">
-		<p>Unless otherwise stated the content of this site is copyright copyright &copy; 2003-2009 Alan Chandler. Please see <a href="/licences/">licence conditions</a> for details on copying.</p>
-
+		<p>AKCMoney is copyright &copy; 2003-2009 Alan Chandler. Visit
+		<a href="http://www.chandlerfamily.org.uk/software/">http://www.chandlerfamily.org.uk/software/</a> to obtain a copy</p>
 	</div>
-	<div id="version"><?php include version.php;?></div>
+	<div id="version"><?php include('version.php');?></div>
 </div>
-<!-- footer END -->
-
-</div>
-<!-- container END -->
-
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-xxxxxxx-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-
 
 </body>
 </html>

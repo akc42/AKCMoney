@@ -35,17 +35,8 @@ if(isset($_POST['dbname'])) {
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-	<link type="text/css" href="/css/redmond/jquery-ui-1.7.2.custom.css" rel="stylesheet" />	
-	<script type="text/javascript" src="/js/jquery-1.3.2.min.js"></script>
 </head>
 <body>
-<script type="text/javascript">
-    var version = "<?php echo file_get_contents("version.txt");?>" ;
-    $(document).ready(function () {
-        $('#version').append(version);
-    });
-</script>
-
 
     <div id="header"></div>
 <?php
