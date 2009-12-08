@@ -41,7 +41,7 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 			echo pg_last_error();
 			echo "<br/><br/>\n\n";
 			echo '</tt>';
-			die('<p>Please inform <i>xxx@yyy.com</i> that a database query failed and include the above text.<br/><br/>Thank You</p>');
+			die('<p>Please inform <i>alan@chandlerfamily.org.uk</i> that a database query failed and include the above text.<br/><br/>Thank You</p>');
 		}
 		return $result;
 	}
@@ -54,6 +54,10 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 	function dbPostSafe($text) {
 	  if ($text == '') return 'NULL';
 	  return dbMakeSafe(htmlentities($text,ENT_QUOTES,'UTF-8',false));
+	}
+	function dbPostBoolean($text) {
+	  if ($text == '') return 'NULL';
+	  return ($text == 't')?'TRUE':'FALSE';
 	}
 	function dbNumRows($result) {
 		return pg_num_rows($result);

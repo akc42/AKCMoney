@@ -16,6 +16,7 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+body {font-family: Arial Helvetica, sans-serif;font-size: 10pt;line-height: 12pt;color: black;background: white;}
 
 #header {
     width:728px;
@@ -38,7 +39,6 @@ ul#menu{
 	width: 728px;
 	height: 43px;
 	background: #FFF url("menu-bg.gif") top left repeat-x; 
-	font-size: 0.8em; 
 	font-family: "Lucida Grande", Verdana, sans-serif; 
 	font-weight: bold; 
 	list-style-type: none; 
@@ -93,7 +93,7 @@ h1,caption {
 
 span#aname{color:red; font-weight:bold;}
 
-div#accountsel {float:left;width:300px;}
+form#accountsel {float:left;width:300px;}
 
 div#accountinfo{
     width:400px;
@@ -121,9 +121,12 @@ div#currency span.title {
 
 .balance {background-color:#e4e4e4;}
 	
-
-.odd {
-	background-color:White;
+.even {background-color:#E8F2FE;}
+tr {
+	background-color:#FAFAFA;
+}
+th {
+    background-color:#F4FF8E;
 }
 
 a {
@@ -134,31 +137,24 @@ a {
 	color:blue;
 }
 
-.clear a {
+.cleared {
 	background-color:#99FFFF;
 	color:black;
 	font-weight:bold;
 }
 
-.unclear a:hover, passed a:hover {
-	background-color:#99FFFF;
-	color:black;
-}
-.clear a:hover{
+.cleared:hover{
 	background-color:white;
 	color:black;
 }
 
-.passed a {
-	background-color:#CCCC66
-}
-
-.repeat a {
-	background-color:#FFFF33
+.passed {
+	background-color:#CCCC66;
 }
 
 .repeat {
-	color:#669900
+    background-color:#FDF501;
+	color:#669900;
 }
 
 .dual {
@@ -166,7 +162,7 @@ a {
 }
 
 .description {width:100%;}
-.ref {width:30px;}
+.ref {width:40px;}
 .date {width:70px;}
 
 div#date {
@@ -339,6 +335,10 @@ a.button span img {
     border:0;
     margin-right:5px;
     float:left;
+}
+
+.sellabel {
+    text-align:right;
 }
 
 

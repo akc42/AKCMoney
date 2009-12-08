@@ -20,49 +20,47 @@ Account = new Class({
     Implements:Options,
     options: {
         name:'',
-        balances: {
-            opening:0,
-            cleared:0,
-            max:0,
-            min:0
-        },
+        isSrc: true,
+        cleared:0,
+        maxmax:0,
         currency: {
-            name:'GBP',
+            account:'GBP',
+            def:'GBP',
             rate:1.0
         },
+        elements:{
+            xaction:null,
+            accounts: null,
+            currencies :null,
+            repeat: null
+        }
     },
-    Initialize: function(options) {
-        this.setOptions();
-    },
-    formatAmount:function(amount) {
-        var dollar = Math.floor(amount/100);
-        var cent = amount%100;
-        if (cent < 10) cent = '0'+cent;
-        return dollar+'.'+cent;
-    },
-    getMinBalance: function() {
-        return this.formatAmount(this.options.balances.min);
-    },
-    getMaxBalance: function() {
-        return this.formatAmount(this.options.balances.max);
-    },
-    getOpeningBalance: function() {
-        return this.formatAmount(this.options.balances.opening);
-    },
-    getClearedBalance: function() {
-        return this.formatAmount(this.options.balances.cleared);
-    }
-});
+    initialize: function(options) {
+        var accountList
+        this.setOptions(options);
+//Clone the account list and adjust for use as secondary account selection when editing a transaction
+        if (this.options.elements.accounts) {
+            var accountList = this.options.elements.accounts.clone();
+            var currentSelected = accountList.getElement('option[selected]');
+            currentSelected.destroy();
+            var blankOption = new Element('option');
+            blankOption.inject(accountList,'top');
+// Insert this new list into the new transaction section
+            if (this.options.elements.xaction) {
+                var listPoint = this.options.elements.xaction.getElement('.accountsel')
+                accountList.inject(listPoint);
+            }
+            this.options.elements.accounts = accountList;   
+        }
+// Need to add events to the key dynamic parts
 
-Money = new Class({
-    Implements:Options,
-    options: {
-        account:null,
-        accountList:null,
-        currencyList:null
+// Firstly the account list
+        $('account').addEvent('change', function() {
+            //submit the form
+            $('accountsel').submit();
+        });
+
     },
-    Initialize: function(options) {
-        this.setOptions();
-    }
+    
 });
 
