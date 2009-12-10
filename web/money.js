@@ -42,8 +42,10 @@ Account = new Class({
         if (this.options.elements.accounts) {
             var accountList = this.options.elements.accounts.clone();
             var currentSelected = accountList.getElement('option[selected]');
+            this.account=currentSelected.get('text');
             currentSelected.destroy();
             var blankOption = new Element('option');
+            blankOption.set('selected','selected');
             blankOption.inject(accountList,'top');
 // Insert this new list into the new transaction section
             if (this.options.elements.xaction) {
@@ -55,11 +57,56 @@ Account = new Class({
 // Need to add events to the key dynamic parts
 
 // Firstly the account list
-        $('account').addEvent('change', function() {
+        $('account').addEvent('change', function(e) {
+            e.stop();
             //submit the form
             $('accountsel').submit();
         });
-
+// Now the "New Transaction" button
+// First lets make the request that creates the transactions
+        this.createXaction = new Request.JSON({
+            url:'newxaction.php',
+            link:'cancel',
+            onComplete: function(response) {
+                if (response) {
+                    var nowRow = $('now');
+                    var rows = this.options.elements.xaction.getElements('tr');
+                    var newRows = [];
+                    rows.each(function(row,i) {
+                        newRows[i] = row.clone();
+                        newRows[i].inject(nowRow,'before');
+                    });
+                    row[0].set('id','t'+response.tid);
+                    var el = newRows[0].getElement('input[name=date]');
+                    el.value = response.date;
+                    this.calendar = new Calendar.Single(el,{onHideStart:function () {el.fireEvent('change')}});
+                    var inputs = row[0].getElements('input');
+                    inputs.extend(row[1].getElements('input');
+//TODO: what about selects?
+                    var myAccount = this;
+                    inputs.addEvent('change', function(e) {
+                        myAccount.updateXaction.post({'account':myAccount.account, 'tid': response.tid, 'field':this.get('name'), 'value':this.value});
+                    });
+//TODO: Add events for buttons 
+                    nowRow.scrollTo(0,100);
+                }
+            }.bind(this);
+        });        
+        var newButton = $('new')
+        var newEvent = function(e) {
+            e.stop();
+            newButton.removeEvent('click',newEvent); // Can't do it again until this transaction is either closed or deleted
+            $('tid').value = 0; //indicate this will be a new transaction which has not yet been created
+            this.createXaction.post({'account':this.account});
+                       
+        }.bind(this);
+        newButton.addEvent('click', newEvent);
+        this.updateXaction = new Request.JSON({
+            url:'updatexaction.php',
+            link:'chain',
+            onComplete: function(response) {
+            }
+        });
     },
     
 });

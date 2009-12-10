@@ -80,11 +80,6 @@ h1,caption {
 	font-weight:bold;
 }
 
-.amount {
-	text-align:right;
-	width:70px;
-}
-
 .rate {
 	text-align:right;
 	color:blue;
@@ -162,8 +157,32 @@ a {
 }
 
 .description {width:100%;}
-.ref {width:40px;}
-.date {width:70px;}
+.amount {
+	text-align:right;
+	padding:0 3px;
+	width:84px;
+}
+input.amount {
+    padding:0;
+}
+
+.ref {
+    width:40px;
+	padding:0 3px;
+}
+input.ref {
+    padding:0;
+}
+.date {
+    width:70px;
+    padding:0 3px;
+}
+.input.date {
+    padding:0;
+}
+
+
+
 
 div#date {
 	padding:20px;
@@ -339,6 +358,10 @@ a.button span img {
 
 .sellabel {
     text-align:right;
+}
+
+.accountsel {
+    float:left;
 }
 
 

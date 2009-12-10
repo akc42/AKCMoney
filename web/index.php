@@ -53,11 +53,14 @@ $repeattime = time() + $_SESSION['repeat_interval'];
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>AKC Money Account Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
+	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
+    	<link rel="stylesheet" type="text/css" href="calendar/calendar-ie.css"/>
 	<![endif]-->
 	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="/js/DateUtils.js"></script>
+	<script type="text/javascript" src="/js/mootools-1.2.4.2-more.js"></script>
+	<script type="text/javascript" src="calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money.js" ></script>
 </head>
 <body>
@@ -113,8 +116,8 @@ echo $row['adesc'];
 
 		</div>
 		<div class="buttoncontainer">
-            <a href="#" class="button" tabindex="200"><span><img src="add.png"/>New Transaction</span></a>
-            <a href="#" class="button" tabindex="201"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
+            <a id="new" class="button" tabindex="200"><span><img src="add.png"/>New Transaction</span></a>
+            <a id="rebalance" class="button" tabindex="201"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
         </div>
 
 <script type="text/javascript">
@@ -133,7 +136,7 @@ window.addEvent('domready', function() {
         minmax:$('fakebalance').get('text'),
         cleared:$('fakecleared').get('text'),
         elements : { 
-            xaction:$('faketransaction'),
+            xaction:$('xactiontemplate'),
             accounts: $('account'),
             currencies :$('currencyList'),
             repeat: $('repeatList')
@@ -143,41 +146,48 @@ window.addEvent('domready', function() {
 </script>
 
 
-<table id="transactions" >
+<table>
     <caption>Transaction List</caption>
     <thead>
         <tr id="accountHead">
-            <th><div class="date">Date</div></th>
-            <th><div class="ref">Ref</div></th>
-            <th  class="description">Description</th>
-            <th><div class="amount">Amount</div></th>
-            <th><div class="amount">Balance</div></th>
+            <th><div>Date</div></th>
+            <th><div>Ref</div></th>
+            <th>Description</th>
+            <th><div>Amount</div></th>
+            <th><div>Balance</div></th>
         </tr>
     </thead>
     <tbody>
         <tr class="balance">
-            <td></td><td></td>
-            <td><?php echo ($atype == 'Debit ')?'Minimum':'Maximum';?> Balance</td>
-            <td></td>
-            <td id="minmaxbalance" class="amount"></td>
+            <td><div class="date"></div></td><td><div class="ref"></div></td>
+            <td class="description"><?php echo ($atype == 'Debit ')?'Minimum':'Maximum';?> Balance</td>
+            <td><div class="amount"></div></td>
+            <td><div id="minmaxbalance" class="amount"></div></td>
       </tr>
         <tr class="balance">
             <td></td><td></td>
             <td>Cleared Balance</td>
             <td></td>
-            <td id="clrbalance" class="amount"></td>
+            <td><div id="clrbalance" class="amount"></div></td>
         </tr>
-        <form action="#" method="post">
-            <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
+    </tbody>
+</table>
+<form id="updatebalance" action="updatebalance.php" method="post">
+    <input type="hidden" name="account" value="<?php echo $account;?>"/>
+    <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
+    <table>
+        <tbody>
             <tr class="balance">
-                <td class="date"><?php echo date("d-M-y",$bdate);?></td>
-                <td></td>
-                <td>Opening Balance</td>
-                <td></td>
-                <td><input id="openbalance" type="text" name="openbalance" 
-                    value="<?php echo fmtAmount($balance);?>" class="amount" tabindex="180"/></td>
+                <td><div class="date"><?php echo date("d-M-y",$bdate);?></div></td>
+                <td><div class="ref"></div></td>
+                <td class="description">Opening Balance</td>
+                <td><div class="amount"></div></td>
+                <td><input id="openbalance" class="amount" type="text" name="openbalance" 
+                    value="<?php echo fmtAmount($balance);?>" tabindex="180"/></td>
             </tr>
-        </form>
+        </tbody>
+    </table>
+</form>
 <?php
 dbFree($result);
 
@@ -228,8 +238,14 @@ while ($repeats_to_do) {
     dbQuery('COMMIT;');
     dbFree($result);
 }
+?><form id="doxaction" action="transaction.php" method="post">
+    <input id="aid" name="account" type="hidden" value="<?php echo $account;?>"/>
+    <input id="tid" name="tid" type="hidden" value="0" />
+    <table>
+        <tbody>
+<?php
 //Having updated the entire account of repeated transactions, we now read and display everything
-
+$locatedNow=false;
 $result = dbQuery('SELECT * FROM transaction WHERE src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).' ORDER BY date ASC;');
 $r = 0;
 while ($row = dbFetch($result)) {
@@ -254,11 +270,13 @@ while ($row = dbFetch($result)) {
     $cumbalance += $amount;
     $minbalance = min($minbalance,$cumbalance);
     $maxbalance = max($maxbalance,$cumbalance);
-    
-?>      <tr <?php
-    echo 'id="t'.$row['id'].' "';
-    if($r%2 == 0) {echo 'class="even xaction"';} else {echo 'class="xaction"';} ?> >
-            <td class="date <?php 
+    if (!$locatedNow && $row['date'] > time()) {
+        $locatedNow=true;
+?>          <tr id="now" class="hidden"></tr>
+<?php
+    }
+?>          <tr id="<?php echo 't'.$row['id']; ?>" class="xaction<?php if($r%2 == 0) echo ' xaction';?>">
+                <td class="<?php 
     if($row['repeat'] != 0) {
         echo " repeat";
         if($cleared) $clrbalance += $amount; //do this because in this case we would otherwise miss it
@@ -269,78 +287,33 @@ while ($row = dbFetch($result)) {
         if ($row['date'] < time()) echo " passed"; //only indicate passed if not indicating cleared
     }
     if ($dual) echo " dual"; 
-                ?>" ><span><?php echo date("d-M-y",$row['date']);?></span><input type="hidden" value="<?php echo $row['date'];?>" /></td>
-            <td class="ref"><?php echo $row['rno'];?></td><td class="desc"><?php echo $row['description'];?></td>
-            <td class="amount<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></td><td class="amount<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></td>
-        </tr>
-        <tr class="hidden">
-            <td>
-                <div class="clearacc">
-                    <input type="checkbox" name="<?php echo 'c'.$row['id'];?>" tabindex="20"/>
-                    <label for="<?php echo 'c'.$row['id'];?>">Cleared</label>
-                </div>
-            </td>
-            <td class="sellabel"><?php echo ($row['src'] == $account)?'Dst :':'Src :';?></td>
-            <td>
-                <div class="accountsel"></div>
-                <div class="repeatsel"></div>
-            </td>
-            <td><input type="text" name="<?php echo 'a'.$row['id'];?>" value="<?php echo fmtAmount($row['amount']);?>" tabindex="40"/></td>
-            <td class="currencysel"></td>
-        </tr>
-        <tr class="hidden">
-            <td colspan="3">
-		        <div class="buttoncontainer">
-                    <a href="#" class="button"><span><img src="close.png" tabindex="70"/>Close</span></a>
-                    <a href="#" class="button"><span><img src="switch.png" tabindex="75"/>Switch Accounts</span></a>
-                    <a href="#" class="button"><span><img src="delete.gif" tabindex="80"/>Delete This Transaction</span></a>
-                    <a href="#" class="button"><span><img src="set.png" tabindex="43"/>Set Currency Rate</span></a>
-                </div>
-            </td>
-            <td><input type="text" name="<?php echo 'n'.$row['id'];?>" value="<?php echo fmtAmount($row['namount']);?>" tabindex="45"/></td>
-            <td><?php echo ($row['actual'] == 't')?'Actual':'Estimated';?></td>
-        </tr>
+                ?>" ><div class="date"><?php echo date("d-M-y",$row['date']);?></div><input type="hidden" value="<?php echo $row['date'];?>" /></td>
+                <td><div class="ref"><?php echo $row['rno'];?></div></td>
+                <td class="description"><?php echo $row['description'];?></td>
+                <td class="<?php if ($dual) echo " dual";?>"><div class="amount"><?php echo fmtAmount($amount);?></div></td>
+                <td class="<?php if ($dual) echo " dual";?>"><div class="amount"><?php echo fmtAmount($cumbalance);?></div></td>
+            </tr>
 <?php
 }
 dbFree($result);
-?>    </tbody>   
-</table>
+    if (!$locatedNow) {
+?>          <tr id="now" class="hidden"></tr>
+<?php
+    }
+?>      </tbody>   
+    </table>
+</form>
 </div>
 <div id="fakebalance" class="hidden"><?php echo fmtAmount(($atype == 'Debit ')?$minbalance:$maxbalance);?></div>
 <div id="fakecleared" class="hidden"><?php echo fmtAmount($clrbalance);?></div>
-<div id="faketransaction" class="hidden">
-    <tr class="xaction">
-        <td class="date"><input type="text" value="<?php echo date('d-M-y');?>" tabindex="70"/><input type="hidden" value="<?php echo time();?>" /></td>
-        <td class="ref"><input type="text" value="" tabindex="100"/></td>
-        <td class="desc"><input type="text" value="" tabindex="10"/></td>
-        <td class="amount"><input type="text" value="0.00" tabindex="20"/></td>
-        <td class="amount"></td>
-    </tr>
-    <tr class="hidden">
-        <td>
-            <div class="clearacc">
-                <input type="checkbox" name="" tabindex="80"/>
-                <label for="">Cleared</label>
-            </div>
-            </td>
-            <td class="sellabel">Dst :</td>
-            <td>
-                <div class="accountsel"></div>
-                <select id="repeatList" class="hidden">
-<?php
-$result=dbQuery('SELECT * FROM repeat;');
-while($row = dbFetch($result)) {
-?>                  <option value="<?php echo $row['rkey']; ?>" <?php
-                             if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
-                                echo $row['description']; ?></option>
-<?php    
-}
-dbFree($result);
-?>
-                </select>
-           </td>
-            <td><input type="text" name="<?php echo 'a'.$row['id'];?>" value="<?php echo fmtAmount($row['amount']);?>"/></td>
-            <td class="currencysel">
+<table id="xactiontemplate" class="hidden" >
+    <tbody>
+        <tr class="xaction">
+            <td ><input type="hidden" name="date" value="<?php echo time();?>" /></td>
+            <td><input class="ref" type="text" name="rno" value="" tabindex="100"/></td>
+            <td class="description"><input class=description type="text" name="desc" value="" tabindex="10"/></td>
+            <td><input class="amount" name="amount" type="text" value="0.00" tabindex="20"/></td>
+            <td class="amount">
                 <select id="currencyList">
 <?php
 $sql = 'SELECT name, rate, display, priority FROM currency WHERE display = true';
@@ -350,8 +323,8 @@ if ($currency != $_SESSION['default_currency']) {
 $result=dbQuery($sql.' ORDER BY priority ASC;');
 while($row = dbFetch($result)) {
 ?>                  <option value="<?php echo $row['name']; ?>" <?php
-                        if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?>><?php
-                            echo $row['name']; ?><span class="hidden"><?php echo $row['rate']; ?></span></option>
+                        if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> rate="<?php
+                            echo $row['rate']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
 dbFree($result);
@@ -359,30 +332,50 @@ dbFree($result);
                 </select>
             </td>
         </tr>
-        <tr class="hidden">
-            <td colspan="3">
-		        <div class="buttoncontainer">
-                    <a href="#" class="button"><span><img src="close.png"/>Save</span></a>
-                    <a href="#" class="button"><span><img src="switch.png"/>Save Switch Accounts</span></a>
-                    <a href="#" class="button"><span><img src="delete.gif"/>Ignore</span></a>
-                    <a href="#" class="button"><span><img src="set.png"/>Set Currency Rate</span></a>
+        <tr class="row2">
+            <td>
+                <div class="clearacc">
+                    <input type="checkbox" name="cleared" tabindex="80"/>
+                    <label for="cleared">Cleared</label>
                 </div>
             </td>
-            <td><input type="text" name="" value=""/></td>
-            <td class="crate"></td>
+            <td class="sellabel">Dst :</td>
+            <td>
+                <div class="accountsel"></div>
+                <div class="repeatsel">
+                    <select id="repeatList">
+<?php
+$result=dbQuery('SELECT * FROM repeat;');
+while($row = dbFetch($result)) {
+?>                      <option value="<?php echo $row['rkey']; ?>" <?php
+                            if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
+                                echo $row['description']; ?></option>
+<?php    
+}
+dbFree($result);
+?>
+                    </select>
+                </div>
+            </td>
+            <td><input class="amount" type="text" name="namout" value="0.00"/></td>
+            <td id="crate"></td>
         </tr>
-
-
-
-
-
-
-
-<div id="test"></div>
-
-
-
-
+        <tr class="row3">
+            <td colspan="2">
+                   <a class="button"><span><img src="close.png"/>Close</span></a>
+            </td>
+            <td>
+		        <div class="buttoncontainer">
+                    <a class="button"><span><img src="switch.png"/>Switch Accounts</</span></a>
+                    <a class="button"><span><img src="delete.gif"/>Delete This Transaction</span></a>
+                </div>
+            </td>
+            <td colspan="2">
+                <a class="button"><span><img src="set.png"/>Set Currency Rate</span></a>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 <div id="footer">
 	<div id="copyright">
