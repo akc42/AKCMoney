@@ -1,0 +1,297 @@
+/*
+ 	Copyright (c) 2009 Alan Chandler
+    This file is part of AKCMoney.
+
+    AKCMoney is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    AKCMoney is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+body {font-family: Arial Helvetica, sans-serif;font-size: 10pt;line-height: 12pt;color: black;background: white;}
+
+#header {
+    width:728px;
+    height:90px;
+    background: white url("banner.jpg") top left  no-repeat;
+   }
+#footer {
+    width:728px;
+    height:90px;
+    padding:5px;
+    background: white url("footer.jpg") top left  no-repeat;
+    color:white;
+    font-size:0.8em;
+    margin-top:10px;
+    clear:both;
+   }
+#footer a,#footer a:visited {color:white;}
+
+ul#menu{ 
+	width: 728px;
+	height: 43px;
+	background: #FFF url("menu-bg.gif") top left repeat-x; 
+	font-family: "Lucida Grande", Verdana, sans-serif; 
+	font-weight: bold; 
+	list-style-type: none; 
+	margin: 0; 
+	padding: 0; 
+	}
+ul#menu li {
+	display: block; 
+	float: left; 
+	margin: 0 0 0 5px; 
+	}
+ul#menu li a { 
+	height: 43px; 
+	color: #777; 
+	text-decoration: none; 
+	display: block; 
+	float: left; 
+	line-height: 200%; 
+	padding: 8px 15px 0; 
+	}
+ul#menu li a:hover { 
+	color: #333; 
+	}
+ul#menu li a.current{ 
+	color: #FFF; 
+	background: #FFF url("current-bg.gif") top left repeat-x; 
+	padding: 5px 15px 0; 
+	}
+#main {
+    width:728px;
+    }
+
+h1,h2 {
+    color:#007AB2;
+}
+
+h2 {
+    text-align:center;
+}
+
+span.currency {
+	color:red;
+	font-weight:bold;
+}
+
+form#accountsel {float:left;width:250px;}
+form.xactionform {
+    background-color:#FFFD7C;
+}
+div#accountinfo{
+    width:400px;
+    float:right;
+}
+
+div#positive, div#currency {
+	background-color:#E8F2FE;
+	margin:5px;
+	padding:5px;
+}
+div#positive {
+	width:300px;
+	font-style:oblique;
+}
+
+div#currency {
+	width:300px;
+    }
+div#currency span.title {
+    font-weight:bolder;
+    }
+.xaction {
+    padding:2px 0;
+    height:18px;
+}
+div.irow {
+    height:26px;
+}
+
+div.brow {
+    height:44px;
+} 
+.heading {
+    background-color:#F4FF8E;
+}
+.balance {
+    background-color:#e4e4e4;
+}
+	
+.even {
+    background-color:#E8F2FE;
+}
+
+a {
+	text-decoration:none;
+}
+
+.cleared {
+	background-color:#99FFFF;
+	color:black;
+	font-weight:bold;
+}
+
+.cleared:hover{
+	background-color:white;
+	color:black;
+}
+
+.passed {
+	background-color:#CCCC66;
+}
+
+.repeat {
+    background-color:#FDF501;
+	color:#669900;
+}
+
+.dual {
+	font-weight:bold;
+}
+
+div.date, div.clearacc {
+    height:16px;
+    float:left;
+    border:solid white 1px;
+    width:80px;
+    padding:0 3px;
+}
+
+div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount {
+    height:24px;
+}
+
+input.ref {
+    width:40px;
+    padding:0;
+}
+div.ref, div.sellabel {
+	padding:0 3px;
+	width:46px;
+    height:16px;
+    float:left;
+    border:solid white 1px;
+}
+.sellabel {
+    text-align:right;
+}
+
+
+input.description {
+    width:418px;
+    padding:0;
+}
+div.description {
+    width:424px;
+    padding:0 3px;
+    height:16px;
+    border:solid white 1px;
+    float:left;
+}
+
+div.accountsel {
+    width:223px;
+    padding:0 3px;
+    height:25px;
+    border:solid white 1px;
+    float:left;
+}
+div.accountsel select {
+    width:200px;
+}
+
+div.repeatsel {
+    width:136px;
+    padding:0 3px;
+    height:25px;
+    border:solid white 1px;
+    float:left;
+}
+
+div.repeatsel select{
+    width:113px;
+}
+
+div.actual {
+    width:49px;
+    padding:0 3px;
+    height:24px;
+    border:solid white 1px;
+    float:left;
+}
+
+
+.amount {
+	text-align:right;
+}
+input.amount {
+    width:63px;
+    padding:0;
+}
+div.amount {
+	padding:0 3px;
+	width:69px;
+    height:16px;
+    border:solid white 1px;
+    float:left;
+}
+
+
+
+.hidden {
+    display:none;
+}
+
+.buttoncontainer { /* generic container (i.e. div) for floating buttons */
+    overflow: hidden;
+    width: 100%;
+    height:24px;
+    padding-top:10px;
+    padding-bottom:10px;
+}
+
+div.brow .buttoncontainer {
+    float:left;
+    width:176px;
+}
+div.brow .buttoncontainer:first-child {
+    width:544px;
+}
+
+a.button {
+    background: transparent url('bg_button_a.gif') no-repeat scroll top right;
+    color: #444;
+    display: block;
+    float: left;
+    font: normal 12px arial, sans-serif;
+    height: 24px;
+    margin-right: 6px;
+    padding-right: 18px; /* sliding doors padding */
+    text-decoration: none;
+}
+
+a.button span {
+    background: transparent url('bg_button_span.gif') no-repeat;
+    line-height: 16px;
+    display:block;
+    padding: 4px 0 4px 18px;
+} 
+
+a.button span img {
+    border:0;
+    margin-right:5px;
+    float:left;
+}
+
+
+
