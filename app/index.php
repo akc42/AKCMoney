@@ -32,7 +32,7 @@ if(!isset($_SESSION['account'])) {
 // if we are at home (IP ADDRESS = 192.168.1.*) then use home_account, else use extn_account as default
     $result = dbQuery('SELECT * FROM config;');
     $row = dbFetch($result);
-    $at = (preg_match('/192\.168\.1\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
+    $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
 	$_SESSION['account'] = $row[$at.'_account'];
 	$_SESSION['demo'] = ($row['demo'] == 't');
     $_SESSION['repeat_interval'] = 86400*$row['repeat_days'];  // 86400 = seconds in day
@@ -44,14 +44,9 @@ function fmtAmount($value) {
 }
 if(isset($_POST['account'])) $_SESSION['account'] = $_POST['account'];
 
-$account = $_SESSION['account'];
-$repeattime = time() + $_SESSION['repeat_interval'];
+function head_content() {
 
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>AKC Money Account Page</title>
+?><title>AKC Money Account Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
 	<!--[if lt IE 7]>
@@ -62,17 +57,24 @@ $repeattime = time() + $_SESSION['repeat_interval'];
 	<script type="text/javascript" src="/js/mootools-1.2.4.2-more.js"></script>
 	<script type="text/javascript" src="calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money.js" ></script>
-</head>
-<body>
-    <div id="header"></div>
-    <ul id="menu">
-        <li><a href="index.php" target="_self" title="Account" class="current">Account</a></li>
+<?php
+}
+
+function menu_items() {
+
+?>      <li><a href="index.php" target="_self" title="Account" class="current">Account</a></li>
         <li><a href="accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
         <li><a href="currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-    </ul>
 
-<div id="main">
-    <h1>Account Data</h1>
+<?php
+}
+
+function content() {
+
+$account = $_SESSION['account'];
+$repeattime = time() + $_SESSION['repeat_interval'];
+
+?><h1>Account Data</h1>
 <?php 
 if ($_SESSION['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
@@ -348,15 +350,8 @@ dbFree($result);
         </div>
     </div>
 </form>
-
-<div id="footer">
-	<div id="copyright">
-		<p>AKCMoney is copyright &copy; 2003-2009 Alan Chandler. Visit
-		<a href="http://www.chandlerfamily.org.uk/software/">http://www.chandlerfamily.org.uk/software/</a> to obtain a copy</p>
-	</div>
-	<div id="version"><?php include('version.php');?></div>
-</div>
-
-</body>
-</html>
+<?php
+} 
+require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
+?>
 

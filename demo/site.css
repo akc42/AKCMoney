@@ -1,0 +1,90 @@
+/*
+ 	Copyright (c) 2009 Alan Chandler
+    This file is part of AKCMoney.
+
+    AKCMoney is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    AKCMoney is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+body {font-family: Arial Helvetica, sans-serif;font-size: 10pt;line-height: 12pt;color: black;background: white;}
+
+#header {
+    width:728px;
+    height:90px;
+    background: white url("banner.jpg") top left  no-repeat;
+   }
+#footer {
+    width:728px;
+    height:90px;
+    padding:5px;
+    background: white url("footer.jpg") top left  no-repeat;
+    color:white;
+    font-size:0.8em;
+    margin-top:10px;
+    clear:both;
+   }
+#footer a,#footer a:visited {color:white;}
+
+ul#menu{ 
+	width: 728px;
+	height: 43px;
+	background: #FFF url("menu-bg.gif") top left repeat-x; 
+	font-family: "Lucida Grande", Verdana, sans-serif; 
+	font-weight: bold; 
+	list-style-type: none; 
+	margin: 0; 
+	padding: 0; 
+	}
+ul#menu li {
+	display: block; 
+	float: left; 
+	margin: 0 0 0 5px; 
+	}
+ul#menu li a { 
+	height: 43px; 
+	color: #777; 
+	text-decoration: none; 
+	display: block; 
+	float: left; 
+	line-height: 200%; 
+	padding: 8px 15px 0; 
+	}
+ul#menu li a:hover { 
+	color: #333; 
+	}
+ul#menu li a.current{ 
+	color: #FFF; 
+	background: #FFF url("current-bg.gif") top left repeat-x; 
+	padding: 5px 15px 0; 
+	}
+#main {
+    width:728px;
+    }
+
+h1,h2 {
+    color:#007AB2;
+}
+
+h2 {
+    text-align:center;
+}
+
+a {
+	text-decoration:none;
+}
+
+#version {
+    float: right;
+}
+
+
