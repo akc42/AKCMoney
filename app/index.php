@@ -29,7 +29,7 @@ require_once('db.php');
 
 
 if(!isset($_SESSION['account'])) {
-// if we are at home (IP ADDRESS = 192.168.1.*) then use home_account, else use extn_account as default
+// if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
     $result = dbQuery('SELECT * FROM config;');
     $row = dbFetch($result);
     $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
@@ -42,11 +42,17 @@ if(!isset($_SESSION['account'])) {
 function fmtAmount($value) {
     return substr_replace(sprintf('%03d',$value),'.',-2,0);
 }
+$charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~@#$%^*()_+-={}|][";
+$key='';
+for ($i=0; $i<30; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
+
+$_SESSION['key'] = $key;
+
 if(isset($_POST['account'])) $_SESSION['account'] = $_POST['account'];
 
 function head_content() {
 
-?><title>AKC Money Account Page</title>
+?><title>AKC Money Main Transaction Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
 	<!--[if lt IE 7]>
@@ -54,7 +60,8 @@ function head_content() {
     	<link rel="stylesheet" type="text/css" href="calendar/calendar-ie.css"/>
 	<![endif]-->
 	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="/js/mootools-1.2.4.2-more.js"></script>
+	<script type="text/javascript" src="mootools-1.2.4.2-more_altered.js"></script>
+	<script type="text/javascript" src="utils.js" ></script>
 	<script type="text/javascript" src="calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money.js" ></script>
 <?php
@@ -124,23 +131,47 @@ echo $row['adesc'];
 
 <script type="text/javascript">
 var thisAccount;
+
 window.addEvent('domready', function() {
+// Set some useful values
+    Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
+    Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
+//Turn all dates to the correct local time
+    Utils.dateAdjust($('bdate'),'dateawait','dateconvert');
+    Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
+//Copy data from bottom of page to top, as PHP can't do this
     $('minmaxbalance').set('text',$('fakebalance').get('text'));
-    $('clrbalance').set('text',$('fakecleared').get('text')); 
+    $('clrbalance').set('text',$('fakecleared').get('text'));
+//It is easier to use Javascript than PHP to create a copy of the account selection list and place it in the transaction editing template
+    var accountList = $('account').clone();
+    var isSrcAccount = <?php echo ($atype == 'Debit ')?'true':'false';?> ;
+    accountList.name = (isSrcAccount)?'dst':'src';  //default name is dependent on account type (could change)
+    var currentSelected = accountList.getElement('option[selected]'); //remove this account
+    currentSelected.destroy();
+    var blankOption = new Element('option'); // and add a "selected" blank entry at top
+    blankOption.set('selected','selected');
+    blankOption.inject(accountList,'top');
+// Insert this new list into the new transaction template
+    accountList.inject($('xactiontemplate').getElement('.accountsel'));
+// Now provide for jumping to new account when the select list changes
+    $('account').addEvent('change', function(e) {
+        e.stop();
+        $('accountsel').submit();
+    });
+//Now let the Account Class Manage all the interaction
     thisAcount = new Account({
-        name:"<?php echo $account;?>",
-        isSrc:<?php echo ($atype == 'Debit ')?'true':'false';?>,
-        currency: {
-            account:"<?php echo $currency ;?>",
-            def:"<?php echo $_SESSION['default_currency'];?>",
-            rate:<?php echo $crate; ?>
-        },
-        minmax:$('fakebalance').get('text'),
-        cleared:$('fakecleared').get('text'),
-        elements : { 
-            xaction:$('xactiontemplate'),
-            accounts: $('account'),
-        }
+        accountName:"<?php echo $account;?>",
+        isSrc:isSrcAccount,
+        currency:"<?php echo $currency ;?>",
+        rate:<?php echo $crate; ?>,
+        minmax:new Amount($('minmaxbalance')),
+        clearbalance:new Amount($('clrbalance')),
+        openbalance:new Amount($('openbalance')),
+        bversion:$('bversion'),
+        nowMarker:$('now'),
+        newxat:$('new'),
+        rebal:$('rebalance'),
+        xtemplate:$('xactiontemplate')
     });
 });
 </script>
@@ -168,13 +199,13 @@ window.addEvent('domready', function() {
     <div id="clrbalance" class="amount"></div>
 </div>
 <div class="xaction balance row">
-    <div class="date"><?php echo date("d-M-y",$bdate);?></div>
+    <div id="bdate" class="date"><input type="hidden" value="<?php echo $bdate?>" class="dateawait" /></div>
     <div class="ref"></div>
     <div class="description">Opening Balance</div>
     <div class="amount"></div>
-    <div id="openbalance" class="amount">
-        <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
-        <input  class="amount" type="text" name="openbalance" 
+    <div  class="amount">
+        <input id="bversion" type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
+        <input  id="openbalance" class="amount" type="text" name="openbalance" 
                 value="<?php echo fmtAmount($balance);?>" tabindex="180"/>
     </div>
 </div>
@@ -221,9 +252,11 @@ while ($repeats_to_do) {
                 die('invalid repeat period in database, transaction id = '.$row['id']);
         }
         if ($row['date'] < $repeattime) $repeats_to_do = true; //still have to do some more after this, since this didn't finish the job
-        dbQuery('INSERT INTO transaction (date, src, dst, version, rno, srcclear, dstclear, namount, repeat, currency, amount, description)
+        dbQuery('INSERT INTO transaction (date, src, dst, version, rno, srcclear, dstclear, srcamount, dstamount, 
+                 repeat, currency, amount, description)
                  VALUES ('.dbPostSafe($row['date']).','.dbPostSafe($row['src']).','.dbPostSafe($row['dst']).', DEFAULT,'.dbPostSafe($row['rno']).
-                 ','.dbPostBoolean($row['srcclear']).','.dbPostBoolean($row['dstclear']).','.dbPostSafe($row['namount']).','.dbPostSafe($row['repeat']).
+                 ','.dbPostBoolean($row['srcclear']).','.dbPostBoolean($row['dstclear']).','.dbPostSafe($row['srcamount']).
+                 ','.dbPostSafe($row['dstamount']).','.dbPostSafe($row['repeat']).
                  ','.dbPostSafe($row['currency']).','.dbPostSafe($row['amount']).','.dbPostSafe($row['description']).');');
     }
     dbQuery('COMMIT;');
@@ -233,22 +266,27 @@ while ($repeats_to_do) {
 $locatedNow=false;
 $result = dbQuery('SELECT * FROM transaction WHERE src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).' ORDER BY date ASC;');
 $r = 0;
+?>
+<div id="transactions">
+<?php
 while ($row = dbFetch($result)) {
     $r++;
-    if($row['currency'] == $currency) {  //if currency the same than can use the raw amount, otherwise we take the normalised value
-       $amount = $row['amount'];
-       $nam = '';
-    } else {
-        $amount = $row['namount'] * $crate;
-        $cam = $row['amount'];
-    }
     $cleared = false;
     $dual = false;
     if($row['src'] == $account) {
-        $amount = -$amount;  //if this is a source account we are decrementing the balance with a positive value
+        if($row['currency'] != $currency && !is_null($row['srcamount'])) {
+            $amount = -$row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
+        } else {
+            $amount = -$row['amount'];
+        }
         if ($row['srcclear'] == 't') $cleared = true;
         if (!is_null($row['dst'])) $dual = true;
     } else {
+        if($row['currency'] != $currency && !is_null($row['dstamount'])) {
+            $amount = $row['dstamount'];
+        } else {
+            $amount = $row['amount'];
+        }
         if ($row['dstclear'] == 't') $cleared = true;
        if (!is_null($row['src'])) $dual = true;
     }
@@ -260,8 +298,13 @@ while ($row = dbFetch($result)) {
 ?><div id="now" class="hidden"></div>
 <?php
     }
-?><div id="<?php echo 't'.$row['id']; ?>" class="xaction<?php if($r%2 == 0) echo ' even';?>">
-    <div class="date<?php 
+?><div id="<?php echo 't'.$row['id']; ?>" class="xaction arow<?php if($r%2 == 0) echo ' even';?>">
+    <input type="hidden" class="version" name="version" value="<?php echo $row['version']; ?>"/>    
+    <input type="hidden" class="accounttype" name="<?php echo ($row['src'] == $account)?'src':'dst' ; ?>" value="<?php echo $account;?>" />
+    <input type="hidden" name="xamount" value="<?php echo $row['amount']; ?>" />
+    <input type="hidden" name="xcurrency" value="<?php echo $row['currency']; ?>" />
+    <input type="hidden" name="xrepeat" value="<?php echo $row['repeat']; ?>" />
+    <div class="date clickable<?php 
     if($row['repeat'] != 0) {
         echo " repeat";
         if($cleared) $clrbalance += $amount; //do this because in this case we would otherwise miss it
@@ -271,12 +314,17 @@ while ($row = dbFetch($result)) {
     } else {
         if ($row['date'] < time()) echo " passed"; //only indicate passed if not indicating cleared
     }
-    if ($dual) echo " dual"; 
-                ?>" ><?php echo date("d-M-y",$row['date']);?><input type="hidden" value="<?php echo $row['date'];?>" /></div>
+   ?>" ><input type="hidden" name="xdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
     <div class="ref"><?php echo $row['rno'];?></div>
-    <div class="description"><?php echo $row['description'];?></div>
-    <div class="amount<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></div>
-    <div class="amount<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
+    <div class="description clickable<?php if ($dual) echo " dual";?>"><?php echo $row['description'];?></div>
+    <div class="amount aamount<?php 
+        if($currency != $row['currency']) {
+            echo " foreign";
+        } else {
+            echo " clickable";
+        };
+        if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></div>
+    <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
 </div>
 <?php
 }
@@ -285,12 +333,26 @@ if (!$locatedNow) {
 ?><div id="now" class="hidden"></div>
 <?php
 }
-?><div id="fakebalance" class="hidden"><?php echo fmtAmount(($atype == 'Debit ')?$minbalance:$maxbalance);?></div>
+?></div>
+<div id="fakebalance" class="hidden"><?php echo fmtAmount(($atype == 'Debit ')?$minbalance:$maxbalance);?></div>
 <div id="fakecleared" class="hidden"><?php echo fmtAmount($clrbalance);?></div>
-<form id="xactiontemplate" class="hidden xactionform" action="updatexaction.php" method="post">
+
+<div id="xactiontemplate" class="xaction hidden">
+    <input type="hidden" name="version" value="0"/>
+    <input type="hidden" class="accounttype" name="<?php echo ($atype == 'Debit ')?'src':'dst';?>" value="<?php echo $account;?>" />
+    <input type="hidden" name="xamount" value="0.00" />
+    <input type="hidden" name="xcurrency" value="<?php echo $currency; ?>" />
+    <input type="hidden" name="xrepeat" value="0" />
+    <div class="date clickable passed"><input type="hidden" name="xdate" value="" class="dateawait"/></div>
+    <div class="ref">&nbsp;</div>
+    <div class="description clickable">&nbsp;</div>
+    <div class="amount aamount clickable">0.00</div>
+    <div class="amount cumulative">0.00</div>
+</div>
+
+<form id="xactionedittemplate" class="hidden xactionform" action="updatexaction.php" method="post">
     <input type="hidden" name="tid" value="0"/>
-    <input type="hidden" name="<?php echo ($atype == 'Debit ')?'src':'dst';?>" value="<?php echo $account;?>" />
-    <input type="hidden" name="version" />
+    
     <div class="xaction irow">
         <div class="date"><input type="hidden" name="date" value="<?php echo time();?>" /></div>
         <div class="ref"><input class="ref" type="text" name="rno" value="" tabindex="100"/></div>
@@ -300,19 +362,15 @@ if (!$locatedNow) {
             <select name="currency">
 <?php
 $sql = 'SELECT name, rate, display, priority FROM currency WHERE display = true';
-if ($currency != $_SESSION['default_currency']) {
-    $sql .=' AND (name = '.dbMakeSafe($currency).' OR name = '.dbMakeSafe($_SESSION['default_currency']);
-}
 $result=dbQuery($sql.' ORDER BY priority ASC;');
 while($row = dbFetch($result)) {
-?>            <option value="<?php echo $row['name']; ?>" <?php
-                    if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> rate="<?php
-                        echo $row['rate']; ?>"><?php echo $row['name']; ?></option>
+?>              <option value="<?php echo $row['name']; ?>" <?php
+                        if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
+                            echo $row['rate']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
 dbFree($result);
-?>
-            </select>
+?>          </select>
         </div>
     </div>
     <div class="xaction irow">
@@ -327,16 +385,16 @@ dbFree($result);
 <?php
 $result=dbQuery('SELECT * FROM repeat;');
 while($row = dbFetch($result)) {
-?>            <option value="<?php echo $row['rkey']; ?>" <?php
-                if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
-                  echo $row['description']; ?></option>
+?>              <option value="<?php echo $row['rkey']; ?>" <?php
+                        if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
+                          echo $row['description']; ?></option>
 <?php    
 }
 dbFree($result);
 ?>          </select>
         </div>
-        <div class="actual"><label for="actual">Act?</label><input type="checkbox" name="actual" disabled="disabled"/></div>
-        <div class="amount"><input class="amount" type="text" name="namout" value="0.00"/></div>
+        <div class="setrate"><label for="setrate">Set Rate</label><input type="checkbox" name="setrate"/></div>
+        <div class="amount"><input class="amount" type="text" name="aamout" value="0.00"/></div>
         <div class="crate"></div>
     </div>
     <div class="xaction brow">
@@ -350,6 +408,7 @@ dbFree($result);
         </div>
     </div>
 </form>
+
 <?php
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 

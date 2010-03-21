@@ -25,41 +25,29 @@ session_start();
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
+function head_content() {
 
-
-
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+?>
 	<title>AKC Money Account Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="/js/DateUtils.js"></script>
-	<script type="text/javascript" src="money.js" ></script>
-</head>
-<body>
-    <div id="header"></div>
-    <ul id="menu">
+
+<?php
+}
+
+function menu_items() {
+
+?> 
         <li><a href="index.php" target="_self" title="Account">Account</a></li>
         <li><a href="accounts.php" target="_self" title="Account Manager" class="current">Account Manager</a></li>
         <li><a href="currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-    </ul>
+<?php
+}
+function content() {
 
-<div id="main">
-
-</div>
-<div id="footer">
-	<div id="copyright">
-		<p>AKCMoney is copyright &copy; 2003-2009 Alan Chandler. Visit
-		<a href="http://www.chandlerfamily.org.uk/software/">http://www.chandlerfamily.org.uk/software/</a> to obtain a copy</p>
-	</div>
-	<div id="version"><?php include('version.php');?></div>
-</div>
-
-</body>
-</html>
+}
+require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
+?>
 

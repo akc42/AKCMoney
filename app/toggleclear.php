@@ -21,29 +21,35 @@ error_reporting(E_ALL);
 
 session_start();
 
-if(!(isset($_POST['key']) && isset($_POST['account']) && isset($_POST['issrc']))) die('Hacking attempt - wrong parameters');
+if(!(isset($_POST['key']) && isset($_POST['tid']) && isset($_POST['clear']) && isset($_POST['issrc']) && isset($_POST['version']))) 
+    die('Hacking attempt - wrong parameters');
 if($_POST['key'] != $_SESSION['key']) die('Hacking attempt - wrong key');
-
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 dbQuery("BEGIN;");
-$sql = "INSERT INTO transaction (src,dst,rno,amount,description) VALUES (";
-if ($_POST['issrc'] == 'true') {
-    $sql.= dbPostSafe($_POST['account']).', NULL';
-} else {
-    $sql .= 'NULL,'.dbPostSafe($_POST['account']);
+$result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
+$row = dbFetch($result);
+dbFree($result);
+if ($row['version'] != $_POST['version'] ) {
+    echo '{"newversion" : true}';
+    dbQuery("ROLLBACK;");
+    exit;
 }
-$sql .= ", '    ', 0,' ');";
+$sql = "UPDATE transaction SET version = DEFAULT, ";
+if($_POST['issrc'] == 'true') {
+    $sql .= "srcclear = ";
+} else {
+    $sql .= "dstclear = ";
+}
+$sql .= ($_POST['clear'] == 'true')? 'TRUE' : 'FALSE' ;
+$sql .= ' WHERE id = '.dbPostSafe($_POST['tid']).';';
 dbQuery($sql);
-$result=dbQuery("SELECT currval('transaction_id_seq'::regclass);");
+$result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
 $row = dbFetch($result);
 dbFree($result);
-$tid=$row['currval'];
-$result=dbQuery("SELECT id, date, version FROM transaction WHERE id=".dbMakeSafe($tid).";");
-$row = dbFetch($result);
-dbFree($result);
+
 dbQuery("COMMIT;");
-echo '{"tid":'.$tid.',"xdate":'.$row['date'].',"version":'.$row['version'].'}';
+echo '{"tid":'.$_POST['tid'].',"clear":'.$_POST['clear'].',"version":'.$row['version'].'}';
 ?>
 

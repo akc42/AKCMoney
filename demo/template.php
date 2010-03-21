@@ -17,6 +17,9 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+error_reporting(E_ALL);
+date_default_timezone_set  ('Europe/London');
+
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
@@ -37,10 +40,10 @@ menu_items();
 content(); 
 ?><div id="footer">
 	<div id="copyright">
-<?php
-    include ('copyright.php');
-?>	</div>
-	<div id="version"><?php include('version.php');?></div>
+	    <p>Copyright &copy; <?php echo date("Y");?> Alan Chandler.<p>
+	    <p>This software is licenced under the latest version of the <a href="http://www.gnu.org/licences/" title="GNU General Public Licence" target="_blank">GPL</a>.</p> 
+	</div>
+	<div id="version"><?php include(dirname(__FILE__).'/../version.php');?></div>
 </div>
 
 </body>

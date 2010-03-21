@@ -48,8 +48,16 @@ div#currency span.title {
     }
 .xaction {
     padding:2px 0;
-    height:18px;
 }
+.xaction:after {
+  content: ".";
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+
+
 div.irow {
     height:26px;
 }
@@ -71,13 +79,9 @@ div.brow {
 .cleared {
 	background-color:#99FFFF;
 	color:black;
-	font-weight:bold;
+	text-decoration:line-through;
 }
 
-.cleared:hover{
-	background-color:white;
-	color:black;
-}
 
 .passed {
 	background-color:#CCCC66;
@@ -96,12 +100,20 @@ div.date, div.clearacc {
     height:16px;
     float:left;
     border:solid white 1px;
-    width:80px;
+    width:7em;
     padding:0 3px;
 }
 
+div.date {
+    text-align:right;
+}
+
+.clickable:hover {
+    cursor:pointer;
+}
+
 div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount {
-    height:24px;
+    min-height:24px;
 }
 
 input.ref {
@@ -110,8 +122,7 @@ input.ref {
 }
 div.ref, div.sellabel {
 	padding:0 3px;
-	width:46px;
-    height:16px;
+	width:4em;
     float:left;
     border:solid white 1px;
 }
@@ -121,13 +132,12 @@ div.ref, div.sellabel {
 
 
 input.description {
-    width:418px;
+    width:26em;
     padding:0;
 }
 div.description {
-    width:424px;
+    width:27em;
     padding:0 3px;
-    height:16px;
     border:solid white 1px;
     float:left;
 }
@@ -168,15 +178,18 @@ div.actual {
 	text-align:right;
 }
 input.amount {
-    width:63px;
+    width:5em;
     padding:0;
 }
 div.amount {
 	padding:0 3px;
-	width:69px;
-    height:16px;
+	width:6em;
     border:solid white 1px;
     float:left;
+}
+
+.foreign {
+    background-color:#CFFFCE;
 }
 
 

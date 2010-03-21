@@ -267,19 +267,19 @@ SELECT pg_catalog.setval('transaction_id_seq', 1, true);
 
 CREATE TABLE transaction (
     id integer DEFAULT nextval('transaction_id_seq'::regclass) NOT NULL,
-    date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
-    src character varying,
-    dst character varying,
     version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
-    rno character(4),
-    srcclear boolean DEFAULT false NOT NULL,
-    dstclear boolean DEFAULT false NOT NULL,
-    namount bigint,
-    actual boolean NOT NULL DEFAULT false,
-    repeat integer DEFAULT 0 NOT NULL,
-    currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
+    date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
     amount bigint DEFAULT 0 NOT NULL,
-    description character varying NOT NULL
+    currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
+    src character varying,
+    srcamount bigint,
+    srcclear boolean DEFAULT false NOT NULL,
+    dst character varying,
+    dstamount bigint,
+    dstclear boolean DEFAULT false NOT NULL,
+    description character varying NOT NULL,
+    rno character varying,
+    repeat integer DEFAULT 0 NOT NULL
 );
 
 ALTER TABLE ONLY transaction

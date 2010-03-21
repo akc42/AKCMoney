@@ -26,20 +26,22 @@ if(isset($_POST['dbname'])) {
     define ('MONEY',1);   //defined so we can control access to some of the files.    
     include('db.php');
 }
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+function head_content() {
+?>
 	<title>AKC Money Install Page</title>
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-</head>
-<body>
-
-    <div id="header"></div>
 <?php
+}
+
+function menu_items () {
+}
+
+function content() {
+
 if(!isset($_POST['dbname'])) {
 /* if we get here, then this is the first time this has been called, so we must put up a form to get data we beed */
     if(file_exists(dirname(__FILE__) . '/settings.php')) {
@@ -96,15 +98,7 @@ if(!isset($_POST['dbname'])) {
 ?> <p>Database is now ready for use click <a href="index.php">here</a> to start to use it</p>
 <?php
 }
+
+}
+require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
 ?>
-
-<div id="footer">
-	<div id="copyright">
-		<p>AKCMoney is copyright &copy; 2003-2009 Alan Chandler. Visit
-		<a href="http://www.chandlerfamily.org.uk/software/">http://www.chandlerfamily.org.uk/software/</a> to obtain a copy</p>
-	</div>
-	<div id="version"><?php include('version.php');?></div>
-</div>
-
-</body>
-</html>

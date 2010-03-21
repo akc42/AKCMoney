@@ -43,11 +43,13 @@ ALTER TABLE transaction
     DROP CONSTRAINT "$3",
     DROP CONSTRAINT "$4",
     ALTER COLUMN namount TYPE bigint USING namount*100,
+    ADD COLUMN srcamount bigint,
+    ADD COLUMN dstamount bigint,
     ALTER COLUMN amount TYPE bigint USING amount*100,
     ALTER COLUMN src TYPE character varying,
     ALTER COLUMN dst TYPE character varying,
-    ALTER COLUMN description character varying,
-    ADD COLUMN actual boolean NOT NULL DEFAULT false,
+    ALTER COLUMN description TYPE character varying,
+    ALTER COLUMN rno TYPE character varying,
     ALTER COLUMN date DROP DEFAULT,
     ALTER COLUMN date TYPE bigint USING date_part('epoch'::text,date),
     ALTER COLUMN date SET DEFAULT date_part('epoch'::text,now()),
@@ -57,7 +59,15 @@ ALTER TABLE transaction
     ADD CONSTRAINT transaction_repeat_fkey FOREIGN KEY (repeat) REFERENCES repeat(rkey);
     
 ALTER TABLE currency
-    ALTER COLUMN descriptopn TYPE character varying;
+    ALTER COLUMN description TYPE character varying;
+
+UPDATE transaction SET srcamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN transaction.namount IS NULL THEN transaction.amount / currency.rate ELSE transaction.namount / currency.rate END END) FROM account, currency WHERE
+transaction.src = account.name AND account.currency = currency.name;
+
+UPDATE transaction SET dstamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN transaction.namount IS NULL THEN transaction.amount / currency.rate ELSE transaction.namount / currency.rate END END) FROM account, currency WHERE
+transaction.dst = account.name AND account.currency = currency.name;
+
+ALTER TABLE transaction DROP COLUMN namount;
 
 ALTER TABLE config  RENAME COLUMN start_account TO extn_account;
 
