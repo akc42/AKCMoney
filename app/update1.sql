@@ -72,6 +72,8 @@ ALTER TABLE transaction DROP COLUMN namount;
 ALTER TABLE config  RENAME COLUMN start_account TO extn_account;
 
 ALTER TABLE config
+    ADD COLUMN version bigint,
+    ALTER COLUMN version SET DEFAULT nextval(('version'::text)::regclass),
     ADD COLUMN home_account character varying,
     ALTER COLUMN extn_account TYPE character varying, 
     ADD COLUMN db_version integer,
@@ -80,8 +82,10 @@ ALTER TABLE config
     ADD CONSTRAINT config_home_account_fkey FOREIGN KEY (home_account) REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
     ADD CONSTRAINT config_extn_account_fkey FOREIGN KEY (extn_account) REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
     ADD CONSTRAINT config_default_currency_fkey FOREIGN KEY (default_currency) REFERENCES currency(name) ON UPDATE CASCADE;
-UPDATE CONFIG SET home_account = 'Cash', db_version = 2 , demo = DEFAULT;
+UPDATE CONFIG SET home_account = 'Cash', db_version = 2 , demo = DEFAULT, version = DEFAULT;
 
-ALTER TABLE config ALTER COLUMN demo SET NOT NULL;
+ALTER TABLE config     
+    ALTER COLUMN version SET NOT NULL,
+    ALTER COLUMN demo SET NOT NULL;
 
 

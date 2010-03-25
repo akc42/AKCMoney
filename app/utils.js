@@ -34,6 +34,8 @@ Utils = function () {
         },
         sessionKey:'Key',
         defaultCurrency:'GBP',
+        dcDescription:'United Kingdom, Pounds',
+        amountMatch:'/^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/',
         /* The function below was based on code from 
     The JavaScript Source :: http://javascript.internet.com
     Created by: Francis Cocharrua :: http://scripts.franciscocharrua.com/ */
@@ -43,8 +45,40 @@ Utils = function () {
                 if(selectElement[index].value == Value)
                     selectElement.selectedIndex = index;
             }    
-        }
+        },
+        Queue: new Class({
+            initialize: function() {
+                this.queue = new Chain();
+                this.running = false;
+                this.requests = new Hash();
+                this.reCall = null;
+                
+            },
+            callRequest:function (myUrl,myParams,bind,myCallback) {
+                var that = this;
+                if(!this.requests.has(myUrl)) {
+                    this.requests.set(myUrl,new Request.JSON ({
+                        url:myUrl,
+                        onComplete: function(response) {
+                            if (response) {
+                                that.reCall(response);
+                            }
+                            that.running = false;
+                            that.queue.callChain();
+                        }
+                    }));
 
+                }
+                if (this.running) {
+                    this.queue.chain(arguments.callee.bind(this,[myUrl,myParams,bind,myCallback]));
+                } else {
+                    this.running = true;
+                    var calling = myCallback.bind(bind)
+                    this.reCall = calling;
+                    this.requests.get(myUrl).post(myParams);
+                }                       
+            }
+        })
     }
 }();
 

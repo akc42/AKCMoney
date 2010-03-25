@@ -21,6 +21,12 @@ span.currency {
 	font-weight:bold;
 }
 
+div.spinner {
+    background: white url(spinner.gif) no-repeat center center;
+    height:50px;
+    width:100px;
+}
+
 form#accountsel {float:left;width:250px;}
 form.xactionform {
     background-color:#FFFD7C;
@@ -30,7 +36,7 @@ div#accountinfo{
     float:right;
 }
 
-div#positive, div#currency {
+div#positive, div#currency, .startaccount, .defaultcurrency {
 	background-color:#E8F2FE;
 	margin:5px;
 	padding:5px;
@@ -46,10 +52,10 @@ div#currency {
 div#currency span.title {
     font-weight:bolder;
     }
-.xaction {
+.xaction, .xaccount {
     padding:2px 0;
 }
-.xaction:after {
+.xaction:after, .xaccount:after, .xcurrency:after, .clearacc:after, .startaccount:after, .defaultcurrency:after  {
   content: ".";
   display: block;
   height: 0;
@@ -67,8 +73,12 @@ div.brow {
 } 
 .heading {
     background-color:#F4FF8E;
+    text-align:center;
+    font-weight:bold;
+    vertical-align:middle;
+    
 }
-.balance {
+.balance, .newaccount {
     background-color:#e4e4e4;
 }
 	
@@ -112,27 +122,55 @@ div.date {
     cursor:pointer;
 }
 
-div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount {
+.heading, div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount, div.sellabel, div.irow div.crate,
+div.clearacc, div.acclabel, div.xaccount .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
+div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate, div#dc_description  {
     min-height:24px;
 }
 
+
+div.irow {
+    vertical-align:middle;
+}
+
 input.ref {
-    width:40px;
+    width:3.9em;
     padding:0;
 }
+
+div.clearacc label {
+    padding-bottom:4px;
+}
+
 div.ref, div.sellabel {
 	padding:0 3px;
 	width:4em;
     float:left;
-    border:solid white 1px;
+    border:1px solid white;
 }
-.sellabel {
+div.sellabel {
+    text-align:right;
+    padding-top:3px;
+}
+
+div.acclabel {
+    padding:3px;
+    width:12em;
+    float:left;
+    border:1px solid white;
     text-align:right;
 }
 
+div#dc_description {
+    padding:3px;
+    width:30em;
+    float:left;
+    border:1px solid white;
+
+}
 
 input.description {
-    width:26em;
+    width:26.9em;
     padding:0;
 }
 div.description {
@@ -143,26 +181,26 @@ div.description {
 }
 
 div.accountsel {
-    width:223px;
+    width:17em;
     padding:0 3px;
     height:25px;
     border:solid white 1px;
     float:left;
 }
 div.accountsel select {
-    width:200px;
+    width:17em;
 }
 
 div.repeatsel {
-    width:136px;
-    padding:0 3px;
-    height:25px;
+    width:9.7em;
+    padding:0 1px;
+    height:24px;
     border:solid white 1px;
     float:left;
 }
 
 div.repeatsel select{
-    width:113px;
+    width:9.5em;
 }
 
 div.actual {
@@ -178,14 +216,19 @@ div.actual {
 	text-align:right;
 }
 input.amount {
-    width:5em;
+    width:5.9em;
     padding:0;
 }
-div.amount {
+div.amount, div.crate {
 	padding:0 3px;
 	width:6em;
     border:solid white 1px;
     float:left;
+}
+
+div.crate {
+    padding-top:3px;
+    text-align:left;
 }
 
 .foreign {
@@ -204,6 +247,7 @@ div.amount {
     height:24px;
     padding-top:10px;
     padding-bottom:10px;
+    text-align:center;
 }
 
 div.brow .buttoncontainer {
@@ -214,21 +258,22 @@ div.brow .buttoncontainer:first-child {
     width:544px;
 }
 
+
 a.button {
-    background: transparent url('bg_button_a.gif') no-repeat scroll top right;
+    background: transparent url('bg_button_a.png') no-repeat right top;
     color: #444;
     display: block;
     float: left;
     font: normal 12px arial, sans-serif;
     height: 24px;
-    margin-right: 6px;
+    margin:0 10px;
     padding-right: 18px; /* sliding doors padding */
     text-decoration: none;
 }
 
 a.button span {
-    background: transparent url('bg_button_span.gif') no-repeat;
-    line-height: 16px;
+    background: transparent url('bg_button_span.png') no-repeat  left top;
+    height: 16px;
     display:block;
     padding: 4px 0 4px 18px;
 } 
@@ -239,5 +284,96 @@ a.button span img {
     float:left;
 }
 
+a.button:hover {
+    background-position:right -24px;
+}
+a.button span:hover {
+    background-position:left -24px;
+}
 
+div.topinfo{
+    width:32em;
+}
 
+div.xaccount .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
+div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate {
+    float:left;
+    border:solid white 1px;
+    padding:0 3px;
+}
+
+div.xaccount {
+    width:52em;
+}
+
+div.xaccount .account {
+    width:23em;
+}
+div.xaccount .account input {
+    width:22.9em;
+}
+
+div.xaccount .type {
+    width:5em; 
+}
+
+div.xaccount .type select {
+    width:4.9em;
+}
+
+div.xaccount .currency {
+    width:6em;
+}
+div.xaccount .currency select {
+    width:5.9em;
+}
+
+div.defaultcurrency .currency {
+    float:right;
+}
+
+div.xaccount div.button {
+    width:14em;
+}
+
+div.xaccount div.button div.buttoncontainer {
+    padding:0 5px;
+}
+
+div.xcurrency {
+    width:50em;
+}
+
+div.xcurrency div.description {
+    width:31em;
+}
+
+div.xcurrency .currency {
+    width:4em;
+}
+div.xcurrency .show {
+    width: 4em;
+}
+
+div.xcurrency .rate {
+    width: 8em;
+}
+div.defaultcurrency {
+    width:36em;
+}
+
+div.defaultcurrency .currency {
+    width:5em;
+}
+
+div.defaultcurrency .currency select {
+    width:4.9em;
+}
+
+div#topcurrencies {
+       padding:0;
+}
+
+div#topcurrencies>div {
+    cursor:pointer;
+}

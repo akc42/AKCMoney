@@ -582,7 +582,7 @@ There are longer term plans for two key changes:-
 UserDocumentation
 </pre>
 </div>
-<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="201003211031" changecount="15">
+<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="201003221929" changecount="16">
 <pre>!Overview
 
 This project is a copy of my Java based [[AKCmoney|#]] application re-implemented using PHP and Javascript.  My motivation for doing so was to 
@@ -595,7 +595,7 @@ In order to keep the look and feel of the site for all pages, but separate from 
 
 UserDocumentation specifies how the pages of the application appear
 
-I have chosen  [[Mootools|http://www.mootools.net]] for the framework used to build this application. See [[Mootools v JQuery]] for the reasons.
+I have chosen  [[Mootools|http://www.mootools.net]] for the framework used to build this application. See [[Mootools v JQuery]] for the reasons.  The UseOfMootools contains more details
 
 </pre>
 </div>
@@ -679,24 +679,27 @@ require_once($_SERVER['DOCUMENT_ROOT'].'/template.php');
 
 </pre>
 </div>
-<div title="UseOfMootools" modifier="AlanChandler" created="200912091255" modified="201003211107" changecount="9">
+<div title="UseOfMootools" modifier="AlanChandler" created="200912091255" modified="201003221941" changecount="12">
 <pre>We will use Mootools core,in all pages of the application.  
 
-The IndexPage where the majority of the action takes place (new transactions, editing existing ones, dragging them about etc) will also use a slightly altered version of Mootools More (currency validation needs to be adjusted to not allow the currency symbol).
+The IndexPage where the majority of the action takes place (new transactions, editing existing ones, dragging them about etc) will also use a  version of Mootools More 
 
 The Mootool More component will use the following functions:
 
 * Class.Occlude
-* Date
-* Date.English.GB
-* Drag
-* Drag.Move
-* Form.Validator (* with the altered function)
-* Form.Validator.Inline
 * Request.Queue
 * Sortable
-* The other more classes that the above selection brings in automatically
+* The other more classes that the above selection brings in automatically (such as Drag, Drag.Move)
 
+I decided against selecting the form validator - there are only two tests I need to validate and the size of the complete validator did not justify it. The validations needed are either:-
+* Is the field non blank
+* It the amount a valid amount using the following regular expression /^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/
+
+
+		1[##][,###]+[.##]
+		1###+[.##]
+		0.##
+		.##
 </pre>
 </div>
 <div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="200912091319" changecount="6">

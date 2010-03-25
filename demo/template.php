@@ -17,6 +17,23 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
+/*This template file shows the prefered way of providing a site template in which to fit
+the application.  This file should be placed in the document root of the site where each page of the application
+will call it to display the site surround, and expect it to call it back via "head_content()", "menu_items()" and "content()" functions.
+
+The application itself is initialised by calling index.php in the application directory where it will see if it has already created a settings.php
+file (do not create this manually - its presence or otherwise causes the application to go into installation mode). 
+
+Updates from one version of the database to another are also handled in installation mode, so when installing a new release of the application, you should delete (or move to a backup location) the settings.php file and allow the application to recreate it.
+
+Full instructions are given in the documentation.html file contained in the "supporting" directory of the overall source package.  This is a 
+tiddly wiki and is a full standalone web site inside a single file.  
+
+This inclusion of the copyright file is the prefered way of providing attribution as required by the licence (obviously adjusting the
+relative path to locate the the file in the delivered application), the inclusion of the version number is entirely optional, but is
+a useful information when users wish to report faults */
+  
 error_reporting(E_ALL);
 date_default_timezone_set  ('Europe/London');
 
@@ -39,11 +56,8 @@ menu_items();
 <?php
 content(); 
 ?><div id="footer">
-	<div id="copyright">
-	    <p>Copyright &copy; <?php echo date("Y");?> Alan Chandler.<p>
-	    <p>This software is licenced under the latest version of the <a href="http://www.gnu.org/licences/" title="GNU General Public Licence" target="_blank">GPL</a>.</p> 
-	</div>
-	<div id="version"><?php include(dirname(__FILE__).'/../version.php');?></div>
+	<div id="copyright"><?php include(dirname(__FILE__).'/../app/copyright.php');?></div>
+	<div id="version"><?php include(dirname(__FILE__).'/../app/version.php');?></div>
 </div>
 
 </body>

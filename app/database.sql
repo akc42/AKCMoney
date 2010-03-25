@@ -267,7 +267,6 @@ SELECT pg_catalog.setval('transaction_id_seq', 1, true);
 
 CREATE TABLE transaction (
     id integer DEFAULT nextval('transaction_id_seq'::regclass) NOT NULL,
-    version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
     amount bigint DEFAULT 0 NOT NULL,
     currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
@@ -296,6 +295,7 @@ ALTER TABLE ONLY transaction
     ADD CONSTRAINT transaction_repeat_fkey FOREIGN KEY (repeat) REFERENCES repeat(rkey);
 
 CREATE TABLE config (
+    version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     db_version integer,
     home_account character varying,
     extn_account character varying,

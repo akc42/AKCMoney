@@ -21,29 +21,25 @@ error_reporting(E_ALL);
 
 session_start();
 
-if(!(isset($_POST['key']) && isset($_POST['account']) && isset($_POST['issrc']))) die('Hacking attempt - wrong parameters');
+if(!(isset($_POST['key']) && isset($_POST['tid']) && isset($_POST['version']) && isset($_POST['accountname']) && 
+    isset($_POST['accounttype']) && isset($_POST['xdate']) && isset($_POST['amount']) && isset($_POST['currency']) &&
+    isset($_POST['repeat']))) die('Hacking attempt - wrong parameters');
 if($_POST['key'] != $_SESSION['key']) die('Hacking attempt - wrong key');
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-dbQuery("BEGIN;");
-$sql = "INSERT INTO transaction (src,dst,rno,amount,description) VALUES (";
-if ($_POST['issrc'] == 'true') {
-    $sql.= dbPostSafe($_POST['account']).', NULL';
-} else {
-    $sql .= 'NULL,'.dbPostSafe($_POST['account']);
-}
-$sql .= ", '    ', 0,' ');";
-dbQuery($sql);
-$result=dbQuery("SELECT currval('transaction_id_seq'::regclass);");
-$row = dbFetch($result);
-dbFree($result);
-$tid=$row['currval'];
-$result=dbQuery("SELECT id, date, version FROM transaction WHERE id=".dbMakeSafe($tid).";");
-$row = dbFetch($result);
-dbFree($result);
-dbQuery("COMMIT;");
+
+
+
+
+
+
+
+
+
+
+
 echo '{"tid":'.$tid.',"xdate":'.$row['date'].',"version":'.$row['version'].'}';
 ?>
 

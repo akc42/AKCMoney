@@ -19,54 +19,267 @@
 
 
 Amount = new Class({
-    initialize:function(el) {
+    Implements: [Class.Occlude],
+    property: 'amount',
+    initialize: function(element){ 
         var aString;
-        this.el = el;
-        if (el.get('tag') != 'input') {
-            aString = el.get('text');
+        if(element) {
+            this.element = $(element);
+            if (this.occlude()) return this.occluded;
+            if (this.element.get('tag') != 'input') {
+                aString = this.element.get('text');
+            } else {
+                aString = this.element.value;
+            }
         } else {
-            aString = el.value;
+            aString = "0.00";
         } 
 		this.value = new Number(aString);
-        return true;
     },
     add:function(amount) {
         this.value += amount.getValue();
-        this.setText(this.value);
+        this.setText();
     },
     subtract: function(amount) {
         this.value -= amount.getValue();
-        this.setText(this.value);
+        this.setText();
     },
     getValue: function() {
         return this.value; 
     },
-    setIfValid: function(aString) {
-        var n = new Number(aString);
-        if (isNaN(n)) return false;
-        this.value = n.round(2);
-        this.setText(this.value);
-        return true;
+    setValue: function(amount) {
+        this.value = amount.getValue();
+        this.setText();
     },
-    setText: function(aValue) {
-        if(this.el.get('tag') != 'input') {
-            this.el.set('text',aValue.toFixed(2));
+    setIfValid: function(aString) {
+        if(/^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/.test(aString)) {
+//1[##][,###]+[.##]
+//1###+[.##]
+//0.##
+//.##
+            var n = new Number(aString);
+            if (isNaN(n)) return false;
+            this.value = n.round(2);
+            this.setText(this.value);
+            return true;
         } else {
-            this.el.value = aValue.toFixed(2);
+            return false;
+        }
+    },
+    setText: function() {
+        if (this.element) {
+            if(this.element.get('tag') != 'input') {
+                this.element.set('text',this.value.toFixed(2));
+            } else {
+                this.element.value = this.value.toFixed(2);
+            }
         }
     }.protect()
 });
 
 Transaction = new Class({
-    Implements: Options,
-    options: {
-        template:null,
-        account:null,
-        marker:null,
-        create:null
+    Implements: [Class.Occlude],
+    property: 'transaction',
+    initialize: function(element, account){
+        this.element = $(element);
+        if (this.occlude()) return this.occluded;
+        this.account = account;
+        this.amount = new Amount(this.element.getElement('.aamount'));
+        this.cumulative = new Amount (this.element.getElement('.cumulative'));
+        
+        if(this.element.get('tag') == 'form') {
+/*  if we are creating a NEW transaction here, with the form tag, then it really is a
+    brand new transaction, and has not even been created on disk yet. This is indicated by
+    this.tid = 0.  This first update event will have to create the transaction and load up the tid, whereas
+    subsequent transactions will update the database but will then need to check the version is correct when the transaction
+    comes back.  But we will not try to even create the transaction, or update it until it is really essential something changes */
+            this.tid=0;
+            this.cleared = false;
+            this.manageForm();
+
+//TODO prepare for the input element - we need lots of events adding
+        } else {
+//TODO this transaction is just the simple kind, where we can edit in place
+            this.tid = this.element.get('id').substr(1).toInt();
+            var dateEl = this.element.getElement('.date');
+            this.cleared = dateEl.hasClass('cleared');
+            if( !dateEl.hasClass('repeat')) { //we can't clear repeating transactions
+                dateEl.addEvent('click', function(e) {
+                    e.stop();
+                    this.account.request.callRequest(
+                        'toggleclear.php',
+                        {
+                            'key':Utils.sessionKey,
+                            'tid':this.tid,
+                            'version': this.element.getElement('input[name=version]').value,
+                            'issrc':this.account.isSrc,
+                            'clear':(!dateEl.hasClass('cleared')) //if it has the class then we are NOT clearing it
+                        },
+                        this,
+                        function(response) {
+                            if(!response.newversion && response.tid == this.tid) {
+                                this.element.getElement('input[name=version]').value = response.version;
+                                var xactdate = this.element.getElement('.date');
+                                var xactamt = new Amount(this.element.getElement('.amount'));
+                                xactdate.removeClass('cleared'); //remove it if its there
+                                if (response.clear) {
+                                    xactdate.removeClass('passed');
+                                    xactdate.addClass('cleared');
+                                    this.account.clearAdd(this.amount);
+                                    this.cleared = true;
+                                } else {
+                                    var d = new Date();
+                                    if((xactdate.getElement('input').value*1000) < d.getTime()) xactdate.addClass('passed');
+                                    this.account.clearSubtract(this.amount);
+                                    this.cleared = false;
+                                }
+                            } else {
+                                this.account.refresh();
+                            }
+                        }
+                    );
+                }.bind(this));
+            }
+//If the transaction has the same currency as its account, then we are allowed to edit the amount in place.
+            var amountEl = this.element.getElement('.aamount');
+            if(amountEl.hasClass('clickable')) {
+                var amountClick = function(e) {
+                    e.stop();
+                    amountEl.removeEvent('click',amountClick);
+                    var original = amountEl.get('text');
+                    var input = new Element('input',{'type':'text','name':'amount','class':'amount','value':original});
+                    amountEl.set('text','');
+                    input.inject(amountEl);
+                    input.addEvent('blur',function(){
+                        if(this.amount.setIfValid(input.value)) {
+                            input.dispose();
+                            this.account.request.callRequest(
+                                'updateamount.php',
+                                {
+                                    'key':Utils.sessionKey,
+                                    'tid':this.tid,
+                                    'version': this.element.getElement('input[name=version]').value,
+                                    'issrc':this.account.isSrc,
+                                    'amount':input.value
+                                },
+                                this,
+                                function (response) {
+                                    if(!response.newversion && response.tid == this.tid) {
+                                        this.element.getElement('input[name=version]').value = response.version;
+                                        amountEl.addEvent('click',amountClick);
+                                        this.account.recalculate();
+                                    } else {
+                                        this.account.refresh();
+                                    }        
+                                }
+                            );    
+                        } else {
+                            if(!confirm('Invalid format, click OK to re-edit, click Cancel to revert')) {
+                                input.value = original;
+                            }
+                            input.focus();
+                        }
+                    }.bind(this));
+                    input.focus();
+                }.bind(this);
+                amountEl.addEvent('click', amountClick);
+            }
+        }
+        
     },
-    initialize: function(options) {
-        this.setOptions(options);
+    manageForm: function () {
+// Create a calender and set the date to now
+        this.element.xdate.value = new Date().getTime()/1000;
+        this.calendar = new Calendar.Single(this.element.xdate,{
+            onHideStart:function () {
+                this.element.xdate.fireEvent('change')
+            }.bind(this)
+        });
+        this.element.xdate.addEvent('change', function(e) {
+            var i=0;
+//TODO - if the date is changed, should we perhaps move the transaction and then scroll to it
+            this.formSender();
+        }.bind(this));
+//Make it visible and scroll to it.
+        this.element.removeClass('hidden');
+        var xpos = this.element.getCoordinates();
+        window.scrollTo(0,xpos.top - 100);
+    },
+    formSender: function () {
+        this.account.request.callRequest(
+            'updatexaction.php',
+            {
+                data:this.element
+            },
+            this,
+            function(response) {
+                if(!response.newversion) {
+//                    this.version.value = response.version;  
+                    if (this.tid == 0) {
+//                        this.element.tid.value = response.tid;
+//                        this.element.getElement('.arow').set('id','t'+response.tid);
+                    }
+                } else {
+                    this.account.refresh();
+                }
+            }
+        );   
+    },
+    getAmount: function () {
+        return this.amount;
+    },
+    getCumulative: function() {
+        return this.cumulative;
+    },
+    setCumulative: function(amount) {
+        this.cumulative.setValue(amount);
+    },
+    isCleared:function() {
+        return this.cleared;
+    }
+});
+
+
+
+
+
+
+
+
+/*
+        
+            var tid = xaction.get('id').substr(1).toInt();
+            var dateEl = xaction.getElement('.date');
+            if (!dateEl.hasClass('repeat')) { //we can't clear repeating transactions
+                xaction.getElement('.date').addEvent('click', function(e) {
+                    e.stop();
+                    that.toggleClear.post({
+                        'key':Utils.sessionKey,
+                        'tid':tid,
+                        'clear':(!this.hasClass('cleared')), //if it has the class then we are NOT clearing it
+                        'issrc':(xaction.getElement('.accounttype').name == 'src'),
+                        'version': xaction.getElement('.version').value
+                    });
+                });
+            }
+            xaction.getElement('.description').addEvent('click', function(e) {
+                e.stop();
+                new Transaction ({
+                    template:that.options.xtemplate,
+                    account:that,
+                    marker:this.getParent()              
+                });
+            });
+            var el=xaction.getElement('.amount'); //this should get the first one
+            if(el.hasClass('clickable')) { //but only do it if this is not a foreign currency (to the account)
+                el.addEvent('click',function(e) {
+                    e.stop();
+//TODO
+                });
+            }
+
+
+
         var that = this;
         this.xaction = this.options.template.clone();
         var dateInput=this.xaction.xdate;
@@ -75,7 +288,7 @@ Transaction = new Class({
         if(this.options.create) { //a create transaction
             this.xaction.getElement('.arow').set('id','t'+this.options.create.tid);
             this.xaction.version.value = this.options.create.version;
-            dateInput.value=this.options.create.date;
+            dateInput.value=this.options.create.xdate;
             accountData.name = (this.account.options.isSrc)?'src':'dst';
             accountData.value = this.account.options.accountName;
             this.xaction.inject(this.options.marker,'before');
@@ -153,8 +366,6 @@ Transaction = new Class({
         }}); 
 //TODO: Add events for field changes
 //TODO: Add events for buttons 
-        var xpos = this.xaction.getCoordinates();
-        window.scrollTo(0,xpos.top - 100);
     },
     removeXaction: function() {
         this.xaction.dispose();//remove from account
@@ -176,26 +387,96 @@ Transaction = new Class({
         
 });
 
+*/
+
 
 Account = new Class({
-    Implements:Options,
-    options: {
-        accountName:'',
-        isSrc:true,
-        clearbalance:null,
-        maxmax:null,
-        openbalance:null,
-        bversion:null,
-        currency: 'GBP',
-        rate:1.0,
-        newxat:null,
-        xtemplate:null,
-        rebal:null,
-        nowMarker:null
-    },
     initialize: function(options) {
-        this.setOptions(options);
-        var that = this;
+        this.accountName = options.accountName;
+        this.isSrc = options.isSrc;
+        this.currency = options.currency;
+        this.rate = options.rate;
+        this.minmaxAmount = new Amount(options.minmaxAmount);
+        this.balanceAmount = new Amount (options.balanceAmount);
+        this.clearAmount = new Amount (options.clearAmount);
+        this.transactions = options.transactions;
+        this.newXactionButton = options.newXactionButton;
+        this.rebalanceButton = options.rebalanceButton;
+        this.nowMarker = options.nowMarker;
+        this.template = options.template;
+        this.request = new Utils.Queue();
+// Now loop round all transactions and create a transaction to represent it
+        this.transactions.each(function(xaction) {
+            var transaction = new Transaction(xaction,this);
+        },this);
+//new Transaction Button
+        this.newXactionButton.addEvent('click',function(e) {
+            e.stop();
+            var xaction = this.template.clone();
+            xaction.inject(this.nowMarker,'before');
+            new Transaction(xaction,this);
+        }.bind(this));
+        this.rebalanceButton.addEvent('click',function(e) {
+            this.request.callRequest('rebalance.php',{'key':Utils.sessionKey,'account':this.accountName},this,function(response){
+            var i=0;
+//TODO
+            });
+
+        }.bind(this));
+       
+    },
+    clearAdd:function(amount) {
+        this.clearAmount.add(amount);
+    },
+    clearSubtract:function(amount) {
+        this.clearAmount.subtract(amount);
+    },
+    recalculate:function() {
+        var runningTotal = new Amount();
+        var r=0;
+        runningTotal.setValue(this.balanceAmount);
+        this.minmaxAmount.setValue(this.balanceAmount);
+        this.clearAmount.setValue(this.balanceAmount);
+        this.transactions.each(function(el) {
+            r++;
+            el.removeClass('even');
+            if (r%2 == 0) el.addClass('even');
+            var xaction = el.retrieve('transaction');
+            runningTotal.add(xaction.getAmount());
+            xaction.setCumulative(runningTotal);
+            if(this.isSrc) {
+                if(runningTotal.getValue() < this.minmaxAmount.getValue()) this.minmaxAmount.setValue(runningTotal);
+            } else {
+                if(runningTotal.getValue() > this.minmaxAmount.getValue()) this.minmaxAmount.setValue(runningTotal);
+            }
+            if (xaction.isCleared()) {
+                this.clearAmount.add(xaction.getAmount());
+            }           
+        },this);
+    },
+    refresh: function() {
+        //if we get this, it means that someone else updated our transaction and we need to reset the data
+        alert('Someone else updated this transaction whilst you have been viewing it. ' +
+            'We are going to refresh this page to ensure you have the most up to date version.');
+//TODO        window.location = 'index.php?account='+this.accountName;
+    }   
+});                
+        
+        
+        
+        
+        
+        
+
+
+
+
+/*
+
+
+
+
+
 //Deal with new transaction button
         var createXaction = new Request.JSON({
             url:'newxaction.php',
@@ -209,7 +490,7 @@ Account = new Class({
                         marker:that.options.nowMarker,
                         create: {
                             tid:response.tid,
-                            date:response.date,
+                            xdate:response.xdate,
                             version:response.version
                         }
                     });
@@ -261,46 +542,5 @@ Account = new Class({
 
 
 
-// Now loop round all transactions and add events to them
-
-        var transactionList = $('transactions').getElements('.xaction');
-        transactionList.each(function(xaction) {
-            var tid = xaction.get('id').substr(1).toInt();
-            var dateEl = xaction.getElement('.date');
-            if (!dateEl.hasClass('repeat')) { //we can't clear repeating transactions
-                xaction.getElement('.date').addEvent('click', function(e) {
-                    e.stop();
-                    that.toggleClear.post({
-                        'key':Utils.sessionKey,
-                        'tid':tid,
-                        'clear':(!this.hasClass('cleared')), //if it has the class then we are NOT clearing it
-                        'issrc':(xaction.getElement('.accounttype').name == 'src'),
-                        'version': xaction.getElement('.version').value
-                    });
-                });
-            }
-            xaction.getElement('.description').addEvent('click', function(e) {
-                e.stop();
-                new Transaction ({
-                    template:that.options.xtemplate,
-                    account:that,
-                    marker:this.getParent()              
-                });
-            });
-            var el=xaction.getElement('.amount'); //this should get the first one
-            if(el.hasClass('clickable')) { //but only do it if this is not a foreign currency (to the account)
-                el.addEvent('click',function(e) {
-                    e.stop();
-//TODO
-                });
-            }
-        });                
     },
-    refresh: function() {
-        //if we get this, it means that someone else updated our transaction and we need to reset the data
-        alert('Someone else updated this transaction whilst you have been viewing it. ' +
-            'We are going to refresh this page to ensure you have the most up to date version.');
-        window.location = 'index.php?account='+this.options.accountName;
-    }.protect()
-});
-
+*/

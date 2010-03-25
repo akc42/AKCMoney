@@ -19,8 +19,14 @@
 */
 error_reporting(E_ALL);
 
-//Can't start if we haven't setup settings.php
 session_start();
+
+//Stop us remaining on this page if we haven't yet started a session
+if(!isset($_SESSION['key'])) {
+	header( 'Location: index.php' ) ;
+	exit;
+};
+
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
@@ -28,12 +34,16 @@ require_once('db.php');
 function head_content() {
 
 ?>
-	<title>AKC Money Account Page</title>
+	<title>AKC Money Account Manager</title>
+<META NAME="Description" CONTENT="AKC Money is an application to Manage Money.  This is the Account Management Page where Accounts may be set up or deleted"/>	
+    <link rel="icon" type="image/png" href="favicon.png" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-
+	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
+	<script type="text/javascript" src="utils.js" ></script>
+	<script type="text/javascript" src="account.js" ></script>
 <?php
 }
 
@@ -46,7 +56,135 @@ function menu_items() {
 <?php
 }
 function content() {
+?><h1>Account Manager</h1>
+<?php
 
+if ($_SESSION['demo']) {
+?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
+<?php
+}
+
+?>
+<script type="text/javascript">
+
+window.addEvent('domready', function() {
+// Set some useful values
+    Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
+    Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
+    Utils.dcDescription = "<?php echo $_SESSION['dc_description']; ?>";
+});
+</script>
+<div class="topinfo">
+    <form id="startaccounts" action="updefaccount.php" method="post" />
+    <input type="hidden" name="version" value="<?php echo $SESSION['config_version']; ?>" />
+    <input type="hidden" name="key" value="<?php echo $_SESSION['default_currency'];?>" />
+    <div class="startaccount">
+        <div class="acclabel">External Start Account</div>
+        <div class="accountsel">
+            <select name="extnaccount" tabindex="10">
+<?php
+$result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
+while ($row = dbFetch($result) ) {
+?>              <option <?php echo ($_SESSION['extn_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
+<?php
+}
+dbfree($result);
+?>          </select>
+
+        </div>
+    </div>
+    <div class="startaccount">
+        <div class="acclabel">Home Start Account</div>
+        <div class="accountsel">
+           <select name="homeaccount" tabindex="20">
+<?php
+$result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
+while ($row = dbFetch($result) ) {
+?>            <option <?php echo ($_SESSION['home_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
+<?php
+}
+dbfree($result);
+?>        </select>
+        </div>
+    </div>
+    </form>
+</div>
+<h2>Account List</h2>
+<div class="xaccount heading">
+    <div class="account">Name</div>
+    <div class="type">Type</div>
+    <div class="currency">Currency</div>
+    <div class="button">&nbsp;</div>
+</div>
+<div class="xaccount newaccount">
+    <form id="newaccount" action="newaccount.php" method="post">
+        <input type="hidden" name="key" value="<?php echo $_SESSION['default_currency'];?>" />
+        <div class="account"><input type="text" name="account" value=""/></div>
+        <div class="type">
+<?php
+$result=dbQuery('SELECT atype,description FROM account_type');
+if($row=dbFetch($result)) { /* first row is the default, so read it first to set it up*/
+/* Note we've given the select statement an id because its going to become a template for all the other accounts */
+?>            <select id="typeselector" title="<?php echo $row['description'];?>">
+                <option selected="selected" title="<?php echo $row['description'];?>"><?php echo $row['atype'];?></option>
+<?php
+    while($row=dbFetch($result)) {
+?>              <option title="<?php echo $row['description'];?>"><?php echo $row['atype'];?></option>
+<?php
+    }
+?>          </select>
+<?php
+}
+?>
+        </div>
+        <div class="currency">
+<?php
+/* drop to php because I don't want the comment below to appear on the actual page source */
+        /* Note we've given the select statement an id because its going to become a template for all the other accounts */
+?>          <select id="currencyselector" title="<?php echo $_SESSION['dc_description']; ?>">
+<?php            
+$result=dbQuery('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
+while($row = dbFetch($result)) {
+?>              <option value="<?php echo $row['name']; ?>" <?php
+                        if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
+                            title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
+<?php    
+}
+?>
+            </select>
+        </div>
+    </form>
+    <div class="button">
+        <div class="buttoncontainer">
+            <a class="button"><span><img src="add.png"/>Add Account</span></a>
+        </div>
+    </div>
+</div>
+<div id="accounts">
+<?php
+$result=dbQuery('SELECT * FROM account ORDER BY name ASC;');
+$r=0;
+while($row = dbFetch($result)) {
+$r++
+?>  <div class="xaccount<?php if($r%2 == 0) echo ' even';?>">
+        <form action="updateaccount.php" method="post">
+            <input type="hidden" name="key" value="<?php echo $_SESSION['default_currency'];?>" />
+            <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
+            <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
+            <div class="type"><?php echo $row['atype']; ?></div>
+            <div class="currency"><?php echo $row['currency']; ?></div>
+        </form>
+        <div class="button">
+            <div class="buttoncontainer">
+                <a class="button"><span><img src="delete.png"/>Delete Account</span></a>
+            </div>
+        </div>
+    </div>
+<?php            
+}
+?>
+</div>
+<?php
 }
 require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
 ?>

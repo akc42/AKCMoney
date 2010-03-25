@@ -28,7 +28,7 @@ define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 
-if(!isset($_SESSION['account'])) {
+if(!isset($_SESSION['key']) || isset($_POST['refresh'])) {
 // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
     $result = dbQuery('SELECT * FROM config;');
     $row = dbFetch($result);
@@ -37,30 +37,38 @@ if(!isset($_SESSION['account'])) {
 	$_SESSION['demo'] = ($row['demo'] == 't');
     $_SESSION['repeat_interval'] = 86400*$row['repeat_days'];  // 86400 = seconds in day
     $_SESSION['default_currency'] = $row['default_currency'];
+    $_SESSION['extn_account'] = $row['extn_account'];
+    $_SESSION['home_account'] = $row['home_account'];
+    $_SESSION['config_version'] = $row['version'];
+    $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~@#$%^*()_+-={}|][";
+    $key='';
+    for ($i=0; $i<30; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
+    $_SESSION['key'] = $key;
     dbFree($result);
 }
 function fmtAmount($value) {
     return substr_replace(sprintf('%03d',$value),'.',-2,0);
 }
-$charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~@#$%^*()_+-={}|][";
-$key='';
-for ($i=0; $i<30; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
-
-$_SESSION['key'] = $key;
 
 if(isset($_POST['account'])) $_SESSION['account'] = $_POST['account'];
 
 function head_content() {
 
 ?><title>AKC Money Main Transaction Page</title>
+<META NAME="Description" CONTENT="AKC Money is an application to Manage Money, either for a private individual or a small business.  It 
+consist of two main concepts, accounts which hold money, and transactions which transfer money from one account to another (or just to or from a
+single account if the transaction is with the outside world).  Multiple currencies are supported, and can use exchange rates which are initially
+estimated, but are then corrected when the actual value used in a transaction is known.  This is the second release, based on personal use over
+the past 4 years and a third release is planned to allow multiple accounting as is typically seen in business (cash accounts versus management accounts"/>
+    <link rel="icon" type="image/png" href="favicon.png" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
     	<link rel="stylesheet" type="text/css" href="calendar/calendar-ie.css"/>
 	<![endif]-->
-	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="mootools-1.2.4.2-more_altered.js"></script>
+	<script type="text/javascript" src="/js/mootools-1.2.4-core-nc.js"></script>
+	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
 	<script type="text/javascript" src="calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money.js" ></script>
@@ -110,6 +118,7 @@ if(! ($row = dbFetch($result))) die ('failed to read account data');
 $currency = $row['currency'];
 $balance = $row['balance'];
 $bdate = $row['date'];
+$cdesc = $row['cdesc'];
 $cumbalance = $balance;
 $clrbalance = $balance;
 $minbalance = $balance;
@@ -120,7 +129,7 @@ echo $row['adesc'];
 ?>			</div> 
 			<div id="currency">
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
-				<?php echo $row['cdesc'];?>
+				<?php echo $cdesc;?>
 			</div>
 
 		</div>
@@ -137,7 +146,7 @@ window.addEvent('domready', function() {
     Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
     Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
 //Turn all dates to the correct local time
-    Utils.dateAdjust($('bdate'),'dateawait','dateconvert');
+    Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 //Copy data from bottom of page to top, as PHP can't do this
     $('minmaxbalance').set('text',$('fakebalance').get('text'));
@@ -159,19 +168,20 @@ window.addEvent('domready', function() {
         $('accountsel').submit();
     });
 //Now let the Account Class Manage all the interaction
-    thisAcount = new Account({
+    thisAccount = new Account({
         accountName:"<?php echo $account;?>",
         isSrc:isSrcAccount,
         currency:"<?php echo $currency ;?>",
         rate:<?php echo $crate; ?>,
-        minmax:new Amount($('minmaxbalance')),
-        clearbalance:new Amount($('clrbalance')),
-        openbalance:new Amount($('openbalance')),
-        bversion:$('bversion'),
+        minmaxAmount:$('minmaxbalance'),
+        clearAmount:$('clrbalance'),
+        balanceAmount:$('openbalance'),
+        balanceUpdateForm:$('balance'),
+        transactions:$('transactions').getElements('.xaction'),
         nowMarker:$('now'),
-        newxat:$('new'),
-        rebal:$('rebalance'),
-        xtemplate:$('xactiontemplate')
+        newXactionButton:$('new'),
+        rebalanceButton:$('rebalance'),
+        template:$('xactiontemplate')
     });
 });
 </script>
@@ -185,29 +195,33 @@ window.addEvent('domready', function() {
     <div class="amount">Balance</div>
 </div>
 <div class="xaction balance">
-    <div class="date"></div>
-    <div class="ref"></div>
+    <div class="date">&nbsp;</div>
+    <div class="ref">&nbsp;</div>
     <div class="description"><?php echo ($atype == 'Debit ')?'Minimum':'Maximum';?> Balance</div>
-    <div class="amount"></div>
+    <div class="amount">&nbsp;</div>
     <div id="minmaxbalance" class="amount"></div>
 </div>
 <div class="xaction balance">
-    <div class="date"></div>
-    <div class="ref"></div>
+    <div class="date">&nbsp;</div>
+    <div class="ref">&nbsp;</div>
     <div class="description">Cleared Balance</div>
-    <div class="amount"></div>
+    <div class="amount">&nbsp;</div>
     <div id="clrbalance" class="amount"></div>
 </div>
 <div class="xaction balance row">
-    <div id="bdate" class="date"><input type="hidden" value="<?php echo $bdate?>" class="dateawait" /></div>
-    <div class="ref"></div>
+<form id="balance" action="updatebalance.php" method="post" />
+    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
+    <input type="hidden" name="clearing" value="false" />
+    <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
+    <div class="date"><input type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
+    <div class="ref">&nbsp;</div>
     <div class="description">Opening Balance</div>
-    <div class="amount"></div>
+    <div class="amount">&nbsp;</div>
     <div  class="amount">
-        <input id="bversion" type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
         <input  id="openbalance" class="amount" type="text" name="openbalance" 
                 value="<?php echo fmtAmount($balance);?>" tabindex="180"/>
     </div>
+</form>
 </div>
 
 <?php
@@ -300,10 +314,6 @@ while ($row = dbFetch($result)) {
     }
 ?><div id="<?php echo 't'.$row['id']; ?>" class="xaction arow<?php if($r%2 == 0) echo ' even';?>">
     <input type="hidden" class="version" name="version" value="<?php echo $row['version']; ?>"/>    
-    <input type="hidden" class="accounttype" name="<?php echo ($row['src'] == $account)?'src':'dst' ; ?>" value="<?php echo $account;?>" />
-    <input type="hidden" name="xamount" value="<?php echo $row['amount']; ?>" />
-    <input type="hidden" name="xcurrency" value="<?php echo $row['currency']; ?>" />
-    <input type="hidden" name="xrepeat" value="<?php echo $row['repeat']; ?>" />
     <div class="date clickable<?php 
     if($row['repeat'] != 0) {
         echo " repeat";
@@ -314,7 +324,7 @@ while ($row = dbFetch($result)) {
     } else {
         if ($row['date'] < time()) echo " passed"; //only indicate passed if not indicating cleared
     }
-   ?>" ><input type="hidden" name="xdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
+   ?>" ><input type="hidden" name="xxdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
     <div class="ref"><?php echo $row['rno'];?></div>
     <div class="description clickable<?php if ($dual) echo " dual";?>"><?php echo $row['description'];?></div>
     <div class="amount aamount<?php 
@@ -337,36 +347,36 @@ if (!$locatedNow) {
 <div id="fakebalance" class="hidden"><?php echo fmtAmount(($atype == 'Debit ')?$minbalance:$maxbalance);?></div>
 <div id="fakecleared" class="hidden"><?php echo fmtAmount($clrbalance);?></div>
 
-<div id="xactiontemplate" class="xaction hidden">
-    <input type="hidden" name="version" value="0"/>
-    <input type="hidden" class="accounttype" name="<?php echo ($atype == 'Debit ')?'src':'dst';?>" value="<?php echo $account;?>" />
-    <input type="hidden" name="xamount" value="0.00" />
-    <input type="hidden" name="xcurrency" value="<?php echo $currency; ?>" />
-    <input type="hidden" name="xrepeat" value="0" />
-    <div class="date clickable passed"><input type="hidden" name="xdate" value="" class="dateawait"/></div>
-    <div class="ref">&nbsp;</div>
-    <div class="description clickable">&nbsp;</div>
-    <div class="amount aamount clickable">0.00</div>
-    <div class="amount cumulative">0.00</div>
-</div>
 
-<form id="xactionedittemplate" class="hidden xactionform" action="updatexaction.php" method="post">
+<form id="xactiontemplate" class="hidden xactionform" action="updatexaction.php" method="post">
+    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
     <input type="hidden" name="tid" value="0"/>
+    <input type="hidden" name="accounttype" value="<?php echo ($atype == 'Debit ')?'src':'dst';?>"/>
+    <input type="hidden" name="accountname" value="<?php echo $account;?>" />
+    <div class="xaction arow hidden">
+        <input type="hidden" class="version" name="version" value="0"/>    
+        <div class="date clickable" ><input type="hidden" name="xxdate" value="0" class="dateawait"/></div>
+        <div class="ref">&nbsp;</div>
+        <div class="description clickable">&nbsp;</div>
+        <div class="amount aamount clickable">0.00</div>
+        <div class="amount cumulative">0.00</div>
+    </div>
     
     <div class="xaction irow">
-        <div class="date"><input type="hidden" name="date" value="<?php echo time();?>" /></div>
+        <div class="date"><input type="hidden" name="xdate" value="0" /></div>
         <div class="ref"><input class="ref" type="text" name="rno" value="" tabindex="100"/></div>
         <div class="description"><input class=description type="text" name="desc" value="" tabindex="10"/></div>
         <div class="amount"><input class="amount" name="amount" type="text" value="0.00" tabindex="20"/></div>
         <div class="amount">
-            <select name="currency">
+            <select name="currency" title="<?php echo $cdesc;?>">
 <?php
-$sql = 'SELECT name, rate, display, priority FROM currency WHERE display = true';
+$sql = 'SELECT name, rate, display, priority, description FROM currency WHERE display = true';
 $result=dbQuery($sql.' ORDER BY priority ASC;');
 while($row = dbFetch($result)) {
+    if(!isset($_SESSION['dc_description'])  && $row['name'] == $_SESSION['default_currency']) $_SESSION['dc_description'] = $row['description'];
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
-                            echo $row['rate']; ?>"><?php echo $row['name']; ?></option>
+                            echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
 dbFree($result);
@@ -393,15 +403,14 @@ while($row = dbFetch($result)) {
 dbFree($result);
 ?>          </select>
         </div>
-        <div class="setrate"><label for="setrate">Set Rate</label><input type="checkbox" name="setrate"/></div>
         <div class="amount"><input class="amount" type="text" name="aamout" value="0.00"/></div>
-        <div class="crate"></div>
+        <div class="crate">1.0</div>
     </div>
     <div class="xaction brow">
         <div class="buttoncontainer">
             <a class="button"><span><img src="close.png"/>Close</span></a>
-            <a class="button"><span><img src="switch.png"/>Switch Accounts</</span></a>
-            <a class="button"><span><img src="delete.gif"/>Delete This Transaction</span></a>
+            <a class="button"><span><img src="switch.png"/>Switch Accounts (S&lt;-&gt;D)</span></a>
+            <a class="button"><span><img src="delete.png"/>Delete This Transaction</span></a>
         </div>
         <div class="buttoncontainer">
             <a class="button"><span><img src="set.png"/>Set Currency Rate</span></a>

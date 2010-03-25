@@ -28,13 +28,15 @@ Calendar = function() {
 			return true;
 		}
 		if(!calrequested) {
-			var req = new Request.HTML({
+			var req = new Request({
 				url:url,
 				onSuccess:function(html) {
-					calcopy.adopt(html);
+					calcopy.set('html',html);
 					calendarloaded = true;
-					var i=0;
 					calqueue.callChain();
+				},
+				onFailure: function(xhr) {
+				    var i = 0;
 				}
 			});
 			req.get();
@@ -69,7 +71,7 @@ Calendar = function() {
 				// null means current time
 				tweak: {
 					x: 8,
-					y: -4
+					y: -180
 				}, // tweak calendar positioning
 				width:'70px'		//Correct width for formating, but if this is changed width will have to change.
 	
@@ -101,10 +103,11 @@ Calendar = function() {
 				},this);
 				this.options.classes = values.associate(keys);
 
-				this.button = new Element('div', {'class': this.options.classes.calendar,'style' : 'width:'+this.options.width});
-				this.button.wraps(input);
-				this.span = new Element('span', {'class':this.options.classes.calendar}).inject(this.button);
+				div = input.getParent();
+				this.button = new Element('button', {'type': 'button','class': this.options.classes.calendar}).inject(div);
+				this.span = new Element('span', {'class':this.options.classes.calendar}).inject(div);
 				this.visible = false;
+
 				// create cal element with css styles required for proper cal functioning
 				this.picker = new Element('div', {
 					'styles': {
