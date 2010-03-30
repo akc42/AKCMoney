@@ -17,13 +17,13 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
 error_reporting(E_ALL);
 
 session_start();
 
-if(!(isset($_POST['key']) && isset($_POST['tid']) && isset($_POST['amount']) && isset($_POST['issrc']) && isset($_POST['version']))) 
-    die('Hacking attempt - wrong parameters');
-if($_POST['key'] != $_SESSION['key']) die('Hacking attempt - wrong key');
+if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
+
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
@@ -32,16 +32,21 @@ dbQuery("BEGIN;");
 $result=dbQuery("SELECT id, version, amount, dstamount, srcamount FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
 $row = dbFetch($result);
 if ($row['version'] != $_POST['version'] ) {
-    echo '{"newversion" : true , "postversion":'.$_POST['version'].',"dbversion":'.$row['version'].'}';
+?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
+information we are going to reload the page</error>
+<?php
     dbFree($result);
     dbQuery("ROLLBACK;");
     exit;
 }
-$amount = (int)($_POST['amount']*100);
+$amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
 $sql = "UPDATE transaction SET version = DEFAULT,";
 if($_POST['issrc'] == 'true') {
     $amount = -$amount;
 }
+/* if either srcamount or dstamount are not null, we need to scale them to represent the change in value of amount.  It
+    should be noted that this routine is only called where one of src or dst is the same currency as the transaction, but that
+    does not imply that the other account (dst or src) is also of the same currency - so it might need updating and here we check */
 $scaling = $amount/$row['amount'];
 if (!is_null($row['srcamount'])) {
     $sql .= ' srcamount = '.dbPostSafe($scaling*$row['srcamount']);
@@ -55,7 +60,7 @@ $sql .= ' amount = '.dbPostSafe($amount).' WHERE id = '.dbPostSafe($_POST['tid']
 dbQuery($sql);
 $result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
 $row = dbFetch($result);
-echo '{"tid":'.$row['id'].',"version":'.$row['version'].'}';
+$version = $row['version'];
 dbFree($result);
 dbQuery("COMMIT;");
-?>
+?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>

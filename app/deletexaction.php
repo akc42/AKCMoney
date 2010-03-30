@@ -17,40 +17,29 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
 error_reporting(E_ALL);
 
 session_start();
 
 if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
+
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 dbQuery("BEGIN;");
+
 $result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
 $row = dbFetch($result);
-dbFree($result);
 if ($row['version'] != $_POST['version'] ) {
-?><error>Someone else has updated this transaction in parallel with you.  In order to ensure you are working with the latest version we
-are going to update the page</error>
+?><error>It appears that someone else has been editing this transaction in parallel to you.  We have not deleted it, and are going to
+reload the page so that we can ensure you see consistent data before taking this major step.</error>
 <?php
+    dbFree($result);
     dbQuery("ROLLBACK;");
     exit;
 }
-$sql = "UPDATE transaction SET version = DEFAULT, ";
-if($_POST['issrc'] == 'true') {
-    $sql .= "srcclear = ";
-} else {
-    $sql .= "dstclear = ";
-}
-$sql .= ($_POST['clear'] == 'true')? 'TRUE' : 'FALSE' ;
-$sql .= ' WHERE id = '.dbPostSafe($_POST['tid']).';';
-dbQuery($sql);
-$result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-$version = $row['version']
 dbFree($result);
-
+dbQuery("DELETE FROM transaction WHERE id = ".dbMakeSafe($_POST['tid']).";");
 dbQuery("COMMIT;");
-?><xaction tid="<?php echo $_POST['tid']; ?>" clear="<?php echo $_POST['clear']; ?>" version="<?php echo $version ?>" ></xaction>
-
-
+?><xaction tid="<?php echo $_POST['tid']; ?>" ></xaction>

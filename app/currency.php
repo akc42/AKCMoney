@@ -77,13 +77,12 @@ window.addEvent('domready', function() {
 </script>
 
 <div class="topinfo">
-    <div class="defaultcurrency">
+    <div id="updefcurrency" class="defaultcurrency">
         <div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
-        <form id="updefcurrency" action="updatedefcur.php" method="post" />
-            <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
-            <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-            <div class="currency">
-                <select id="currencyselector" name="currency">
+        <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
+        <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
+        <div class="currency">
+            <select id="currencyselector" name="currency">
 <?php            
 $result=dbQuery('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
 while($row = dbFetch($result)) {
@@ -93,9 +92,8 @@ while($row = dbFetch($result)) {
 <?php    
 }
 ?>
-                </select>
-            </div>
-        </form>
+            </select>
+        </div>
     </div>
 </div>
 <h2>Currency List</h2>
@@ -110,7 +108,7 @@ $result=dbQuery('SELECT * FROM currency WHERE display = true ORDER BY priority A
 if ($row = dbFetch($result)) {  //First row is default currency and is not sortable
 ?>
 <div id="defaultcurrency">
-    <div class="xcurrency">
+    <div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency">
         <input type="hidden" name="version" value="<?php echo  $row['version']; ?>" />
         <div class="description"><?php echo $row['description']; ?></div>
         <div class="currency"><?php echo $row['name']; ?></div>
@@ -126,7 +124,7 @@ if ($row = dbFetch($result)) {  //First row is default currency and is not sorta
         $r++
 ?>
 
-<div class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
+<div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
     <input type="hidden" name="version" value="<?php echo  $row['version']; ?>" />
     <input type="hidden" name="priority" value="<?php echo $r-1 ?>" />
     <div class="description"><?php echo $row['description']; ?></div>
@@ -149,7 +147,7 @@ $result=dbQuery('SELECT * FROM currency WHERE display = false ORDER BY name ASC;
 while($row = dbFetch($result)) {
 $r++
 ?>
-<div class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
+<div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
     <input type="hidden" name="version" value="<?php echo  $row['version']; ?>" />
     <input type="hidden" name="priority" value="1000" />
     <div class="description"><?php echo $row['description']; ?></div>

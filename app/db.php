@@ -71,4 +71,8 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 	function dbRestartQuery($result) {
 		pg_result_seek($result,0);
 	}
+	function fmtAmount($value) {
+        return substr_replace(sprintf('%03d',$value),'.',-2,0);
+    }
+
 ?>

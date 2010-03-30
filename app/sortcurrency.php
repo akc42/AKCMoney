@@ -21,7 +21,7 @@ error_reporting(E_ALL);
 
 session_start();
 
-if(!(isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] )) die('Hacking attempt - wrong key');
+if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');

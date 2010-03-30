@@ -28,7 +28,7 @@ div.spinner {
 }
 
 form#accountsel {float:left;width:250px;}
-form.xactionform {
+div.xactionform {
     background-color:#FFFD7C;
 }
 div#accountinfo{
@@ -110,7 +110,7 @@ div.date, div.clearacc {
     height:16px;
     float:left;
     border:solid white 1px;
-    width:7em;
+    width:93px;
     padding:0 3px;
 }
 
@@ -134,7 +134,7 @@ div.irow {
 }
 
 input.ref {
-    width:3.9em;
+    width:52px;;
     padding:0;
 }
 
@@ -144,7 +144,7 @@ div.clearacc label {
 
 div.ref, div.sellabel {
 	padding:0 3px;
-	width:4em;
+	width:53px;
     float:left;
     border:1px solid white;
 }
@@ -170,29 +170,29 @@ div#dc_description {
 }
 
 input.description {
-    width:26.9em;
+    width:359px;
     padding:0;
 }
 div.description {
-    width:27em;
+    width:360px;;
     padding:0 3px;
     border:solid white 1px;
     float:left;
 }
 
 div.accountsel {
-    width:17em;
+    width:227px;
     padding:0 3px;
     height:25px;
     border:solid white 1px;
     float:left;
 }
 div.accountsel select {
-    width:17em;
+    width:227px;
 }
 
 div.repeatsel {
-    width:9.7em;
+    width:129px;
     padding:0 1px;
     height:24px;
     border:solid white 1px;
@@ -200,7 +200,7 @@ div.repeatsel {
 }
 
 div.repeatsel select{
-    width:9.5em;
+    width:104px;
 }
 
 div.actual {
@@ -216,12 +216,12 @@ div.actual {
 	text-align:right;
 }
 input.amount {
-    width:5.9em;
+    width:78px;
     padding:0;
 }
 div.amount, div.crate {
 	padding:0 3px;
-	width:6em;
+	width:80px;
     border:solid white 1px;
     float:left;
 }
@@ -241,7 +241,7 @@ div.crate {
     display:none;
 }
 
-.buttoncontainer { /* generic container (i.e. div) for floating buttons */
+.buttoncontainer, .spacer1, .spacer2 { /* generic container (i.e. div) for floating buttons */
     overflow: hidden;
     width: 100%;
     height:24px;
@@ -254,10 +254,21 @@ div.brow .buttoncontainer {
     float:left;
     width:176px;
 }
-div.brow .buttoncontainer:first-child {
-    width:544px;
+div.brow .switchaccounts {
+    width:227px;
 }
 
+div.brow .spacer1 {
+    width:170px;
+    float:left;
+}
+div.brow .spacer2 {
+    width:137px;
+    float:left;
+}
+div.brow .xactionactions {
+    width:544px;
+}
 
 a.button {
     background: transparent url('bg_button_a.png') no-repeat right top;

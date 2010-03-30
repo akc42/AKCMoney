@@ -27,6 +27,8 @@ Utils = function () {
 		       	var d = datespan.value; //should be a hidden input, so can use .value here
 		       	if(d != '' && d !='0') {
 	                var myDate = new Date(d.toInt()*1000);
+	                var p = datespan.getPrevious();
+	                if (p && (p.get('tag') == 'span')) p.destroy();
 	                var el = new Element('span',{'text':myDate.getDate() + ' ' + m_names[myDate.getMonth()] 
 	                    + ' ' + myDate.getFullYear()}).inject(datespan,'before');
 	        	}
@@ -35,7 +37,7 @@ Utils = function () {
         sessionKey:'Key',
         defaultCurrency:'GBP',
         dcDescription:'United Kingdom, Pounds',
-        amountMatch:'/^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/',
+        amountMatch:/^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/,
         /* The function below was based on code from 
     The JavaScript Source :: http://javascript.internet.com
     Created by: Francis Cocharrua :: http://scripts.franciscocharrua.com/ */
@@ -47,24 +49,33 @@ Utils = function () {
             }    
         },
         Queue: new Class({
-            initialize: function() {
+            initialize: function(pageUrl) {
                 this.queue = new Chain();
                 this.running = false;
                 this.requests = new Hash();
                 this.reCall = null;
-                
+                this.pageUrl = pageUrl;
             },
+            
+            /* this is the main worker.  It appears that if myParams is configured as
+                            {data:this} 
+                then all the subcomponents of the container that this represents will be sent  */
+                
             callRequest:function (myUrl,myParams,bind,myCallback) {
                 var that = this;
                 if(!this.requests.has(myUrl)) {
-                    this.requests.set(myUrl,new Request.JSON ({
+                    this.requests.set(myUrl,new Request ({
                         url:myUrl,
-                        onComplete: function(response) {
-                            if (response) {
-                                that.reCall(response);
+                        onSuccess: function(html) {
+                            var holder = new Element('div').set('html',html);
+                            if (holder.getElement('error')) {
+                                alert(holder.getElement('error').get('text'));
+//TODO-remove when finished testing  window.location = that.pageURL;
+                            } else {
+                                that.reCall(holder);
+                                that.running = false;
+                                that.queue.callChain();
                             }
-                            that.running = false;
-                            that.queue.callChain();
                         }
                     }));
 

@@ -46,9 +46,6 @@ if(!isset($_SESSION['key']) || isset($_POST['refresh'])) {
     $_SESSION['key'] = $key;
     dbFree($result);
 }
-function fmtAmount($value) {
-    return substr_replace(sprintf('%03d',$value),'.',-2,0);
-}
 
 if(isset($_POST['account'])) $_SESSION['account'] = $_POST['account'];
 
@@ -110,12 +107,21 @@ dbfree($result);
 		<div id="accountinfo">
 			<div id="positive">
 <?php
-$sql = 'SELECT a.name, a.atype, bversion,balance,date,a.currency, c.description AS cdesc, t.description AS adesc, c.rate ';
+$sql = 'SELECT a.name, a.atype, bversion, dversion,balance,date,a.currency, c.description AS cdesc, t.description AS adesc, c.rate ';
 $sql .= 'FROM account AS a JOIN account_type AS t ON a.atype = t.atype JOIN currency AS c ON a.currency = c.name ';
 $sql .= 'WHERE a.name = '.dbMakeSafe($account).';';
 $result = dbQuery($sql);
-if(! ($row = dbFetch($result))) die ('failed to read account data');
+if(!($row = dbFetch($result))) {
+?><h1>Problem with Account</h1>
+<p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
+working in parallel with you has deleted it.  You can try to restart the software by
+clicking <a href="index.php?refresh=yes"><strong>here</strong></a>, but if that still fails then you should report the fault to
+an adminstrator, informing them that you had a problem with account name <strong><?php echo $account; ?></strong> not being in the database</p>
+<?php
+    return;
+}
 $currency = $row['currency'];
+$_SESSION['currency'] = $currency;
 $balance = $row['balance'];
 $bdate = $row['date'];
 $cdesc = $row['cdesc'];
@@ -134,6 +140,12 @@ echo $row['adesc'];
 
 		</div>
 		<div class="buttoncontainer">
+		    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
+		    <input type="hidden" name="account" value="<?php echo $account;?>" />
+		    <input type="hidden" name="issrc" value="<?php echo ($atype == 'Debit ')?'true':'false';?>" />
+		    <input type="hidden" name="currency" value="<?php echo $currency; ?>" />
+		    <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>" />
+		    <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>" />
             <a id="new" class="button" tabindex="200"><span><img src="add.png"/>New Transaction</span></a>
             <a id="rebalance" class="button" tabindex="201"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
         </div>
@@ -142,19 +154,16 @@ echo $row['adesc'];
 var thisAccount;
 
 window.addEvent('domready', function() {
+    
 // Set some useful values
     Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
     Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
 //Turn all dates to the correct local time
     Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
-//Copy data from bottom of page to top, as PHP can't do this
-    $('minmaxbalance').set('text',$('fakebalance').get('text'));
-    $('clrbalance').set('text',$('fakecleared').get('text'));
 //It is easier to use Javascript than PHP to create a copy of the account selection list and place it in the transaction editing template
     var accountList = $('account').clone();
     var isSrcAccount = <?php echo ($atype == 'Debit ')?'true':'false';?> ;
-    accountList.name = (isSrcAccount)?'dst':'src';  //default name is dependent on account type (could change)
     var currentSelected = accountList.getElement('option[selected]'); //remove this account
     currentSelected.destroy();
     var blankOption = new Element('option'); // and add a "selected" blank entry at top
@@ -167,22 +176,7 @@ window.addEvent('domready', function() {
         e.stop();
         $('accountsel').submit();
     });
-//Now let the Account Class Manage all the interaction
-    thisAccount = new Account({
-        accountName:"<?php echo $account;?>",
-        isSrc:isSrcAccount,
-        currency:"<?php echo $currency ;?>",
-        rate:<?php echo $crate; ?>,
-        minmaxAmount:$('minmaxbalance'),
-        clearAmount:$('clrbalance'),
-        balanceAmount:$('openbalance'),
-        balanceUpdateForm:$('balance'),
-        transactions:$('transactions').getElements('.xaction'),
-        nowMarker:$('now'),
-        newXactionButton:$('new'),
-        rebalanceButton:$('rebalance'),
-        template:$('xactiontemplate')
-    });
+    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",isSrcAccount);
 });
 </script>
 
@@ -199,17 +193,16 @@ window.addEvent('domready', function() {
     <div class="ref">&nbsp;</div>
     <div class="description"><?php echo ($atype == 'Debit ')?'Minimum':'Maximum';?> Balance</div>
     <div class="amount">&nbsp;</div>
-    <div id="minmaxbalance" class="amount"></div>
+    <div id="minmaxbalance" class="amount">0.00</div>
 </div>
 <div class="xaction balance">
     <div class="date">&nbsp;</div>
     <div class="ref">&nbsp;</div>
     <div class="description">Cleared Balance</div>
     <div class="amount">&nbsp;</div>
-    <div id="clrbalance" class="amount"></div>
+    <div id="clrbalance" class="amount">0.00</div>
 </div>
-<div class="xaction balance row">
-<form id="balance" action="updatebalance.php" method="post" />
+<div id="balance" class="xaction balance row">
     <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
     <input type="hidden" name="clearing" value="false" />
     <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
@@ -221,7 +214,6 @@ window.addEvent('domready', function() {
         <input  id="openbalance" class="amount" type="text" name="openbalance" 
                 value="<?php echo fmtAmount($balance);?>" tabindex="180"/>
     </div>
-</form>
 </div>
 
 <?php
@@ -278,7 +270,7 @@ while ($repeats_to_do) {
 }
 //Having updated the entire account of repeated transactions, we now read and display everything
 $locatedNow=false;
-$result = dbQuery('SELECT * FROM transaction WHERE src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).' ORDER BY date ASC;');
+$result = dbQuery('SELECT transaction.*, currency.name AS cname, currency.rate AS rate FROM transaction,currency WHERE transaction.currency = currency.name AND (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).') ORDER BY date ASC;');
 $r = 0;
 ?>
 <div id="transactions">
@@ -288,53 +280,61 @@ while ($row = dbFetch($result)) {
     $cleared = false;
     $dual = false;
     if($row['src'] == $account) {
-        if($row['currency'] != $currency && !is_null($row['srcamount'])) {
+        if(!is_null($row['srcamount'])) {
             $amount = -$row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
         } else {
-            $amount = -$row['amount'];
+            if($row['currency'] != $currency) {
+                $amount = -$row['amount']*$crate/$row['rate'];
+            } else {
+                $amount = -$row['amount'];
+            }
         }
         if ($row['srcclear'] == 't') $cleared = true;
         if (!is_null($row['dst'])) $dual = true;
     } else {
-        if($row['currency'] != $currency && !is_null($row['dstamount'])) {
+        if(!is_null($row['dstamount'])) {
             $amount = $row['dstamount'];
         } else {
-            $amount = $row['amount'];
+            if($row['currency'] != $currency) {
+                $amount = $row['amount']*$crate/$row['rate'];
+            } else {
+                $amount = $row['amount'];
+            }
         }
         if ($row['dstclear'] == 't') $cleared = true;
-       if (!is_null($row['src'])) $dual = true;
+        if (!is_null($row['src'])) $dual = true;
     }
     $cumbalance += $amount;
-    $minbalance = min($minbalance,$cumbalance);
-    $maxbalance = max($maxbalance,$cumbalance);
     if (!$locatedNow && $row['date'] > time()) {
         $locatedNow=true;
 ?><div id="now" class="hidden"></div>
 <?php
     }
 ?><div id="<?php echo 't'.$row['id']; ?>" class="xaction arow<?php if($r%2 == 0) echo ' even';?>">
-    <input type="hidden" class="version" name="version" value="<?php echo $row['version']; ?>"/>    
-    <div class="date clickable<?php 
-    if($row['repeat'] != 0) {
-        echo " repeat";
-        if($cleared) $clrbalance += $amount; //do this because in this case we would otherwise miss it
-    } elseif($cleared) {
-        $clrbalance += $amount;
-        echo " cleared";
-    } else {
-        if ($row['date'] < time()) echo " passed"; //only indicate passed if not indicating cleared
-    }
-   ?>" ><input type="hidden" name="xxdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
-    <div class="ref"><?php echo $row['rno'];?></div>
-    <div class="description clickable<?php if ($dual) echo " dual";?>"><?php echo $row['description'];?></div>
-    <div class="amount aamount<?php 
-        if($currency != $row['currency']) {
-            echo " foreign";
+    <div class="wrapper">    
+        <input type="hidden" class="version" name="version" value="<?php echo $row['version']; ?>"/>
+        <div class="date clickable<?php 
+        if($row['repeat'] != 0) {
+            echo " repeat";
+            if($cleared) $clrbalance += $amount; //do this because in this case we would otherwise miss it
+        } elseif($cleared) {
+            $clrbalance += $amount;
+            echo " cleared";
         } else {
-            echo " clickable";
-        };
-        if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></div>
-    <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
+            if ($row['date'] < time()) echo " passed"; //only indicate passed if not indicating cleared
+        }
+       ?>" ><input type="hidden" name="xxdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
+        <div class="ref"><?php echo $row['rno'];?></div>
+        <div class="description clickable<?php if ($dual) echo " dual";?>"><?php echo $row['description'];?></div>
+        <div class="amount aamount<?php 
+            if($currency != $row['currency']) {
+                echo " foreign";
+            } else {
+                echo " clickable";
+            };
+            if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></div>
+        <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
+    </div>
 </div>
 <?php
 }
@@ -344,44 +344,19 @@ if (!$locatedNow) {
 <?php
 }
 ?></div>
-<div id="fakebalance" class="hidden"><?php echo fmtAmount(($atype == 'Debit ')?$minbalance:$maxbalance);?></div>
-<div id="fakecleared" class="hidden"><?php echo fmtAmount($clrbalance);?></div>
-
-
-<form id="xactiontemplate" class="hidden xactionform" action="updatexaction.php" method="post">
+<div id="xactiontemplate" class="hidden xactionform"
     <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
     <input type="hidden" name="tid" value="0"/>
+    <input type="hidden" name="version" value="0" />
     <input type="hidden" name="accounttype" value="<?php echo ($atype == 'Debit ')?'src':'dst';?>"/>
     <input type="hidden" name="accountname" value="<?php echo $account;?>" />
-    <div class="xaction arow hidden">
-        <input type="hidden" class="version" name="version" value="0"/>    
-        <div class="date clickable" ><input type="hidden" name="xxdate" value="0" class="dateawait"/></div>
-        <div class="ref">&nbsp;</div>
-        <div class="description clickable">&nbsp;</div>
-        <div class="amount aamount clickable">0.00</div>
-        <div class="amount cumulative">0.00</div>
-    </div>
-    
+    <input type="hidden" name="acchange" value="0" />
     <div class="xaction irow">
         <div class="date"><input type="hidden" name="xdate" value="0" /></div>
         <div class="ref"><input class="ref" type="text" name="rno" value="" tabindex="100"/></div>
         <div class="description"><input class=description type="text" name="desc" value="" tabindex="10"/></div>
-        <div class="amount"><input class="amount" name="amount" type="text" value="0.00" tabindex="20"/></div>
-        <div class="amount">
-            <select name="currency" title="<?php echo $cdesc;?>">
-<?php
-$sql = 'SELECT name, rate, display, priority, description FROM currency WHERE display = true';
-$result=dbQuery($sql.' ORDER BY priority ASC;');
-while($row = dbFetch($result)) {
-    if(!isset($_SESSION['dc_description'])  && $row['name'] == $_SESSION['default_currency']) $_SESSION['dc_description'] = $row['description'];
-?>              <option value="<?php echo $row['name']; ?>" <?php
-                        if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
-                            echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
-<?php    
-}
-dbFree($result);
-?>          </select>
-        </div>
+        <div class="amount"><input class="amount" name="aamount" type="text" value="0.00" tabindex="20"/></div>
+        <div class="crate">1.0</div>
     </div>
     <div class="xaction irow">
         <div class="clearacc">
@@ -403,20 +378,41 @@ while($row = dbFetch($result)) {
 dbFree($result);
 ?>          </select>
         </div>
-        <div class="amount"><input class="amount" type="text" name="aamout" value="0.00"/></div>
-        <div class="crate">1.0</div>
+        <div class="amount"><input class="amount" type="text" name="amount" value="0.00"/></div>
+        <div class="amount">
+            <select name="currency" title="<?php echo $cdesc;?>">
+<?php
+$sql = 'SELECT name, rate, display, priority, description FROM currency WHERE display = true';
+$result=dbQuery($sql.' ORDER BY priority ASC;');
+while($row = dbFetch($result)) {
+    if(!isset($_SESSION['dc_description'])  && $row['name'] == $_SESSION['default_currency']) $_SESSION['dc_description'] = $row['description'];
+?>              <option value="<?php echo $row['name']; ?>" <?php
+                        if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
+                            echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
+<?php    
+}
+dbFree($result);
+?>          </select>
+        </div>
     </div>
     <div class="xaction brow">
-        <div class="buttoncontainer">
-            <a class="button"><span><img src="close.png"/>Close</span></a>
-            <a class="button"><span><img src="switch.png"/>Switch Accounts (S&lt;-&gt;D)</span></a>
-            <a class="button"><span><img src="delete.png"/>Delete This Transaction</span></a>
+        <div class="spacer1"></div>
+        <div class="buttoncontainer switchaccounts">
+            <a class="button switchsrcdst" title="switch source and destination accounts" ><span><img src="switch.png"/>Switch Accounts (S&lt;-&gt;D)</span></a>
         </div>
+        <div class="spacer2"></div>
         <div class="buttoncontainer">
-            <a class="button"><span><img src="set.png"/>Set Currency Rate</span></a>
+            <a class="button setcurrency" title="set currency rate from this transaction"><span><img src="set.png"/>Set Currency Rate</span></a>
         </div>
     </div>
-</form>
+    <div class="xaction brow">
+        <div class="buttoncontainer xactionactions">
+            <a class="button revertxaction" title="close form and revert transaction" ><span><img src="revert.png"/>Cancel</span></a>
+            <a class="button closeeditform" title="close form and save transaction"><span><img src="save.png"/>Save and Close</span></a>
+            <a class="button deletexaction" title="delete this transaction"><span><img src="delete.png"/>Delete This Transaction</span></a>
+        </div>
+    </div>
+</div>
 
 <?php
 } 

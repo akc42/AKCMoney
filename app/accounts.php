@@ -118,8 +118,8 @@ dbfree($result);
 </div>
 <div class="xaccount newaccount">
     <form id="newaccount" action="newaccount.php" method="post">
-        <input type="hidden" name="key" value="<?php echo $_SESSION['default_currency'];?>" />
-        <div class="account"><input type="text" name="account" value=""/></div>
+        <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
+        <div class="account"><input type="text" name="account" value="<?php echo $_SESSION['default_currency'];?>"/></div>
         <div class="type">
 <?php
 $result=dbQuery('SELECT atype,description FROM account_type');
@@ -138,18 +138,18 @@ if($row=dbFetch($result)) { /* first row is the default, so read it first to set
 ?>
         </div>
         <div class="currency">
+            <select title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
-/* drop to php because I don't want the comment below to appear on the actual page source */
-        /* Note we've given the select statement an id because its going to become a template for all the other accounts */
-?>          <select id="currencyselector" title="<?php echo $_SESSION['dc_description']; ?>">
-<?php            
+$currencies = Array();            
 $result=dbQuery('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
 while($row = dbFetch($result)) {
+$currencies[$row['name']] = Array($row['rate'],$row['description']);
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
+dbFree($result);
 ?>
             </select>
         </div>
@@ -167,18 +167,32 @@ $r=0;
 while($row = dbFetch($result)) {
 $r++
 ?>  <div class="xaccount<?php if($r%2 == 0) echo ' even';?>">
-        <form action="updateaccount.php" method="post">
-            <input type="hidden" name="key" value="<?php echo $_SESSION['default_currency'];?>" />
-            <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
-            <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
-            <div class="type"><?php echo $row['atype']; ?></div>
-            <div class="currency"><?php echo $row['currency']; ?></div>
-        </form>
-        <div class="button">
-            <div class="buttoncontainer">
-                <a class="button"><span><img src="delete.png"/>Delete Account</span></a>
-            </div>
+    <div class="wrapper">
+        <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
+        <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
+        <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
+        <input type="hidden" name="rate" value="<?php echo $currencies[$row['currency']][0]; ?>" 
+        <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
+        <div class="type"><?php echo $row['atype']; ?></div>
+        <div class="currency">
+            <select title="<?php echo $currencies[$row['currency']][1]; ?>">
+<?php
+foreach($currencies as $currency => $values) {
+?>              <option value="<?php echo $currency; ?>" title="<?php
+                     echo $value[1]; ?>" rate="<?php echo $value[0]; ?>" <?php if ($currency == $row['currency']) echo 'selected="selected"';?> 
+                     ><?php echo $currency; ?></option>
+<?php
+}
+?>          </select>
         </div>
+    </div>
+    <div class="button">
+        <div class="buttoncontainer">
+            <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
+            <input type="hidden" name="account" value="<?php echo $row['name']; ?>"/>
+            <a class="button"><span><img src="delete.png"/>Delete Account</span></a>
+        </div>
+    </div>
     </div>
 <?php            
 }

@@ -21,7 +21,7 @@ error_reporting(E_ALL);
 
 session_start();
 
-if(!(isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] )) die('Hacking attempt - wrong key');
+if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
@@ -51,13 +51,13 @@ $oldrate = $row['rate'];
 $oldpriority = $row['priority'];
 dbFree($result);
 
-dbQuery('UPDATE currency SET version = DEFAULT, rate = CASE WHEN name = "'.$_SESSION['default_currency'].'" THEN 1.0 ELSE rate / '
-        .$oldrate.' END, priority = CASE WHEN name = "'.$_SESSION['default_currency'].'"'
+dbQuery("UPDATE currency SET version = DEFAULT, rate = CASE WHEN name = '".$_SESSION['default_currency']."' THEN 1.0 ELSE rate / "
+        .$oldrate." END, priority = CASE WHEN name = '".$_SESSION['default_currency']."'"
         .' THEN 0 WHEN display = false THEN NULL WHEN priority < '.$oldpriority.' THEN priority + 1 ELSE priority END ;');
 
 dbQuery('COMMIT;');
-?><div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
-<form id="updefcurrency" action="updatedefcur.php" method="post" />
+?><selector>
+    <div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
     <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
     <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
     <div class="currency">
@@ -75,16 +75,16 @@ $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate
 ?>
         </select>
     </div>
-</form>
+</selector>
 <?php
 dbFree($result);
 dbQuery("COMMIT;");
 $r=0;
 foreach($currencies as $name => $values)  {
-    $r++
+    $r++;
     if($r == 1) {
 ?><defaultcurrency>
-<div class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
+<div id="<?php echo 'c_'.$name; ?>" class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
     <input type="hidden" name="version" value="<?php echo  $values[0]; ?>" />
     <div class="description"><?php echo $values[1]; ?></div>
     <div class="currency"><?php echo $name; ?></div>
@@ -93,9 +93,10 @@ foreach($currencies as $name => $values)  {
 </div>
 </defaultcurrency>
 <currencies>
+<?php
     } else {
 ?>
-<div class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
+<div id="<?php echo 'c_'.$name; ?>" class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
     <input type="hidden" name="version" value="<?php echo  $values[0]; ?>" />
     <input type="hidden" name="priority" value="<?php echo $r-1; ?>" />
     <div class="description"><?php echo $values[1]; ?></div>
