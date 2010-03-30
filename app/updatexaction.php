@@ -185,19 +185,25 @@ if($_POST['accounttype'] == "src") {
     } else {
         $sql .= ", src = NULL, srcclear = false, srcamount = NULL";
     }
-}    
-dbQuery($sql." WHERE id = ".dbMakeSafe($_POST['tid'])." ;");
+}
+dbFree($result);    
+$result = dbQuery($sql." WHERE id = ".dbMakeSafe($_POST['tid'])." RETURNING version, date, repeat;");
+$row = dbFetch($result);
+$version = $row['version'];
+$date = $row['date'];
+$repeat = $row['repeat'];
 dbFree($result);
+
 if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we requested to set the currencies and they are not the same
     if($amount != 0 && $aamount != 0) { //can only do this if neither value is 0
         //we asked to set the rate from the current transaction.
         $ratio = $amount/$aamount;
         //bcurrency will possibly have transaction currency in it
         if($_POST['currency'] != $bcurrency) {            
-            $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-            $row2 = dbFetch($result2);
-            $brate = $row2['rate'];
-            dbFree($result2);
+            $result = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
+            $row = dbFetch($result);
+            $brate = $row['rate'];
+            dbFree($result);
         }
         if($_POST['currency'] == $_SESSION['default_currency']) {
             //we need to change the rate of the account currency
@@ -211,12 +217,6 @@ if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we
 }
 
 
-$result=dbQuery("SELECT id, version, date, repeat FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-$version = $row['version'];
-$date = $row['date'];
-$repeat = $row['repeat'];
-dbFree($result);
 dbQuery("COMMIT;");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" date="<?php echo $date; ?>" repeat="<?php echo $repeat; ?>">
     <amount><?php echo fmtAmount($aamount); ?></amount>

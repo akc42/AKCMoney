@@ -29,7 +29,7 @@ require_once('db.php');
 
 dbQuery("BEGIN;");
 
-$result=dbQuery("SELECT id, version, amount, dstamount, srcamount FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
+$result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
 $row = dbFetch($result);
 if ($row['version'] != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
@@ -39,25 +39,12 @@ information we are going to reload the page</error>
     dbQuery("ROLLBACK;");
     exit;
 }
-$amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
-$sql = "UPDATE transaction SET version = DEFAULT,";
-if($_POST['issrc'] == 'true') {
-    $amount = -$amount;
-}
-/* if either srcamount or dstamount are not null, we need to scale them to represent the change in value of amount.  It
-    should be noted that this routine is only called where one of src or dst is the same currency as the transaction, but that
-    does not imply that the other account (dst or src) is also of the same currency - so it might need updating and here we check */
-$scaling = $amount/$row['amount'];
-if (!is_null($row['srcamount'])) {
-    $sql .= ' srcamount = '.dbPostSafe($scaling*$row['srcamount']);
-}
-if (!is_null($row['dstamount'])) {
-    $sql .= ' dstamount = '.dbPostSafe($scaling*$row['dstamount']);
-}
 dbFree($result);
 
-$sql .= ' amount = '.dbPostSafe($amount).' WHERE id = '.dbPostSafe($_POST['tid']).' RETURNING version;';
-$result dbQuery($sql);
+$result=dbQuery("UPDATE transaction SET version = DEFAULT, date = ".dbPostSafe($_POST['date']).
+    " WHERE id = ".dbPostSafe($_POST['tid'])."RETURNING version;");
+
+
 $row = dbFetch($result);
 $version = $row['version'];
 dbFree($result);
