@@ -30,18 +30,19 @@ Amount = new Class({
             if (this.occlude()) return this.occluded;
             if (this.element.get('tag') != 'input') {
                 aString = this.element.get('text');
+            } else {
+                aString = this.element.value;
                 this.element.addEvent('blur',function(e) {
+                    var value = this.value;
                     if(this.setIfValid(this.element.value)) {
-                        this.fireEvent('change');
+                        this.fireEvent('change',this.value != value); //fire event on any blur, but send whether a change occurred
                     } else {
                         if(!confirm('Invalid format, click OK to re-edit, click Cancel to revert')) {
                             this.setText();
                         }
-                        this.element.setFocus();
+                        this.element.focus();
                     }   
                 }.bind(this));
-            } else {
-                aString = this.element.value;
             }
         } else {
             aString = "0.00";
@@ -90,7 +91,7 @@ Amount = new Class({
                 this.element.value = this.value.toFixed(2);
             }
         }
-    }.protect()
+    }
 });
 
 var AKCMoney = function () {
@@ -162,29 +163,37 @@ var AKCMoney = function () {
                 this.amountClick = function(e) {
                     e.stop();
                     amountEl.removeEvent('click',this.amountClick);
+                    sorting.removeItems(this.element);
                     var input = new Element('input',{'type':'text','name':'amount','class':'amount','value':amountEl.get('text')});
                     var amount = new Amount(input);
                     amountEl.set('text','');
                     input.inject(amountEl);
-                    amount.addEvent('change',function(){
-                        this.account.request.callRequest(
-                            'updateamount.php',
-                            {
-                                'key':Utils.sessionKey,
-                                'tid':this.tid,
-                                'version': this.version,
-                                'issrc':isSrc,
-                                'amount':amount.getValue()
-                            },
-                            this,
-                            function (holder) {
-                                if(holder.getElement('xaction').get('tid') == this.tid) {
-                                    this.setVersion(holder.get('xaction').get('version'));
-                                    amountEl.addEvent('click',this.amountClick);
-                                    recalculate();
-                                }        
-                            }
-                        );
+                    amount.addEvent('change',function(occurred){
+                        if(occurred) { //actual change so tell the database
+                            request.callRequest(
+                                'updateamount.php',
+                                {
+                                    'key':Utils.sessionKey,
+                                    'tid':this.tid,
+                                    'version': this.version,
+                                    'issrc':isSrc,
+                                    'amount':amount.getValue()
+                                },
+                                this,
+                                function (holder) {
+                                    if(holder.getElement('xaction').get('tid') == this.tid) {
+                                        this.setVersion(holder.getElement('xaction').get('version'));
+                                        amountEl.addEvent('click',this.amountClick);
+                                        sorting.addItems(this.element);
+                                        recalculate();
+                                    }        
+                                }
+                            );
+                        } else {
+                            amountEl.addEvent('click',this.amountClick);
+                            sorting.addItems(this.element);
+                        }
+                        this.amount.setValue(amount);    
                         input.dispose();    
                     }.bind(this));
                     input.focus();
@@ -466,20 +475,38 @@ var AKCMoney = function () {
                     var d = t.getXactionDate();
                     var p = transaction.getPrevious();
                     if(p == m) p = p.getPrevious(); //skip now marker
-                    var n;
+                    var n,pd,nd;
                     if(p) {
                         p = p.retrieve('transaction');
-                        if(p.getXactionDate() > d) {
+                        pd = p.getXactionDate();
+                        if(pd > d) {
                            //we must have moved down (to a later date) for this to be so
-                           t.setXactionDate(p.getXactionDate()+1);  //make it one second later
+                            n = transaction.getNext();
+                            if (n == m) n = n.getNext(); //skip now marker
+                            if (n) {
+                                n = n.retrieve('transaction');
+                                nd = n.getXactionDate();
+                                if (nd < pd+1) { //if next as at the same date as previous
+                                    t.setXactionDate(p.getXactionDate());
+                                } else {
+                                   t.setXactionDate(p.getXactionDate()+1);  //make it one second later
+                                }
+                            } else {
+                                t.setXactionDate(p.getXactionDate()+1);  //make it one second later
+                            }
                         } else {
                             n = transaction.getNext();
                             if (n == m) n = n.getNext(); //skip now marker
                             if (n) {
                                 n = n.retrieve('transaction');
-                                if (n.getXactionDate()  < d) {
+                                nd = n.getXactionDate();
+                                if ( nd < d) {
                                     //we must have moved up (to a earlier date) for this to be so
-                                    t.setXactionDate(n.getXactionDate()-1); //make it one second earlier
+                                    if (pd > nd-1) { //if previous at same date
+                                        t.setXactionDate(n.getXactionDate()); //make it one second earlier
+                                    } else {
+                                        t.setXactionDate(n.getXactionDate()-1); //make it one second earlier
+                                    }
                                 } //else nothing to be done we haven't moved
                             } // else nothing to be done, we haven't moved
                         }

@@ -47,7 +47,7 @@ with your updates, and we are about to reload the page.  Sorry it has been neces
 
 $amount = (int)($_POST['amount']*100);
 $sql = "UPDATE transaction SET version = DEFAULT, date = ".dbPostSafe($_POST['xdate']);
-$sql .= ", amount = ".dbPostSafe($amount).", currency = ".dbPostSafe($_POST['currency']) ;
+$sql .= ", amount = ".$amount.", currency = ".dbPostSafe($_POST['currency']) ;
 
 
 if($_POST['accounttype'] == "src") {
@@ -78,8 +78,8 @@ if($_POST['accounttype'] == "src") {
         } else {
             if ($_POST['currency'] == $row['currency']) {
                 if(is_null($row['srcamount'])) {
-                    $aamount = -$amount*$row['trate']/$arate
-                    $sql .= ",srcamount = ".dbPostSafe($aamount);
+                    $aamount = (int)(-$amount*$row['trate']/$arate);
+                    $sql .= ",srcamount = ".$aamount;
                 }
             } else {
                 if($_POST['currency'] != $bcurrency) {            
@@ -89,17 +89,17 @@ if($_POST['accounttype'] == "src") {
                     dbFree($result2);
                 }
                 if(is_null($row['srcamount'])) {
-                    $aamount = -$amount*$brate/$arate
-                    $sql .= ",srcamount = ".dbPostSafe($aamount);
+                    $aamount = (int)(-$amount*$brate/$arate);
+                    $sql .= ",srcamount = ".$aamount;
                 } else {
-                    $aamount = $row['srcamount']*$brate/$row['trate']
-                    $sql .= ",srcamount = ".dbPostSafe($aamount);
+                    $aamount =(int)($row['srcamount']*$brate/$row['trate']);
+                    $sql .= ",srcamount = ".$aamount;
                 }
                 if(isset($_POST['account']) {
                     if(is_null($row['dst']) {
-                        $sql .= ",dstamount = ".dbPostSafe(($amount*$brate/$arate));
+                        $sql .= ",dstamount = ".((int)($amount*$brate/$arate));
                     } else {
-                        $sql .= ",dstamount = ".($row['dstamount']*$brate/$row['trate']);
+                        $sql .= ",dstamount = ".((int)($row['dstamount']*$brate/$row['trate']));
                     }   
                 } 
             }
@@ -140,13 +140,13 @@ if($_POST['accounttype'] == "src") {
         $sq1 .= ",dstamount = NULL";
     } else {
         if($_POST['acchange'] != "0") {
-            $aamount = $(int)(100*$_POST['aamount']);
-            $sql .= ",dstamount = ".dbPostSafe($aamount);
+            $aamount = (int)(100*$_POST['aamount']);
+            $sql .= ",dstamount = ".$aamount;
         } else {
             if ($_POST['currency'] == $row['currency']) {
                 if(is_null($row['dstamount'])) {
-                    $aamount = $amount*$row['trate']/$arate;
-                    $sql .= ",dstcamount = ".dbPostSafe($aamount);
+                    $aamount = (int)($amount*$row['trate']/$arate);
+                    $sql .= ",dstcamount = ".$aamount;
                 }
             } else {
                 if($_POST['currency'] != $bcurrency) {            
@@ -156,18 +156,18 @@ if($_POST['accounttype'] == "src") {
                     dbFree($result2);
                 }
                 if(is_null($row['dstamount'])) {
-                    $aamount = $amount*$brate/$arate;
-                    $sql .= ",dstamount = ".dbPostSafe($aamount);
+                    $aamount = (int)($amount*$brate/$arate);
+                    $sql .= ",dstamount = ".$aamount;
                 } else {
-                    $aamount = $row['srcamount']*$brate/$row['trate']
+                    $aamount = (int)($row['srcamount']*$brate/$row['trate']);
                     $sql .= ",dstamount = ".$aamount;
                 }
                 if(isset($_POST['account']) {
                     if(is_null($row['src']) {
-                        $aamount = $amount*$brate/$arate;
-                        $sql .= ",srcamount = ".dbPostSafe($aamount);
+                        $aamount = (int)($amount*$brate/$arate);
+                        $sql .= ",srcamount = ".$aamount;
                     } else {
-                        $aamount = row['srcamount']*$brate/$row['trate']
+                        $aamount = (int)(row['srcamount']*$brate/$row['trate']);
                         $sql .= ",srcamount = ".$aamount;
                     }   
                 } 

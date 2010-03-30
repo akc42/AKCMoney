@@ -39,6 +39,8 @@ information we are going to reload the page</error>
     dbQuery("ROLLBACK;");
     exit;
 }
+
+
 $amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
 $sql = "UPDATE transaction SET version = DEFAULT,";
 if($_POST['issrc'] == 'true') {
@@ -47,17 +49,19 @@ if($_POST['issrc'] == 'true') {
 /* if either srcamount or dstamount are not null, we need to scale them to represent the change in value of amount.  It
     should be noted that this routine is only called where one of src or dst is the same currency as the transaction, but that
     does not imply that the other account (dst or src) is also of the same currency - so it might need updating and here we check */
-$scaling = $amount/$row['amount'];
-if (!is_null($row['srcamount'])) {
-    $sql .= ' srcamount = '.dbPostSafe($scaling*$row['srcamount']);
-}
-if (!is_null($row['dstamount'])) {
-    $sql .= ' dstamount = '.dbPostSafe($scaling*$row['dstamount']);
+if ($row['amount'] != 0) { 
+    $scaling = $amount/$row['amount'];
+    if (!is_null($row['srcamount'])) {
+        $sql .= ' srcamount = '.((int)($scaling*$row['srcamount']));
+    }
+    if (!is_null($row['dstamount'])) {
+        $sql .= ' dstamount = '.((int)($scaling*$row['dstamount']));
+    }
 }
 dbFree($result);
 
-$sql .= ' amount = '.dbPostSafe($amount).' WHERE id = '.dbPostSafe($_POST['tid']).' RETURNING version;';
-$result dbQuery($sql);
+$sql .= ' amount = '.$amount.' WHERE id = '.dbPostSafe($_POST['tid']).' RETURNING version;';
+$result = dbQuery($sql);
 $row = dbFetch($result);
 $version = $row['version'];
 dbFree($result);

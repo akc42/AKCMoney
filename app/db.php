@@ -52,7 +52,7 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 		return "'".$value."'" ;
 	}
 	function dbPostSafe($text) {
-	  if ($text == '') return 'NULL';
+	  if (((string)$text) == '') return 'NULL';
 	  return dbMakeSafe(htmlentities($text,ENT_QUOTES,'UTF-8',false));
 	}
 	function dbPostBoolean($text) {
