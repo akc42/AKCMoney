@@ -30,6 +30,7 @@ div.spinner {
 form#accountsel {float:left;width:250px;}
 div.xactionform {
     background-color:#FFFD7C;
+    overflow:hidden;
 }
 div#accountinfo{
     width:400px;
@@ -68,9 +69,7 @@ div.irow {
     height:26px;
 }
 
-div.brow {
-    height:44px;
-} 
+
 .heading {
     background-color:#F4FF8E;
     text-align:center;
@@ -142,7 +141,7 @@ div.clearacc label {
     padding-bottom:4px;
 }
 
-div.ref, div.sellabel {
+div.ref {
 	padding:0 3px;
 	width:53px;
     float:left;
@@ -150,7 +149,10 @@ div.ref, div.sellabel {
 }
 div.sellabel {
     text-align:right;
-    padding-top:3px;
+    padding:3px;
+    float:left;
+    border:1px solid white;
+    width:106px;
 }
 
 div.acclabel {
@@ -181,7 +183,7 @@ div.description {
 }
 
 div.accountsel {
-    width:227px;
+    width:410px;
     padding:0 3px;
     height:25px;
     border:solid white 1px;
@@ -229,6 +231,7 @@ div.amount, div.crate {
 div.crate {
     padding-top:3px;
     text-align:left;
+    overflow:hidden;
 }
 
 .foreign {
@@ -241,30 +244,36 @@ div.crate {
     display:none;
 }
 
-.buttoncontainer, .spacer1, .spacer2 { /* generic container (i.e. div) for floating buttons */
+div.accountbuttons {
     overflow: hidden;
     width: 100%;
     height:24px;
     padding-top:10px;
     padding-bottom:10px;
     text-align:center;
+    float:none;
 }
 
-div.brow .buttoncontainer {
+.buttoncontainer {
     float:left;
-    width:176px;
+    height:24px;
+    text-align:center;
+    overflow:hidden;
 }
-div.brow .switchaccounts {
+
+div.switchaccounts {
     width:227px;
 }
 
-div.brow .spacer1 {
-    width:170px;
+div.spacer1 {
+    width:80px;
     float:left;
+    height:24px;
 }
-div.brow .spacer2 {
+div.spacer2 {
     width:137px;
     float:left;
+    height:24px;
 }
 div.brow .xactionactions {
     width:544px;
@@ -280,6 +289,7 @@ a.button {
     margin:0 10px;
     padding-right: 18px; /* sliding doors padding */
     text-decoration: none;
+    cursor:pointer;
 }
 
 a.button span {
@@ -387,4 +397,8 @@ div#topcurrencies {
 
 div#topcurrencies>div {
     cursor:pointer;
+}
+
+.setrate {
+    color:#d00000;
 }

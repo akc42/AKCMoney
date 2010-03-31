@@ -276,7 +276,7 @@ CREATE TABLE transaction (
     dst character varying,
     dstamount bigint,
     dstclear boolean DEFAULT false NOT NULL,
-    description character varying NOT NULL,
+    description character varying,
     rno character varying,
     repeat integer DEFAULT 0 NOT NULL
 );

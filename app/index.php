@@ -94,7 +94,7 @@ if ($_SESSION['demo']) {
 } 
 ?>      <form id="accountsel" action="index.php" method="post">
 Account Name:		
-            <select id="account" name="account" tabindex="210">
+            <select id="account" name="account" tabindex="300">
 <?php
 $result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
 while ($row = dbFetch($result) ) {
@@ -139,15 +139,14 @@ echo $row['adesc'];
 			</div>
 
 		</div>
-		<div class="buttoncontainer">
+		<div class="buttoncontainer accountbuttons">
 		    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
 		    <input type="hidden" name="account" value="<?php echo $account;?>" />
 		    <input type="hidden" name="issrc" value="<?php echo ($atype == 'Debit ')?'true':'false';?>" />
 		    <input type="hidden" name="currency" value="<?php echo $currency; ?>" />
-		    <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>" />
-		    <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>" />
-            <a id="new" class="button" tabindex="200"><span><img src="add.png"/>New Transaction</span></a>
-            <a id="rebalance" class="button" tabindex="201"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
+		    <input id="bversion" type="hidden" name="bversion" value="<?php echo $row['bversion'];?>" />
+            <a id="new" class="button" tabindex="310"><span><img src="add.png"/>New Transaction</span></a>
+            <a id="rebalance" class="button" tabindex="320"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
         </div>
 
 <script type="text/javascript">
@@ -163,6 +162,7 @@ window.addEvent('domready', function() {
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 //It is easier to use Javascript than PHP to create a copy of the account selection list and place it in the transaction editing template
     var accountList = $('account').clone();
+    accountList.set('tabindex',"70");
     var isSrcAccount = <?php echo ($atype == 'Debit ')?'true':'false';?> ;
     var currentSelected = accountList.getElement('option[selected]'); //remove this account
     currentSelected.destroy();
@@ -212,7 +212,7 @@ window.addEvent('domready', function() {
     <div class="amount">&nbsp;</div>
     <div  class="amount">
         <input  id="openbalance" class="amount" type="text" name="openbalance" 
-                value="<?php echo fmtAmount($balance);?>" tabindex="180"/>
+                value="<?php echo fmtAmount($balance);?>" tabindex="280"/>
     </div>
 </div>
 
@@ -281,7 +281,7 @@ while ($row = dbFetch($result)) {
     $dual = false;
     if($row['src'] == $account) {
         if(!is_null($row['srcamount'])) {
-            $amount = -$row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
+            $amount = $row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
         } else {
             if($row['currency'] != $currency) {
                 $amount = -$row['amount']*$crate/$row['rate'];
@@ -352,35 +352,12 @@ if (!$locatedNow) {
     <input type="hidden" name="accountname" value="<?php echo $account;?>" />
     <input type="hidden" name="acchange" value="0" />
     <div class="xaction irow">
-        <div class="date"><input type="hidden" name="xdate" value="0" /></div>
-        <div class="ref"><input class="ref" type="text" name="rno" value="" tabindex="100"/></div>
+        <div class="date" ><input type="hidden" name="xdate" value="0" /></div>
+        <div class="ref"><input class="ref" type="text" name="rno" value="" tabindex="50"/></div>
         <div class="description"><input class=description type="text" name="desc" value="" tabindex="10"/></div>
-        <div class="amount"><input class="amount" name="aamount" type="text" value="0.00" tabindex="20"/></div>
-        <div class="crate">1.0</div>
-    </div>
-    <div class="xaction irow">
-        <div class="clearacc">
-            <input type="checkbox" name="cleared" tabindex="80"/>
-            <label for="cleared">Cleared</label>
-        </div>
-        <div class="sellabel"><?php echo ($atype == 'Debit ')?'Dst :':'Src :';?></div>
-        <div class="accountsel"></div>
-        <div class="repeatsel">
-            <select name="repeat">
-<?php
-$result=dbQuery('SELECT * FROM repeat;');
-while($row = dbFetch($result)) {
-?>              <option value="<?php echo $row['rkey']; ?>" <?php
-                        if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
-                          echo $row['description']; ?></option>
-<?php    
-}
-dbFree($result);
-?>          </select>
-        </div>
-        <div class="amount"><input class="amount" type="text" name="amount" value="0.00"/></div>
+        <div class="amount"><input class="amount" type="text" name="amount" value="0.00" tabindex="20"/></div>
         <div class="amount">
-            <select name="currency" title="<?php echo $cdesc;?>">
+            <select name="currency" title="<?php echo $cdesc;?>" tabindex="30" >
 <?php
 $sql = 'SELECT name, rate, display, priority, description FROM currency WHERE display = true';
 $result=dbQuery($sql.' ORDER BY priority ASC;');
@@ -395,22 +372,46 @@ dbFree($result);
 ?>          </select>
         </div>
     </div>
-    <div class="xaction brow">
+    <div class="xaction irow">
+        <div class="clearacc">
+            <input type="checkbox" name="cleared" tabindex="40"/>
+            <label for="cleared">Cleared</label>
+        </div>
         <div class="spacer1"></div>
         <div class="buttoncontainer switchaccounts">
             <a class="button switchsrcdst" title="switch source and destination accounts" ><span><img src="switch.png"/>Switch Accounts (S&lt;-&gt;D)</span></a>
         </div>
-        <div class="spacer2"></div>
-        <div class="buttoncontainer">
-            <a class="button setcurrency" title="set currency rate from this transaction"><span><img src="set.png"/>Set Currency Rate</span></a>
+        <div class="repeatsel">
+            <select name="repeat" tabindex="60" >
+<?php
+$result=dbQuery('SELECT * FROM repeat;');
+while($row = dbFetch($result)) {
+?>              <option value="<?php echo $row['rkey']; ?>" <?php
+                        if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
+                          echo $row['description']; ?></option>
+<?php    
+}
+dbFree($result);
+?>          </select>
         </div>
+        <div class="buttoncontainer">
+            <a class="button setcurrency" title="set currency rate from this transaction" ><span><img src="set.png"/>Set Currency Rate</span></a>
+        </div>
+    </div>
+    <div class="xaction brow">
+        <div class="sellabel"><?php echo ($atype == 'Debit ')?'Dst :':'Src :';?></div>
+        <div class="accountsel"></div>
+        <div class="amount crate">1.0</div>
+        <div class="amount cumcopy">0.00</div>
     </div>
     <div class="xaction brow">
         <div class="buttoncontainer xactionactions">
             <a class="button revertxaction" title="close form and revert transaction" ><span><img src="revert.png"/>Cancel</span></a>
-            <a class="button closeeditform" title="close form and save transaction"><span><img src="save.png"/>Save and Close</span></a>
-            <a class="button deletexaction" title="delete this transaction"><span><img src="delete.png"/>Delete This Transaction</span></a>
+            <a class="button closeeditform" title="close form and save transaction" ><span><img src="save.png"/>Save and Close</span></a>
+            <a class="button deletexaction" title="delete this transaction" ><span><img src="delete.png"/>Delete This Transaction</span></a>
         </div>
+        <div class="amount"><input class="amount" name="aamount" type="text" value="0.00" tabindex="200"/></div>
+        <div class="amount"><?php echo $currency; ?></div>
     </div>
 </div>
 

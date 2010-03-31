@@ -49,6 +49,7 @@ ALTER TABLE transaction
     ALTER COLUMN src TYPE character varying,
     ALTER COLUMN dst TYPE character varying,
     ALTER COLUMN description TYPE character varying,
+    ALTER COLUMN description DROP NOT NULL,
     ALTER COLUMN rno TYPE character varying,
     ALTER COLUMN date DROP DEFAULT,
     ALTER COLUMN date TYPE bigint USING date_part('epoch'::text,date),
@@ -61,11 +62,13 @@ ALTER TABLE transaction
 ALTER TABLE currency
     ALTER COLUMN description TYPE character varying;
 
-UPDATE transaction SET srcamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN transaction.namount IS NULL THEN transaction.amount / currency.rate ELSE transaction.namount / currency.rate END END) FROM account, currency WHERE
-transaction.src = account.name AND account.currency = currency.name;
+UPDATE currency SET rate = 1/rate ;
 
-UPDATE transaction SET dstamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN transaction.namount IS NULL THEN transaction.amount / currency.rate ELSE transaction.namount / currency.rate END END) FROM account, currency WHERE
-transaction.dst = account.name AND account.currency = currency.name;
+UPDATE transaction SET srcamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN transaction.namount IS NULL THEN -transaction.amount / currency.rate ELSE -transaction.namount END END) FROM account, currency WHERE
+transaction.src = account.name AND transaction.currency = currency.name;
+
+UPDATE transaction SET dstamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN transaction.namount IS NULL THEN transaction.amount / currency.rate ELSE transaction.namount  END END) FROM account, currency WHERE
+transaction.dst = account.name AND transaction.currency = currency.name;
 
 ALTER TABLE transaction DROP COLUMN namount;
 

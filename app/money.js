@@ -47,26 +47,39 @@ Amount = new Class({
         } else {
             aString = "0.00";
         } 
-		this.value = new Number(aString);
+		this.value = new Number(aString).round(2);
     },
     add:function(amount) {
         this.value += amount.getValue();
         this.setText();
+        return this;
     },
     subtract: function(amount) {
         this.value -= amount.getValue();
         this.setText();
+        return this;
+    },
+    multiply: function(number) {
+        this.value = (this.value*number).round(2);
+        this.setText();
+        return this;
     },
     negate: function() {
         this.value = -this.value;
         this.setText();
+        return this;
     },
     getValue: function() {
         return this.value; 
     },
     setValue: function(amount) {
-        this.value = amount.getValue();
+        if($type(amount) == 'object') {
+            this.value = amount.getValue();
+        } else {
+            this.value = amount.toFloat().round(2);
+        }
         this.setText();
+        return this;
     },
     setIfValid: function(aString) {
         if(/^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/.test(aString)) {
@@ -91,6 +104,7 @@ Amount = new Class({
                 this.element.value = this.value.toFixed(2);
             }
         }
+        return this;
     }
 });
 
@@ -132,28 +146,26 @@ var AKCMoney = function () {
                             'key':Utils.sessionKey,
                             'tid':this.tid,
                             'version': this.element.getElement('input[name=version]').value,
-                            'issrc':isSrc,
+                            'account':accountName,
                             'clear':(!dateEl.hasClass('cleared')) //if it has the class then we are NOT clearing it
                         },
                         this,
                         function(holder) {
-                            if(holder.getElement('xaction').get('tid') == this.tid) {
-                                this.element.getElement('input[name=version]').value = response.version;
-                                var xactdate = this.element.getElement('.date');
-                                var xactamt = new Amount(this.element.getElement('.amount'));
-                                xactdate.removeClass('cleared'); //remove it if its there
-                                if (holder.getElement('xaction').get('clear') == 'true' ) {
-                                    xactdate.removeClass('passed');
-                                    xactdate.addClass('cleared');
-                                    clearedbalance.add(this.amount);
-                                    this.cleared = true;
-                                } else {
-                                    var d = new Date();
-                                    if((xactdate.getElement('input').value*1000) < d.getTime()) xactdate.addClass('passed');
-                                    clearedbalance.subtract(this.amount);
-                                    this.cleared = false;
-                                }
+                            this.setVersion(holder.getElement('xaction').get('version'));
+                            var xactdate = this.element.getElement('.date');
+                            xactdate.removeClass('cleared'); //remove it if its there
+                            if (holder.getElement('xaction').get('clear') == 'true' ) {
+                                xactdate.removeClass('passed');
+                                xactdate.addClass('cleared');
+                                clearedBalance.add(this.amount);
+                                this.cleared = true;
+                            } else {
+                                var d = new Date();
+                                if((xactdate.getElement('input').value*1000) < d.getTime()) xactdate.addClass('passed');
+                                clearedBalance.subtract(this.amount);
+                                this.cleared = false;
                             }
+
                         }
                     );
                 }.bind(this));
@@ -176,8 +188,8 @@ var AKCMoney = function () {
                                     'key':Utils.sessionKey,
                                     'tid':this.tid,
                                     'version': this.version,
-                                    'issrc':isSrc,
-                                    'amount':amount.getValue()
+                                    'amount':amount.getValue(),
+                                    'account':accountName
                                 },
                                 this,
                                 function (holder) {
@@ -209,6 +221,8 @@ var AKCMoney = function () {
             this.editForm.getElement('input[name=desc]').value = this.element.getElement('.description').get('text');
             var xdate = this.editForm.getElement('[input[name=xdate]')
             xdate.value = this.element.getElement('input[name=xxdate]').value;
+            this.cumcopy = new Amount(this.editForm.getElement('.cumcopy'));
+            this.cumcopy.setValue(this.cumulative);
     // Create a calender and set the date to now
             this.calendar = new Calendar.Single(xdate);
             this.editMode = true;
@@ -221,98 +235,137 @@ var AKCMoney = function () {
                     'key':Utils.sessionKey,
                     'tid':this.tid,
                     'version':this.version,
-                    'issrc':isSrc
+                    'account':accountName
                 },
                 this,
                 function(holder) {
                     this.element.removeClass('spinner');
                     var rno = this.editForm.getElement('input[name=rno]');
                     rno.value = this.element.getElement('.ref').get('text');
-                    rno.addEvent('change',function(e) {
-                        e.stop()
-                        this.element.getElement('.ref').set('text', rno.value);
-                    }.bind(this));
                     var desc = this.editForm.getElement('input[name=desc]');
                     desc.value = this.element.getElement('.description').get('text');
-                    desc.addEvent('change', function(e) {
-                        e.stop()
-                        this.element.getElement('.description').set('text', desc.value);
-                    }.bind(this));
+                    desc.focus();
                     var xaction = holder.getElement('xaction');
                     this.setVersion(xaction.get('version'));
-                    var a = xaction.getElement('amount');
-                    var amount = new Amount(this.editForm.getElement('input[name=amount]'));
-                    amount.setIfValid(a.get('text'));
-                    var account = xaction.getElement('account');
-                    var aamount = new Amount(this.editForm.getElement('input[name=aamount]'));
-                    aamount.setIfValid(account.getElement('amount').get('text'));
-                    aamount.addEvent('change', function(e) {
-                        e.stop();
-                        var acchange = this.editForm.getElement('input[name=acchange]');
-                        if(acchange.value == 0) {
-                            acchange.value = 1;
-                        }
+                    var accountType = this.editForm.getElement('input[name=accounttype]');
+                    accountType.value = xaction.get('accounttype');
+                    var originalAmount = this.amount.getValue();
+                    this.editForm.getElement('.sellabel').set('text',(accountType.value == 'src')?'Dst :':'Src :');
+                    this.editForm.getElement('.switchsrcdst').addEvent('click',function(e) {
+                        accountType.value = (accountType.value == 'src')?'dst':'src';
+                        aamount.negate();
                         this.amount.setValue(aamount);
+                        this.editForm.getElement('.sellabel').set('text',(accountType.value == 'src')?'Dst :':'Src :');
                         recalculate();
                     }.bind(this));
+                    
+                    var a = xaction.getElement('amount');
+                    var trate = a.get('rate').toFloat();
+                    var isZero = (a.get('zero') == "true");
+                    var account = xaction.getElement('account');
+                    var arate = account.getElement('amount').get('rate').toFloat();
                     var crate = this.editForm.getElement('.crate');
-                    crate.set('text',account.getElement('amount').get('rate')/a.get('rate'));   
+                    crate.set('text',arate/trate);   
+                    var amount = new Amount(this.editForm.getElement('input[name=amount]'));
+                    var oldValue = a.get('text').toFloat();
+                    amount.setValue(a.get('text'));
+                    amount.addEvent('change',function(occurred) {
+                        if(occurred) {
+                            if(this.editForm.getElement('input[name=acchange]').value == 0) {
+                                if(isZero) {
+                                    aamount.setValue(amount).multiply(arate/trate);
+                                    if (accountType.value == "src") aamount.negate();
+                                    isZero = false;
+                                } else {
+                                    aamount.multiply(amount.getValue()/oldValue);
+                                }
+                                this.amount.setValue(aamount);
+                                recalculate();
+                            }
+                            oldValue = amount.getValue();                                
+                        }
+                    }.bind(this));
+                    var aamount = new Amount(this.editForm.getElement('input[name=aamount]'));
+                    aamount.setValue(account.getElement('amount').get('text'));
+                    aamount.addEvent('change', function(occurred) {
+                        if(occurred) {
+                        
+                            var acchange = this.editForm.getElement('input[name=acchange]');
+                            if(acchange.value == 0) {
+                                acchange.value = 1;
+                            }
+                            this.amount.setValue(aamount);
+                            recalculate();
+                        }
+                    }.bind(this));
                     Utils.selectValueSet(this.editForm,'currency',a.get('currency'));
                     var currency = this.editForm.getElement('select[name=currency]')
-                    currency.addEvent('change',function(e) {
-                        e.stop();
+                    var accountCurrency = account.getElement('amount').get('currency');
+                    if(accountCurrency == currency.value) {
+                        aamount.element.readOnly = true;
+                    }
+                    currency.addEvent('change',function() {
                         currency.getElements('option').every(function(option) {
                             if(option.get('text') == currency.value) {
-                                crate.set('text',account.getElement('amount').get('rate')/option.get('rate'));
+                                var newrate = option.get('rate').toFloat();
+                                if(accountCurrency == currency.value) {
+                                    aamount.element.readOnly = true;
+                                    aamount.setValue(amount);
+                                    this.amount.setValue(aamount);
+                                    recalculate();
+                                } else {
+                                    aamount.element.readOnly = false;
+                                    if(!isZero && this.editForm.getElement('input[name=acchange]').value == 0) {
+                                        aamount.multiply(newrate/trate);
+                                        this.amount.setValue(aamount);
+                                        recalculate();
+                                    }
+                                }
+                                trate = newrate;
+                                crate.set('text',arate/trate);
                                 return false;
                             }
                             return true;
-                        });
-                    });
+                        }.bind(this));
+                    }.bind(this));
+                    
                     var other = account.getNext();
                     Utils.selectValueSet(this.editForm,'account',(other)?other.get('name'):'');
                     var cleared = this.editForm.getElement('input[name=cleared]');
                     cleared.checked = (account.get('cleared') == "t");
                     var repeat = this.editForm.getElement('select[name=repeat]');
                     Utils.selectValueSet(this.editForm,'repeat',xaction.get('repeat'));
-                    repeat.addEvent('change', function (e) {
-                        e.stop();
-                        cleared.checked = false;
-                        cleared.fireEvent('change');
-                    }); 
-                    cleared.addEvent('change',function (e) {
-                        if(repeat.value == 0) {
-                            var el = this.element.getElement('.date');
-                            if (cleared.checked) {                        
-                                el.removeClass('passed');
-                                el.addClass('cleared');
-                            } else {
-                                el.removeClass('cleared');
-                                if(xdate.value < new Date().getTime()/1000) el.addClass('passed');
-                            }
+                    repeat.addEvent('change', function () {
+                        if(repeat.value != 0) {
+                            cleared.checked = false;
                             recalculate();
                         }
+                    }); 
+                    cleared.addEvent('change',function () {
+                        if(repeat.value != 0) {
+                            cleared.checked = false;
+                        } else {
+                            recalculate();
+                        } 
                     });
                     this.editForm.getElement('.setcurrency').addEvent('click',function(e) {
                         this.editForm.getElement('input[name=acchange]').value=2;
-                    }.bind(this));
-                    this.editForm.getElement('.switchsrcdst').addEvent('click',function(e) {
-                        isSrc = !isSrc;
-                        this.editForm.getElement('input[name=accounttype]').value = (isSrc)?'src':'dst';
-                        aamount.negate();
-                        this.amount.setValue(aamount);
-                        this.editForm.getElement('.sellabel').set('text',(isSrc)?'Dst :':'Src :');
-                        recalculate();
+                        this.editForm.getElement('.crate').addClass('setrate');
                     }.bind(this));
                     this.editForm.getElement('.revertxaction').addEvent('click',function(e) {
+                        this.amount.setValue(originalAmount);
+                        this.element.getElement('.wrapper').removeClass('hidden');
                         this.editForm.destroy();
-                        this.edit();
+                        sorting.addItems(this.element);
+                        this.editMode = false;
+                        recalculate();
                     }.bind(this));
                     this.editForm.getElement('.deletexaction').addEvent('click',function(e) {
                         if(confirm('Are you sure you wish to delete this transaction?')) {
                             request.callRequest('deletexaction.php',{'key':Utils.sessionKey,'tid':this.tid,'version':this.version},this,
                                 function(holder) {
                                     this.element.destroy();
+                                    recalculate();
                                 }
                             );
                         }
@@ -327,16 +380,27 @@ var AKCMoney = function () {
                                 var found = false;
                                 var marker = $('now');
                                 var xdate = xaction.get('date');
-                                var dateEL = this.element.getElement('input[name=xxdate]')
+                                var dateEl = this.element.getElement('input[name=xxdate]')
                                 var odate = dateEl.value 
                                 dateEl.value= xdate;
+                                var del= this.element.getElement('.date');
                                 if(xaction.get('repeat') == 0) {
-                                    var del= this.element.getElement('.date');
+                                    del.removeClass('repeat');
+                                    this.cleared = (xaction.get('clear') == "t");
+                                    if(this.cleared) {
+                                        del.addClass('cleared');
+                                        del.removeClass('passed');
+                                    } else {
+                                        del.removeClass('cleared');
+                                    }
+                                    
                                     if(xdate < new Date().getTime()/1000) {
-                                        if(!del.hasClass('cleared')) del.addClass('passed');
+                                        if(!this.cleared) del.addClass('passed');
                                     } else {
                                         del.removeClass('passed');
                                     }
+                                } else {
+                                    del.removeClass('cleared').removeClass('passed').addClass('repeat');
                                 }
                                 if (xdate != odate) {
                                     dateEl.removeClass('dateconvert').addClass('dateawait');
@@ -348,7 +412,7 @@ var AKCMoney = function () {
                                             previous = previous.getPrevious()
                                             if (previous == marker) previous = previous.getPrevious();
                                             if(previous) {                            
-                                                if (xdate.value > previous.getElement('input[name=xxdate]').value) {
+                                                if (xdate > previous.getElement('input[name=xxdate]').value) {
                                                     found = true;
                                                     this.element.inject(previous,'after');
                                                 }
@@ -363,7 +427,7 @@ var AKCMoney = function () {
                                             next = next.getNext();
                                             if(next == marker) next=next.getNext();
                                             if(next) {
-                                                if (xdate.value < next.getElement('input[name=xxdate]').value) {
+                                                if (xdate < next.getElement('input[name=xxdate]').value) {
                                                     found=true;
                                                     this.element.inject(next,'before');
                                                 }
@@ -373,17 +437,28 @@ var AKCMoney = function () {
                                             }
                                         }
                                     }
+                                   recalculate();
                                     window.scrollTo(0,this.element.getCoordinates().top - 100);
                                 }
-                                this.element.getElement('.wrapper').removeClass('hidden');
-                                this.amount.setIfValid(holder.getElement('amount').get('text'));
+                                this.element.getElement('.ref').set('text', rno.value);
+                                this.element.getElement('.description').set('text', desc.value);
+                                if( xaction.getElement('amount').get('dual') == "true" ) {
+                                    this.element.getElement('.description').addClass('dual');
+                                    this.element.getElement('.aamount').addClass('dual');
+                                    this.element.getElement('.cumulative').addClass('dual');
+                                } else {
+                                    this.element.getElement('.description').removeClass('dual');
+                                    this.element.getElement('.aamount').removeClass('dual');
+                                    this.element.getElement('.cumulative').removeClass('dual');
+                                }                                        
+                                 this.element.getElement('.wrapper').removeClass('hidden');
+                                this.amount.setValue(holder.getElement('amount').get('text'));
                                 this.editForm.destroy();
                                 sorting.addItems(this.element);
                                 this.editMode = false;
                             }
                         );
-                        this.editForm.empty();
-                        this.editForm.addClass('spinner');
+                         this.editForm.addClass('spinner');
                     }.bind(this));
                }
             );
@@ -403,9 +478,12 @@ var AKCMoney = function () {
         },
         setCumulative: function(amount) {
             this.cumulative.setValue(amount);
+            if(this.editMode) {
+                this.cumcopy.setValue(amount);
+            }
         },
         isCleared:function() {
-            return this.cleared;
+            return (this.editMode)?this.editForm.getElement('input[name=cleared]').checked :this.cleared;
         },
         getXactionDate: function() {
             return this.element.getElement('input[name=xxdate]').value.toInt();
@@ -414,6 +492,12 @@ var AKCMoney = function () {
             var el = this.element.getElement('input[name=xxdate]')
             el.value = d;
             el.removeClass('dateconvert').addClass('dateawait');
+            el = el.getParent();
+            if(d > new Date().getTime()/1000) {
+                el.removeClass('passed');
+            } else {
+                if(!(el.hasClass('cleared') || el.hasClass('repeat'))) el.addClass('passed');
+            }
             Utils.dateAdjust(this.element,'dateawait','dateconvert');
             request.callRequest(
                 'updatedate.php',
@@ -543,23 +627,35 @@ var AKCMoney = function () {
             $('rebalance').addEvent('click',function(e) {
                 request.callRequest(
                     'rebalance.php',
-                    {data: this.getParent()},
+                    this.getParent(),
                     openingBalance,
                     function(holder){
-                        var a = new Amount();
-                        a.setIfValid(holder.getElement('balance').get('text'));
-                        openingBalance.setValue(a);
+                        openingBalance.setValue(holder.getElement('balance').get('text'));
                         var xactions = holder.getElement('xactions').getElements('xaction');
                         xactions.each(function(xaction) {
                             var el = $('t'+xaction.get('tid'));
                             sorting.removeItems(el);
                             el.destroy();
                         });
+                        $('bversion').value = holder.getElement('balance').get('version');
                         recalculate();
                     }
                 );
             });
             openingBalance = new Amount($('openbalance'));
+            openingBalance.addEvent('change',function(occurred) {
+                if(occurred) {
+                    request.callRequest('updatebalance.php',{
+                        'key':Utils.sessionKey,
+                        'account':accountName,
+                        'bversion':$('bversion').value,
+                        'balance':openingBalance.getValue()
+                    },this,function(holder) {
+                        $('bversion').value = holder.getElement('balance').get('version');
+                        recalculate();                
+                    });
+                }
+            });
             minMaxBalance = new Amount($('minmaxbalance'));
             clearedBalance = new Amount($('clrbalance'));
             recalculate();

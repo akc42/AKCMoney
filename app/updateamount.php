@@ -29,7 +29,7 @@ require_once('db.php');
 
 dbQuery("BEGIN;");
 
-$result=dbQuery("SELECT id, version, amount, dstamount, srcamount FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
+$result=dbQuery("SELECT id, version, amount, src , srcamount, dst, dstamount FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
 $row = dbFetch($result);
 if ($row['version'] != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
@@ -43,7 +43,7 @@ information we are going to reload the page</error>
 
 $amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
 $sql = "UPDATE transaction SET version = DEFAULT,";
-if($_POST['issrc'] == 'true') {
+if($_POST['account'] == $row['src']) {
     $amount = -$amount;
 }
 /* if either srcamount or dstamount are not null, we need to scale them to represent the change in value of amount.  It

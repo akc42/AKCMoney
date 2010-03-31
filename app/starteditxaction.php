@@ -45,29 +45,40 @@ data we will reload the page</error>
     exit;
 }
 
-?><xaction tid="<?php echo $row['id'] ; ?>" version="<?php echo $row['version'] ?>" repeat="<?php echo $row['repeat']; ?>" >
-    <amount currency="<?php echo $row['currency']; ?>" rate="<?php echo $row['trate']; ?>"><?php echo fmtAmount($row['amount']); ?></amount>
+?><xaction tid="<?php echo $row['id'] ; ?>"
+    version="<?php echo $row['version'] ?>"
+    repeat="<?php echo $row['repeat']; ?>"
+    accounttype="<?php echo (($_POST['account'] == $row['src'])? "src" : "dst"); ?>">
+    <amount currency="<?php echo $row['currency']; ?>" 
+        rate="<?php echo $row['trate']; ?>"
+        zero="<?php echo ((((int)$row['amount']) == 0 )?"true" : "false"); ?>"><?php echo fmtAmount($row['amount']); ?></amount>
 <?php 
-if($_POST['issrc'] == "true") {
+if($_POST['account'] == $row['src']) {
+    if($row['currency'] == $row['srccurrency']) {
+        $aamount = -$row['amount'];
+    } else {
+        $aamount = $row['srcamount'];
+    }
 ?>  <account name="<?php echo $row['src']; ?>" cleared="<?php echo $row['srcclear']; ?>">
-        <amount currency="<?php echo $row['srccurrency']; ?>" rate="<?php echo $row['srate']; ?>"><?php echo fmtAmount($row['srcamount']); ?></amount>
+        <amount currency="<?php echo $row['srccurrency']; ?>" rate="<?php echo $row['srate']; ?>"><?php echo fmtAmount($aamount); ?></amount>
     </account>
 <?php
     if(isset($row['dst'])) {
-?>  <account name="<?php echo $row['dst']; ?>" cleared="<?php echo $row['dstclear']; ?>">
-        <amount currency="<?php echo $row['dstcurrency']; ?>" rate="<?php echo $row['drate']; ?>"><?php echo fmtAmount($row['dstamount']); ?></amount>
-    </account>
+?>  <account name="<?php echo $row['dst']; ?>" cleared="<?php echo $row['dstclear']; ?>"></account>
 <?php
     }
 } else {
+    if($row['currency'] == $row['dstcurrency']) {
+        $aamount = $row['amount'];
+    } else {
+        $aamount = $row['dstamount'];
+    }
 ?>  <account name="<?php echo $row['dst']; ?>" cleared="<?php echo $row['dstclear']; ?>">
-        <amount currency="<?php echo $row['dstcurrency']; ?>" rate="<?php echo $row['drate']; ?>"><?php echo fmtAmount($row['dstamount']); ?></amount>
+        <amount currency="<?php echo $row['dstcurrency']; ?>" rate="<?php echo $row['drate']; ?>"><?php echo fmtAmount($aamount); ?></amount>
     </account>
 <?php
     if(isset($row['src'])) {
-?>  <account name="<?php echo $row['src']; ?>" cleared="<?php echo $row['srcclear']; ?>">
-        <amount currency="<?php echo $row['srccurrency']; ?>" rate="<?php echo $row['srate']; ?>"><?php echo fmtAmount($row['srcamount']); ?></amount>
-    </account>
+?>  <account name="<?php echo $row['src']; ?>" cleared="<?php echo $row['srcclear']; ?>"></account>
 <?php
     }
 }

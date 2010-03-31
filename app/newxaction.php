@@ -40,8 +40,8 @@ if (!($row = dbFetch($result)) ) {
 }
 dbFree($result);
 
-$result = dbQuery("INSERT INTO transaction (id,version, description,".(($_POST['issrc'] == "true")?"src":"dst").
-            ",currency) VALUES(DEFAULT,DEFAULT,'NEW TRANSACTION',".dbPostSafe($_POST['account']).
+$result = dbQuery("INSERT INTO transaction (id,version,".(($_POST['issrc'] == "true")?"src":"dst").
+            ",currency) VALUES(DEFAULT,DEFAULT,".dbPostSafe($_POST['account']).
             ",".dbPostSafe($_POST['currency']).") RETURNING * ;");
 
 $row = dbFetch($result);

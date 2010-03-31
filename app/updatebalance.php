@@ -22,35 +22,29 @@ error_reporting(E_ALL);
 session_start();
 
 if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
+
+
 define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 dbQuery("BEGIN;");
-$result=dbQuery("SELECT id, version,src,dst FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-dbFree($result);
-if ($row['version'] != $_POST['version'] ) {
-?><error>Someone else has updated this transaction in parallel with you.  In order to ensure you are working with the latest version we
-are going to update the page</error>
+$result = dbQuery("SELECT name, bversion FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
+if (!($row = dbFetch($result)) || $row['bversion'] != $_POST['bversion'] ) {
+?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
+ensure you have the correct version</error>
 <?php
+    dbFree($result);
     dbQuery("ROLLBACK;");
     exit;
 }
-$sql = "UPDATE transaction SET version = DEFAULT, ";
-if($_POST['account'] == $row['src']) {
-    $sql .= "srcclear = ";
-} else {
-    $sql .= "dstclear = ";
-}
-$sql .= ($_POST['clear'] == 'true')? 'TRUE' : 'FALSE' ;
-$sql .= ' WHERE id = '.dbPostSafe($_POST['tid']).' RETURNING version;';
-$result = dbQuery($sql);
 
-$row = dbFetch($result);
-$version = $row['version'];
 dbFree($result);
-
-dbQuery("COMMIT;");
-?><xaction tid="<?php echo $_POST['tid']; ?>" clear="<?php echo $_POST['clear']; ?>" version="<?php echo $version ?>" ></xaction>
-
-
+$balance = round(100*$_POST['balance']);
+$result = dbQuery("UPDATE account SET bversion = DEFAULT, balance = ".$balance.
+    " WHERE name = ".dbMakeSafe($_POST['account'])." RETURNING bversion;");
+$row = dbFetch($result);
+?><balance version="<?php echo $row['bversion']; ?>"><?php echo fmtAmount($balance) ; ?></balance>
+<?php
+dbFree($result);
+dbQuery("COMMIT ;");
+?>

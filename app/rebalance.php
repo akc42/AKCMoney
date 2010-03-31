@@ -28,8 +28,8 @@ define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 dbQuery("BEGIN;");
-$result = dbQuery("SELECT name, bversion, balance, currency FROM account WHERE name = ".dbMakeSafe($_POST['account']." ;");
-if (!($row = dbFetch($result)) || $row['bversion'] != $_POST['version'] || $row['currency'] != $_POST['currency'] ) {
+$result = dbQuery("SELECT name, bversion, balance, currency FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
+if (!($row = dbFetch($result)) || $row['bversion'] != $_POST['bversion'] || $row['currency'] != $_POST['currency'] ) {
 ?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
 ensure you have the correct version</error>
 <?php
@@ -43,41 +43,43 @@ $currency = $row['currency'];
 $oldbalance = $balance;
 dbFree($result);
 
-$result=dbQuery("SELECT * FROM transaction WHERE ( src = ".dbMakeSafe($_POST['account']
-                ." AND srcclear IS TRUE ) OR dst = ".dbMakeSafe($_POST['account']." AND dstclear IS TRUE ;");
+$result=dbQuery("SELECT * FROM transaction WHERE ( src = ".dbMakeSafe($_POST['account']).
+                " AND srcclear IS TRUE ) OR dst = ".dbMakeSafe($_POST['account'])." AND dstclear IS TRUE ;");
 ?><xactions>
 <?php
-while($row = dbFetch($result);) {
+while($row = dbFetch($result)) {
     if($row['src'] == $_POST['account']) {
         if($row['currency'] == $_POST['currency']) {
             $balance -= $row['amount'];
         } else {
             $balance -= $row['srcamount'];
         }
-        if ($row['dstclear'] == 't') {
+        if (is_null($row['dst'])) {
             dbQuery("DELETE FROM transaction WHERE id = ".$row['id']." ;");
         } else {
-            dbQuery("UPDATE transaction set VERSION = DEFAULT, srcclear = TRUE WHERE id = ".$row['id']." ;");
+            dbQuery("UPDATE transaction SET version = DEFAULT, src = NULL, srcamount = NULL, srcclear = false WHERE id = ".$row['id']." ;");
         }
     } else {
         if($row['currency'] == $_POST['currency']) {
             $balance += $row['amount'];
         } else {        
-            $balance += $row['dstamount']
+            $balance += $row['dstamount'];
         }
-        if ($row['srcclear'] == 't') {
+        if (is_null($row['src'])) {
             dbQuery("DELETE FROM transaction WHERE id = ".$row['id']." ;");
         } else {
-            dbQuery("UPDATE transaction set VERSION = DEFAULT, dstclear = TRUE WHERE id = ".$row['id']." ;");
+            dbQuery("UPDATE transaction SET version = DEFAULT, dst = NULL, dstamount = NULL, dstclear = false WHERE id = ".$row['id']." ;");
         }
     }
 ?><xaction tid="<?php echo $row['id']; ?>"></xaction>
 <?php
 }
 dbFree($result);
-?></xactions><balance><?php 
-echo fmtAmount($balance) ;
-dbQuery("UPDATE account SET bversion = DEFAULT, balance = ".$balance." WHERE name = ".dbMakeSafe($_POST['account']." ;");
-dnQuery("COMMIT ;");
-?></balance>
-
+$result = dbQuery("UPDATE account SET bversion = DEFAULT, balance = ".$balance.
+    " WHERE name = ".dbMakeSafe($_POST['account'])." RETURNING bversion;");
+$row = dbFetch($result);
+?></xactions><balance version="<?php echo $row['bversion']; ?>"><?php echo fmtAmount($balance) ; ?></balance>
+<?php
+dbFree($result);
+dbQuery("COMMIT ;");
+?>
