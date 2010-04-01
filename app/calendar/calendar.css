@@ -27,9 +27,9 @@ button.calendar.active {
 div.picker {
 	background: url(calendar.png) no-repeat;
 	height: 173px;
-	padding: 0 12px;
+	padding: 0 4px;
 	text-align: center;
-	width: 139px;
+	width: 154px;
 	font: normal 16px/20px verdana, Helvetica, sans-serif;
 
 }	
@@ -44,7 +44,7 @@ div.picker div {
 	overflow: hidden;
 	padding-top: 10px;
 	position: relative;
-	width: 139px;
+	width: 154px;
 }	
 
 div.picker caption {

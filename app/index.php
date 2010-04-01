@@ -28,7 +28,7 @@ define ('MONEY',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 
-if(!isset($_SESSION['key']) || isset($_POST['refresh'])) {
+if(!isset($_SESSION['key']) || isset($_REQUEST['refresh'])) {
 // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
     $result = dbQuery('SELECT * FROM config;');
     $row = dbFetch($result);
@@ -47,7 +47,7 @@ if(!isset($_SESSION['key']) || isset($_POST['refresh'])) {
     dbFree($result);
 }
 
-if(isset($_POST['account'])) $_SESSION['account'] = $_POST['account'];
+if(isset($_REQUEST['account'])) $_SESSION['account'] = $_REQUEST['account'];
 
 function head_content() {
 
@@ -57,6 +57,7 @@ consist of two main concepts, accounts which hold money, and transactions which 
 single account if the transaction is with the outside world).  Multiple currencies are supported, and can use exchange rates which are initially
 estimated, but are then corrected when the actual value used in a transaction is known.  This is the second release, based on personal use over
 the past 4 years and a third release is planned to allow multiple accounting as is typically seen in business (cash accounts versus management accounts"/>
+<meta name="keywords" content="
     <link rel="icon" type="image/png" href="favicon.png" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>

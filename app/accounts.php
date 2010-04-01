@@ -41,7 +41,7 @@ function head_content() {
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
-	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
+	<script type="text/javascript" src="/js/mootools-1.2.4-core-nc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
 	<script type="text/javascript" src="account.js" ></script>
 <?php
@@ -72,12 +72,13 @@ window.addEvent('domready', function() {
     Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
     Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
     Utils.dcDescription = "<?php echo $_SESSION['dc_description']; ?>";
+    AKCMoney.Account();
 });
 </script>
 <div class="topinfo">
     <form id="startaccounts" action="updefaccount.php" method="post" />
-    <input type="hidden" name="version" value="<?php echo $SESSION['config_version']; ?>" />
-    <input type="hidden" name="key" value="<?php echo $_SESSION['default_currency'];?>" />
+    <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
+    <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
     <div class="startaccount">
         <div class="acclabel">External Start Account</div>
         <div class="accountsel">
@@ -117,18 +118,22 @@ dbfree($result);
     <div class="button">&nbsp;</div>
 </div>
 <div class="xaccount newaccount">
-    <form id="newaccount" action="newaccount.php" method="post">
+    <form id="newaccount" action="newaccount.php" method="post" onSubmit="return false;">
         <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-        <div class="account"><input type="text" name="account" value="<?php echo $_SESSION['default_currency'];?>"/></div>
+        <div class="account"><input type="text" name="account" value=""/></div>
         <div class="type">
 <?php
+$atype = Array();
 $result=dbQuery('SELECT atype,description FROM account_type');
 if($row=dbFetch($result)) { /* first row is the default, so read it first to set it up*/
+    $defaultatype = $row['atype'];
+    $atype[$defaultatype] = $row['description'];
 /* Note we've given the select statement an id because its going to become a template for all the other accounts */
-?>            <select id="typeselector" title="<?php echo $row['description'];?>">
+?>            <select name="type" title="<?php echo $row['description'];?>">
                 <option selected="selected" title="<?php echo $row['description'];?>"><?php echo $row['atype'];?></option>
 <?php
     while($row=dbFetch($result)) {
+    $atype[$row['atype']] = $row['description'];
 ?>              <option title="<?php echo $row['description'];?>"><?php echo $row['atype'];?></option>
 <?php
     }
@@ -138,7 +143,7 @@ if($row=dbFetch($result)) { /* first row is the default, so read it first to set
 ?>
         </div>
         <div class="currency">
-            <select title="<?php echo $_SESSION['dc_description']; ?>">
+            <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
 $currencies = Array();            
 $result=dbQuery('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
@@ -156,7 +161,7 @@ dbFree($result);
     </form>
     <div class="button">
         <div class="buttoncontainer">
-            <a class="button"><span><img src="add.png"/>Add Account</span></a>
+            <a id="addaccount" class="button"><span><img src="add.png"/>Add Account</span></a>
         </div>
     </div>
 </div>
@@ -165,34 +170,40 @@ dbFree($result);
 $result=dbQuery('SELECT * FROM account ORDER BY name ASC;');
 $r=0;
 while($row = dbFetch($result)) {
-$r++
+    $r++
 ?>  <div class="xaccount<?php if($r%2 == 0) echo ' even';?>">
-    <div class="wrapper">
-        <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-        <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
-        <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
-        <input type="hidden" name="rate" value="<?php echo $currencies[$row['currency']][0]; ?>" 
-        <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
-        <div class="type"><?php echo $row['atype']; ?></div>
-        <div class="currency">
-            <select title="<?php echo $currencies[$row['currency']][1]; ?>">
-<?php
-foreach($currencies as $currency => $values) {
-?>              <option value="<?php echo $currency; ?>" title="<?php
-                     echo $value[1]; ?>" rate="<?php echo $value[0]; ?>" <?php if ($currency == $row['currency']) echo 'selected="selected"';?> 
-                     ><?php echo $currency; ?></option>
-<?php
-}
-?>          </select>
-        </div>
-    </div>
-    <div class="button">
-        <div class="buttoncontainer">
+        <form action="updateaccount.php" method="post" onSubmit="return false;">
             <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-            <input type="hidden" name="account" value="<?php echo $row['name']; ?>"/>
-            <a class="button"><span><img src="delete.png"/>Delete Account</span></a>
+            <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
+            <input type="hidden" name="original" value="<?php echo $row['name']; ?>" />
+            <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
+            <div class="type">
+                <select name="type" title="<?php echo $atype[$defaultatype]; ?>" />
+<?php
+    foreach($atype as $type => $description) { 
+?>                  <option value="<?php echo $type; ?>" 
+                        title="<?php echo $description; ?>" <?php if ($type == $row['atype']) echo 'selected="selected"';?> ><?php echo $type; ?></option>
+<?php
+    }
+?>              </select>
+            </div>
+            <div class="currency">
+                <select name="currency" title="<?php echo $currencies[$row['currency']][1]; ?>">
+<?php
+    foreach($currencies as $currency => $values) {
+?>                <option value="<?php echo $currency; ?>" title="<?php
+                         echo $values[1]; ?>" rate="<?php echo $values[0]; ?>" <?php if ($currency == $row['currency']) echo 'selected="selected"';?> 
+                       ><?php echo $currency; ?></option>
+<?php
+    }
+?>              </select>
+            </div>
+        </form>
+        <div class="button">
+            <div class="buttoncontainer">
+                <a class="button"><span><img src="delete.png"/>Delete Account</span></a>
+            </div>
         </div>
-    </div>
     </div>
 <?php            
 }
