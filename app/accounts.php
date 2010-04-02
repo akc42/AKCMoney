@@ -41,6 +41,7 @@ function head_content() {
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
+	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
 	<script type="text/javascript" src="/js/mootools-1.2.4-core-nc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
 	<script type="text/javascript" src="account.js" ></script>

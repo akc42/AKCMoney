@@ -65,6 +65,7 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
     	<link rel="stylesheet" type="text/css" href="calendar/calendar-ie.css"/>
 	<![endif]-->
+	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
 	<script type="text/javascript" src="/js/mootools-1.2.4-core-nc.js"></script>
 	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
