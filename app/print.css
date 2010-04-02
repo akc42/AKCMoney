@@ -118,16 +118,15 @@ div#now.hidden {
     display:block;
     height:1px;
     width:100%;
-    border-top:1px dotted black;
+    border-top:1px solid black;
 }
 
-.description, .currency, .currency select ,.show, .rate, .account, .account input, .type, .type select, .button, .buttoncontainer,
-.date, .clickable, .ref, .amount, .xaction .irow, .xaction .brow {
-    page-break-before:avoid;
-    page-break-after:avoid;
-    float:none !important;
+div.newaccount, div.button {
+    display:none !important;
 }
+
 
 .xaction, .xaccount, .xcurrency {
-    page-break-before:auto;
+/*    page-break-before:auto; */
+    overflow:auto;
 }
