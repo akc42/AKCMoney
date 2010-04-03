@@ -47,7 +47,7 @@ Amount = new Class({
         } else {
             aString = "0.00";
         } 
-		this.value = new Number(aString).round(2);
+		this.value = new Number(aString);
     },
     add:function(amount) {
         this.value += amount.getValue();
@@ -60,7 +60,7 @@ Amount = new Class({
         return this;
     },
     multiply: function(number) {
-        this.value = (this.value*number).round(2);
+        this.value = (this.value*number);
         this.setText();
         return this;
     },
@@ -76,7 +76,7 @@ Amount = new Class({
         if($type(amount) == 'object') {
             this.value = amount.getValue();
         } else {
-            this.value = amount.toFloat().round(2);
+            this.value = amount.toFloat();
         }
         this.setText();
         return this;
@@ -89,7 +89,7 @@ Amount = new Class({
 //.##
             var n = new Number(aString);
             if (isNaN(n)) return false;
-            this.value = n.round(2);
+            this.value = n;
             this.setText(this.value);
             return true;
         } else {
