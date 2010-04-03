@@ -52,6 +52,7 @@ if(!isset($_POST['dbname'])) {
         $dbname = "money";
         $dbuser = "money";
         $dbpassword = "";
+        $demo = "";
     }
 ?>  
     <h1>Setup Main Parameters to Access the Database</h1>
@@ -67,6 +68,7 @@ if(!isset($_POST['dbname'])) {
                     <td></td><td></td></tr>
                 <tr><td>Database User: </td><td><input type="text" name="dbuser" value="<?php echo $dbuser; ?>" /></td>
                     <td>Password: </td><td><input type="text" name="dbpassword" value="<?php echo $dbpassword; ?>" /></td></tr>
+                <tr><td>Setup as Demo:</td><input type="checkbox" name="demo" <?php if($demo != "") echo 'checked="checked"'; ?> /></td></tr>
             </tbody>
         </table>
         <input type="submit" value="Submit" />
@@ -94,6 +96,10 @@ if(!isset($_POST['dbname'])) {
             //Update config to have new version
             $row['db_version'] = 3;
         } */
+        dbFree($result);
+     }
+     if (isset($_POST['demo']) {
+        dbQuery("UPDATE config SET demo = true;");
      }
 ?> <p>Database is now ready for use click <a href="index.php">here</a> to start to use it</p>
 <?php
