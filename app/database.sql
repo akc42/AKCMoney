@@ -304,7 +304,7 @@ CREATE TABLE config (
     demo boolean DEFAULT false NOT NULL
 );
 
-INSERT INTO config VALUES (2,'Cash','Cash', 90, 'GBP');
+INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency) VALUES (2,'Cash','Cash', 90, 'GBP');
 ALTER TABLE ONLY config
     ADD CONSTRAINT config_home_account_fkey FOREIGN KEY (home_account) REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
     ADD CONSTRAINT config_extn_account_fkey FOREIGN KEY (extn_account) REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
