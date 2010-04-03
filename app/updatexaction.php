@@ -47,7 +47,7 @@ with your updates, and we are about to reload the page.  Sorry it has been neces
 $cleared = (isset($_POST['cleared']))?"TRUE":"FALSE";
 
 $accounttype = $_POST['accounttype'];
-$amount = (int)($_POST['amount']*100);
+$amount = round($_POST['amount']*100);
 if($amount < 0 ) { //if the amount is negative, we are going to switch over
    $amount = -$amount;
    $accounttype = ($accounttype == "src")?"dst":"src";
