@@ -98,7 +98,7 @@ if(!isset($_POST['dbname'])) {
         } */
         dbFree($result);
      }
-     if (isset($_POST['demo']) {
+     if (isset($_POST['demo'])) {
         dbQuery("UPDATE config SET demo = true;");
      }
 ?> <p>Database is now ready for use click <a href="index.php">here</a> to start to use it</p>
