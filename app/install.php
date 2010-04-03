@@ -68,7 +68,7 @@ if(!isset($_POST['dbname'])) {
                     <td></td><td></td></tr>
                 <tr><td>Database User: </td><td><input type="text" name="dbuser" value="<?php echo $dbuser; ?>" /></td>
                     <td>Password: </td><td><input type="text" name="dbpassword" value="<?php echo $dbpassword; ?>" /></td></tr>
-                <tr><td>Setup as Demo:</td><input type="checkbox" name="demo" <?php if($demo != "") echo 'checked="checked"'; ?> /></td></tr>
+                <tr><td>Setup as Demo:</td><td><input type="checkbox" name="demo" <?php if($demo != "") echo 'checked="checked"'; ?> /></td></tr>
             </tbody>
         </table>
         <input type="submit" value="Submit" />
