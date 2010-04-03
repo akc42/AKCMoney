@@ -64,12 +64,13 @@ ALTER TABLE currency
 
 UPDATE currency SET rate = 1/rate ;
 
-UPDATE transaction SET srcamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN config.default_currency IS NULL THEN -transaction.amount / tc.rate ELSE -transaction.amount*ac.rate END END) FROM account, currency AS tc, currency AS ac WHERE
-transaction.src = account.name AND transaction.currency = tc.name AND account.currency = ac.name;
+UPDATE transaction SET srcamount = (CASE WHEN t.currency = account.currency THEN NULL ELSE CASE WHEN config.default_currency IS NULL THEN -t.amount / tc.rate ELSE -t.amount*ac.rate END END) FROM transaction t LEFT JOIN config ON t.currency = config.default_currency, account, currency AS tc, currency AS ac WHERE
+transaction.src = account.name AND transaction.currency = tc.name AND account.currency = ac.name AND t.id = transaction.id;
 
-UPDATE transaction SET dstamount = (CASE WHEN transaction.currency = account.currency THEN NULL ELSE CASE WHEN config.default_currency IS NULL THEN transaction.amount / tc.rate ELSE transaction.amount * ac.rate  END END) FROM account, currency AS tc, currency AS ac 
-LEFT JOIN config ON transaction.currency = config.default_currency WHERE
-transaction.dst = account.name AND transaction.currency = tc.name AND account.currency = ac.name;
+UPDATE transaction SET dstamount = (CASE WHEN t.currency = account.currency THEN NULL ELSE CASE WHEN config.default_currency IS NULL THEN t.amount / tc.rate ELSE t.amount * ac.rate  END END) FROM  transaction t LEFT JOIN config ON t.currency = config.default_currency, account, currency AS tc, currency AS ac WHERE
+transaction.dst = account.name AND transaction.currency = tc.name AND account.currency = ac.name AND t.id = transaction.id;
+
+
 
 ALTER TABLE transaction DROP COLUMN namount;
 
