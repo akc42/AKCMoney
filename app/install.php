@@ -49,8 +49,8 @@ if(!isset($_POST['dbname'])) {
     } else {
         $dbserver = "localhost";
         $dbport = "5432";
-        $dbname = "money";
-        $dbuser = "money";
+        $dbname = "";
+        $dbuser = "";
         $dbpassword = "";
         $demo = "";
     }
