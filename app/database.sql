@@ -255,7 +255,7 @@ ALTER TABLE ONLY account
     ADD CONSTRAINT account_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
     ADD CONSTRAINT account_atype_fkey FOREIGN KEY (atype) REFERENCES account_type(atype);
 
-INSERT INTO account VALUES ('Cash', DEFAULT, DEFAULT, 'GBP', 'Debit ', 0, DEFAULT);
+INSERT INTO account (name,bversion,dversion,currency,atype,balance,date) VALUES ('Cash', DEFAULT, DEFAULT, 'GBP', 'Debit ', 0, DEFAULT);
 
 CREATE SEQUENCE transaction_id_seq
     INCREMENT BY 1
@@ -268,6 +268,7 @@ SELECT pg_catalog.setval('transaction_id_seq', 1, true);
 CREATE TABLE transaction (
     id integer DEFAULT nextval('transaction_id_seq'::regclass) NOT NULL,
     date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
+    version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     amount bigint DEFAULT 0 NOT NULL,
     currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
     src character varying,
