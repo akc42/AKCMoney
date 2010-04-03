@@ -69,7 +69,7 @@ if($accounttype == "src") {
         $sql .= ",srcamount = NULL";
         $aamount = -$amount;
     } else {
-        $aamount = (int)(100*$_POST['aamount']);
+        $aamount = round(100*$_POST['aamount']);
         $sql .= ",srcamount = ".dbPostSafe($aamount);
     }
     $sql .= ", src = ".dbPostSafe($_POST['accountname']);
@@ -149,7 +149,7 @@ if($accounttype == "src") {
         $sql .= ",dstamount = NULL";
         $aamount = $amount;
     } else {
-        $aamount = (int)(100*$_POST['aamount']);
+        $aamount = round(100*$_POST['aamount']);
         $sql .= ",dstamount = ".dbPostSafe($aamount);
     }
     $sql .= ", dst = ".dbPostSafe($_POST['accountname']);
