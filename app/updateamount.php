@@ -52,10 +52,10 @@ if($_POST['account'] == $row['src']) {
 if ($row['amount'] != 0) { 
     $scaling = $amount/$row['amount'];
     if (!is_null($row['srcamount'])) {
-        $sql .= ' srcamount = '.((int)($scaling*$row['srcamount']));
+        $sql .= ' srcamount = '.(round($scaling*$row['srcamount']));
     }
     if (!is_null($row['dstamount'])) {
-        $sql .= ' dstamount = '.((int)($scaling*$row['dstamount']));
+        $sql .= ' dstamount = '.(round($scaling*$row['dstamount']));
     }
 }
 dbFree($result);
