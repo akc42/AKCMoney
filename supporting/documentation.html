@@ -599,6 +599,22 @@ I have chosen  [[Mootools|http://www.mootools.net]] for the framework used to bu
 
 </pre>
 </div>
+<div title="EditTransaction" creator="AlanChandler" modifier="AlanChandler" created="201004041239" modified="201004041240" changecount="2">
+<pre>When the transactions is double clicked on it grows to provide a form so that it can be edited.  The key parameters of the transaction are here
+
+... (still to be edited)
+
+
+
+New facility for the next release:-
+;Open Balance Transactions
+:A transaction has a flag for each account it is party to which if set allows the amount to be set from the condition in the account.  It will always be at least the last amount set for the transaction, but if the cumulative balance of the account //at the point the transaction is currently inserted// is more that the value then the value is increased to cause the balance of the account to go to zero.  The ''amount'' field will be set to grey rather than black to show that this value is open.
+:The direction of the value is intended to be opposite to normal flow of transactions.  So for a debit account (one that is normally the source of transactions) this will only work for a transaction which credits the account (a debit transaction will immediately have its value negated, turning it into a credit transaction).
+;Link Transfer Transactions
+:Different parts of the overall database could hold accounts for different entities.  For instance, it may be that there are some business accounts in some part of the database and personal accounts in another.  Some transactions - for instance - claiming of personal expenses against the business may actually be relevant to both parts.  The problem with the first release of the software is that a transaction to move the sum of expenses to an invoice will set the balance on the account to zero, yet it would be nice to record that at some future time the balance would be re-embersed.  Similarly from the business side, there is no record that a liability exists to repay these expenses.
+:The solution is to provide the ability to signal to a transaction that one side of it is a ''link transfer''.  These transactions do not change the cumulative balance on the account, but instead contribute to a new amount shown for the account called the &quot;transfer liability&quot;.  Generally these apply on //credit// accounts, where some incurred costs from other sources (such as a credit card or cash) add to an account which will be re-embersed in the future.  Indeed an //Open Balance// transaction may be used to provide that.  The liability is transfered from this account to (say a client invoice account, or a cost ledger for the business, increasing the transfer liability.  When payment is made, a reverse transaction is applied, reducing the liability back to zero
+</pre>
+</div>
 <div title="GettingStarted" modifier="AlanChandler" created="200906111832" modified="200912091259" changecount="2">
 <pre>To get started with this blank TiddlyWiki, you'll need to modify the following tiddlers:
 * SiteTitle &amp; SiteSubtitle: The title and subtitle of the site, as shown above (after saving, they will also appear in the browser title bar)
@@ -609,7 +625,7 @@ You'll also need to enter your username for signing your edits: &lt;&lt;option t
 
 Help with markup http://tiddlywiki.org/wiki/TiddlyWiki_Markup</pre>
 </div>
-<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="200912091319" changecount="11">
+<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="201004040635" changecount="14">
 <pre>The main index page is where the user will perform their main activities.  It comprises three main sections.
 
 ;  Account selection
@@ -624,11 +640,11 @@ Help with markup http://tiddlywiki.org/wiki/TiddlyWiki_Markup</pre>
 :* the opening balance 
 
 ; Transaction List
-: This is a list of transactions, ordered by date described on the account.  This list is like an accordian, in that if you click on the description of the transaction it grows large, and the [[transaction can be edited|EditTransaction]].  
+: This is a list of transactions, ordered by date described on the account.  This list is like an accordian, in that if you double click on the description of the transaction it grows large, and the [[transaction can be edited|EditTransaction]].  
 
 : You can also drag transactions up and down the list to change their date (by dragging the date portion of the transaction).  If the transaction is dragged down the list it will have a date one day after the transaction immediately above it (unless the transaction below it is the same date as the transaction above).  If the transaction is dragged up the list it will take a date one day before the transaction below it, unless the one above has the same date, in which case it will take the same date. 
 
-: Clicking on the amount toggles whether the transaction is cleared
+: Clicking on the date toggles whether the transaction is cleared, clicking on the amount (provided it is in the same currency as the account) will allow you to edit in place the amount.
 </pre>
 </div>
 <div title="Main Index Page (Design)" modifier="AlanChandler" created="200906151609" modified="200906180743" changecount="6">
