@@ -265,7 +265,7 @@ var AKCMoney = function () {
                     var account = xaction.getElement('account');
                     var arate = account.getElement('amount').get('rate').toFloat();
                     var crate = this.editForm.getElement('.crate');
-                    crate.set('text',arate/trate);   
+                    crate.set('text',trate/arate);   
                     var amount = new Amount(this.editForm.getElement('input[name=amount]'));
                     var oldValue = a.get('text').toFloat();
                     amount.setValue(a.get('text'));
@@ -316,13 +316,13 @@ var AKCMoney = function () {
                                 } else {
                                     aamount.element.readOnly = false;
                                     if(!isZero && this.editForm.getElement('input[name=acchange]').value == 0) {
-                                        aamount.multiply(newrate/trate);
+                                        aamount.multiply(trate/newrate);
                                         this.amount.setValue(aamount);
                                         recalculate();
                                     }
                                 }
                                 trate = newrate;
-                                crate.set('text',arate/trate);
+                                crate.set('text',trate/arate);
                                 return false;
                             }
                             return true;

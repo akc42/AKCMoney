@@ -87,12 +87,12 @@ if($accounttype == "src") {
             } elseif ($_POST['currency'] == $row['currency']) {
                 $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
             } elseif ($_POST['currency'] == $row['srccurrency']) {
-                $sql .= ". dstamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
                 $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
                 $row2 = dbFetch($result2);
-                $sql .= ". dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
                 dbFree($result2);
             }
         } elseif (isset($row['src']) && $_POST['account'] == $row['src']) {
@@ -102,12 +102,12 @@ if($accounttype == "src") {
             } elseif ($_POST['currency'] == $row['currency']) {
                 $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
             } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                $sql .= ". dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
                 $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
                 $row2 = dbFetch($result2);
-                $sql .= ". dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
                 dbFree($result2);
             }
         } else {
@@ -124,12 +124,12 @@ if($accounttype == "src") {
             } elseif ($_POST['currency'] == $row['currency']) {
                 $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
             } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                $sql .= ". dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
                 $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
                 $row2 = dbFetch($result2);
-                $sql .= ". dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
                 dbFree($result2);
             }
        }      
@@ -167,12 +167,12 @@ if($accounttype == "src") {
             } elseif ($_POST['currency'] == $row['currency']) {
                 $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
             } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                $sql .= ". srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
                 $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
                 $row2 = dbFetch($result2);
-                $sql .= ". srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
                 dbFree($result2);
             }
         } elseif (isset($row['src']) && $_POST['account'] == $row['dst']) {
@@ -182,12 +182,12 @@ if($accounttype == "src") {
             } elseif ($_POST['currency'] == $row['currency']) {
                 $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
             } elseif ($_POST['currency'] == $row['srccurrency']) {
-                $sql .= ". srcamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
                 $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
                 $row2 = dbFetch($result2);
-                $sql .= ". srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
                 dbFree($result2);
             }
         } else {
@@ -204,12 +204,12 @@ if($accounttype == "src") {
             } elseif ($_POST['currency'] == $row['currency']) {
                 $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
             } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                $sql .= ". srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
                 $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
                 $row2 = dbFetch($result2);
-                $sql .= ". srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
                 dbFree($result2);
             }
        }      
@@ -235,7 +235,7 @@ dbFree($result);
 if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we requested to set the currencies and they are not the same
     if($amount != 0 && $aamount != 0) { //can only do this if neither value is 0
         //we asked to set the rate from the current transaction.
-        $ratio = $aamount/$amount;
+        $ratio = abs($aamount/$amount);
         
         $result = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
         $row = dbFetch($result);
