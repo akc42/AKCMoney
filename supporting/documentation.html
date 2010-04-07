@@ -718,9 +718,17 @@ I decided against selecting the form validator - there are only two tests I need
 		.##
 </pre>
 </div>
-<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="200912091319" changecount="6">
+<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="201004041553" changecount="7">
 <pre>! Basic Concepts
-The whole concept of AKC Money is based around the concept of two key entities.  //Accounts// which have an opening balance and which contain (one side of) //transactions//.  Each transaction can either increase or increase the balance on the account, so that over time the account balance can reach a maximum or minimum amount.
+The whole concept of AKC Money is based around the concept of two key entities.  //Accounts// which have an opening balance and which contain (one side of) //transactions//.  Each transaction can either increase or increase the balance on the account, so that over time the account balance can reach a maximum or minimum amount.  Transactions can refer to two accounts{
+# The ''source'' of the transaction.  The transaction amount is debited from this accounts balance, and
+# The ''destination'' of the transaction.  The transaction amount is credited to this accounts balance
+This forms the basis of the complete system.
+
+In addition, amounts may be specified in different currencies and accounts themselves operate in a currency. The system maintains estimated exchange rates between the currencies, although for any transaction when both sides of the transaction is known then this can be entered explicitly (as well as potentially using this new rate to set the rate used in the estimating process).
+
+The release 2 of AKCMoney adds to this basic ability with the concept of ''link'' accounts.  These are special accounts which sit at the interface between two areas ...
+
 
 
 There are three main screens in AKC Money

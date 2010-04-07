@@ -84,8 +84,9 @@ if(!isset($_POST['dbname'])) {
     } else { 
         $result = dbQuery('SELECT * FROM config;');
         $row = dbFetch($result);
+/* this should be identical to code in index.php - if you change it here, please change it there */
         if(!isset($row['db_version'])) {
-// Database version is at version 1 (no version number if config table), so we need to update to version 2
+// Database version is at version 1 (no version number in config table), so we need to update to version 2
             dbQuery(file_get_contents('update1.sql'));
             //Update config to have new version
             $row['db_version'] = 2;

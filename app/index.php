@@ -32,6 +32,23 @@ if(!isset($_SESSION['key']) || isset($_REQUEST['refresh'])) {
 // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
     $result = dbQuery('SELECT * FROM config;');
     $row = dbFetch($result);
+/* this should be identical to code in install.php - if you change it here, please change it there */
+        if(!isset($row['db_version'])) {
+// Database version is at version 1 (no version number in config table), so we need to update to version 2
+            dbQuery(file_get_contents('update1.sql'));
+            //Update config to have new version
+            $row['db_version'] = 2;
+        }
+// TO BE ADDED WHEN THERE IS A NEXT UPDATE
+        if($row['db_version'] < 3) { //update to version 3
+            dbQuery(file_get_contents('update2.sql'));
+            //Update config to have new version
+            $row['db_version'] = 3;
+//Now reread config - to pickup any changes made to it during the updgrades
+            dbfree($result);
+            $result = dbQuery('SELECT * FROM config;');
+            $row = dbFetch($result);            
+        } 
     $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
 	$_SESSION['account'] = $row[$at.'_account'];
 	$_SESSION['demo'] = ($row['demo'] == 't');

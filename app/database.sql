@@ -35,8 +35,9 @@ CREATE TABLE account_type (
 ALTER TABLE ONLY account_type
     ADD CONSTRAINT account_type_pkey PRIMARY KEY (atype);
 
-INSERT INTO account_type VALUES ('Debit ', 'This account is normally the source of a transaction');
-INSERT INTO account_type VALUES ('Credit', 'This account is normally the destination of a transaction');
+INSERT INTO account_type VALUES ('Cash  ', 'Account containing real Money');
+INSERT INTO account_type VALUES ('Accrue', 'An accrual account, containing an asset or liability with external party');
+INSERT INTO account_type VALUES ('Trnsfr', 'An accrual account, containing an asset or liability with ourselves');
 
 CREATE TABLE repeat (
     rkey integer NOT NULL,
@@ -253,9 +254,9 @@ CREATE TABLE account (
 ALTER TABLE ONLY account
     ADD CONSTRAINT account_pkey PRIMARY KEY (name),
     ADD CONSTRAINT account_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
-    ADD CONSTRAINT account_atype_fkey FOREIGN KEY (atype) REFERENCES account_type(atype);
+    ADD CONSTRAINT account_atype_fkey FOREIGN KEY (atype) REFERENCES account_type(atype) ON UPDATE CASCADE;
 
-INSERT INTO account (name,bversion,dversion,currency,atype,balance,date) VALUES ('Cash', DEFAULT, DEFAULT, 'GBP', 'Debit ', 0, DEFAULT);
+INSERT INTO account (name,bversion,dversion,currency,atype,balance,date) VALUES ('Cash', DEFAULT, DEFAULT, 'GBP', 'Cash  ', 0, DEFAULT);
 
 CREATE SEQUENCE transaction_id_seq
     INCREMENT BY 1
@@ -270,6 +271,7 @@ CREATE TABLE transaction (
     date bigint DEFAULT date_part('epoch'::text,now()) NOT NULL,
     version bigint DEFAULT nextval(('version'::text)::regclass) NOT NULL,
     amount bigint DEFAULT 0 NOT NULL,
+    open boolean DEFAULT false NOT null,
     currency character(3) DEFAULT 'GBP'::bpchar NOT NULL,
     src character varying,
     srcamount bigint,
@@ -277,6 +279,8 @@ CREATE TABLE transaction (
     dst character varying,
     dstamount bigint,
     dstclear boolean DEFAULT false NOT NULL,
+    lnk character varying,
+    lnkclear boolean DEFAULT false NOT NULL,
     description character varying,
     rno character varying,
     repeat integer DEFAULT 0 NOT NULL
@@ -292,6 +296,7 @@ CREATE INDEX transaction_idx_src ON transaction USING btree (src);
 ALTER TABLE ONLY transaction
     ADD CONSTRAINT transaction_src_fkey FOREIGN KEY (src) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
     ADD CONSTRAINT transaction_dst_fkey FOREIGN KEY (dst) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT transaction_lnk_fkey FOREIGN KEY (lnk) REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL,
     ADD CONSTRAINT transaction_currency_fkey FOREIGN KEY (currency) REFERENCES currency(name),
     ADD CONSTRAINT transaction_repeat_fkey FOREIGN KEY (repeat) REFERENCES repeat(rkey);
 
