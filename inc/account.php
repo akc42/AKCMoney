@@ -17,38 +17,19 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-error_reporting(E_ALL);
-
-//Can't start if we haven't setup settings.php
-if (!file_exists(dirname(__FILE__) . '/settings.php')) header('Location: install.php'); //So install it
-
-session_start();
-
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
 
 
 if(!isset($_SESSION['key']) || isset($_REQUEST['refresh'])) {
 // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
-    $result = dbQuery('SELECT * FROM config;');
-    $row = dbFetch($result);
-/* this should be identical to code in install.php - if you change it here, please change it there */
-        if(!isset($row['db_version'])) {
-// Database version is at version 1 (no version number in config table), so we need to update to version 2
-            dbQuery(file_get_contents('update1.sql'));
-            //Update config to have new version
-            $row['db_version'] = 2;
-        }
+    $row = $db->querySingle('SELECT * FROM config;',true);
+/*
 // TO BE ADDED WHEN THERE IS A NEXT UPDATE
-        if($row['db_version'] < 3) { //update to version 3
-            dbQuery(file_get_contents('update2.sql'));
-            //Update config to have new version
-            $row['db_version'] = 3;
+        if($row['db_version'] < 2) { //update to version 2
+            $db->exec(file_get_contents(INC_DIR.'update1.sql'));
 //Now reread config - to pickup any changes made to it during the updgrades
-            dbfree($result);
-            $result = dbQuery('SELECT * FROM config;');
-            $row = dbFetch($result);            
-        } 
+            $row = db->querySingle('SELECT * FROM config;',true);            
+        }
+*/ 
     $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
 	$_SESSION['account'] = $row[$at.'_account'];
 	$_SESSION['demo'] = ($row['demo'] == 't');
@@ -61,7 +42,6 @@ if(!isset($_SESSION['key']) || isset($_REQUEST['refresh'])) {
     $key='';
     for ($i=0; $i<30; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
     $_SESSION['key'] = $key;
-    dbFree($result);
 }
 
 if(isset($_REQUEST['account'])) $_SESSION['account'] = $_REQUEST['account'];
@@ -75,68 +55,70 @@ single account if the transaction is with the outside world).  Multiple currenci
 estimated, but are then corrected when the actual value used in a transaction is known.  This is the second release, based on personal use over
 the past 4 years and a third release is planned to allow multiple accounting as is typically seen in business (cash accounts versus management accounts"/>
 <meta name="keywords" content="
-    <link rel="icon" type="image/png" href="favicon.png" />
-	<link rel="stylesheet" type="text/css" href="money.css"/>
-	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
+    <link rel="shortcut icon" type="image/png" href="/money/favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="/money/money.css"/>
+	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar.css"/>
 	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
-    	<link rel="stylesheet" type="text/css" href="calendar/calendar-ie.css"/>
+		<link rel="stylesheet" type="text/css" href="/money/money-ie.css"/>
+    	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
 	<script type="text/javascript" src="/js/mootools-1.2.4-core-nc.js"></script>
-	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
-	<script type="text/javascript" src="utils.js" ></script>
-	<script type="text/javascript" src="calendar/calendar.js" ></script>
-	<script type="text/javascript" src="money.js" ></script>
+	<script type="text/javascript" src="/money/mootools-1.2.4.4-money-yc.js"></script>
+	<script type="text/javascript" src="/money/utils.js" ></script>
+	<script type="text/javascript" src="/money/calendar/calendar.js" ></script>
+	<script type="text/javascript" src="/money/money.js" ></script>
 <?php
 }
 
 function menu_items() {
 
-?>      <li><a href="index.php" target="_self" title="Account" class="current">Account</a></li>
-        <li><a href="accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
+?>      <li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?q=account" target="_self" title="Account" class="current">Account</a></li>
+        <li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?q=accounts" target="_self" title="Account Manager">Account Manager</a></li>
+        <li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?q=currency" target="_self" title="Currency Manager">Currency Manager</a></li>
 
 <?php
 }
 
 function content() {
-
+    global $db;
 $account = $_SESSION['account'];
 $repeattime = time() + $_SESSION['repeat_interval'];
-
+dbBegin(true);
 ?><h1>Account Data</h1>
 <?php 
 if ($_SESSION['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
 <?php
 } 
-?>      <form id="accountsel" action="index.php" method="post">
+?>      <form id="accountsel" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+            <input type="hidden" name="q" value="account" />
 Account Name:		
             <select id="account" name="account" tabindex="300">
 <?php
-$result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
-while ($row = dbFetch($result) ) {
+$result = $db->query('SELECT name FROM account ORDER BY name ASC;');
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>            <option <?php echo ($account == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
-dbfree($result);
+$result->finalize();
 ?>        </select>
         </form>	
 		<div id="accountinfo">
 			<div id="positive">
 <?php
-$sql = 'SELECT a.name, a.atype, bversion, dversion,balance,date,a.currency, c.description AS cdesc, t.description AS adesc, c.rate ';
-$sql .= 'FROM account AS a JOIN account_type AS t ON a.atype = t.atype JOIN currency AS c ON a.currency = c.name ';
+$sql = 'SELECT a.name, a.code AS acode, bversion, dversion,balance,date,a.currency, c.description AS cdesc, ac.description AS adesc, c.rate ';
+$sql .= 'FROM account AS a JOIN currency AS c ON a.currency = c.name LEFT JOIN account_code AS ac ON a.code = ac.id ';
 $sql .= 'WHERE a.name = '.dbMakeSafe($account).';';
-$result = dbQuery($sql);
-if(!($row = dbFetch($result))) {
+
+if(!($row = $db->querySingle($sql,true))) {
 ?><h1>Problem with Account</h1>
 <p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
 working in parallel with you has deleted it.  You can try to restart the software by
-clicking <a href="index.php?refresh=yes"><strong>here</strong></a>, but if that still fails then you should report the fault to
+clicking <a href="<?php echo $_SERVER['PHP_SELF']; ?>?refresh=yes"><strong>here</strong></a>, but if that still fails then you should report the fault to
 an adminstrator, informing them that you had a problem with account name <strong><?php echo $account; ?></strong> not being in the database</p>
 <?php
+    dbRollBack();
     return;
 }
 $currency = $row['currency'];
@@ -148,9 +130,9 @@ $cumbalance = $balance;
 $clrbalance = $balance;
 $minbalance = $balance;
 $maxbalance = $balance;
-$atype = $row['atype'];
+$acode = $row['acode'];
 $crate = $row['rate'];
-echo $row['adesc'];
+if(!is_null($acode)) echo $row['adesc'];
 ?>			</div> 
 			<div id="currency">
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
@@ -161,7 +143,7 @@ echo $row['adesc'];
 		<div class="buttoncontainer accountbuttons">
 		    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
 		    <input type="hidden" name="account" value="<?php echo $account;?>" />
-		    <input type="hidden" name="issrc" value="<?php echo ($atype == 'Debit ')?'true':'false';?>" />
+		    <input type="hidden" name="issrc" value="true" />
 		    <input type="hidden" name="currency" value="<?php echo $currency; ?>" />
 		    <input id="bversion" type="hidden" name="bversion" value="<?php echo $row['bversion'];?>" />
             <a id="new" class="button" tabindex="310"><span><img src="add.png"/>New Transaction</span></a>
@@ -172,7 +154,7 @@ echo $row['adesc'];
 var thisAccount;
 
 window.addEvent('domready', function() {
-    
+    AKCMoney("<?php echo $_SERVER['PHP_SELF']; ?>");
 // Set some useful values
     Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
     Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
@@ -182,7 +164,7 @@ window.addEvent('domready', function() {
 //It is easier to use Javascript than PHP to create a copy of the account selection list and place it in the transaction editing template
     var accountList = $('account').clone();
     accountList.set('tabindex',"70");
-    var isSrcAccount = <?php echo ($atype == 'Debit ')?'true':'false';?> ;
+    var isSrcAccount = true ;
     var currentSelected = accountList.getElement('option[selected]'); //remove this account
     currentSelected.destroy();
     var blankOption = new Element('option'); // and add a "selected" blank entry at top
@@ -236,7 +218,6 @@ window.addEvent('domready', function() {
 </div>
 
 <?php
-dbFree($result);
 
 /*
     Deal with repeating entries, by copying any that are below the repeat threshold to their
@@ -245,12 +226,11 @@ dbFree($result);
 $repeats_to_do = true;
 while ($repeats_to_do) {
     $repeats_to_do = false; //lets be optimistic and plan to be done
-    dbQuery('BEGIN;');  // Start transaction, because we may have to update repeat entries
-    $sql ='SELECT * FROM transaction WHERE (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).')'; 
+    $sql ='SELECT * FROM xsaction WHERE (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).')'; 
     $sql .= 'AND repeat <> 0 AND date < '.dbMakeSafe($repeattime).';';
-    $result = dbQuery($sql);
-    while ($row = dbFetch($result)) {
-        dbQuery('UPDATE transaction SET version = DEFAULT, repeat = 0 WHERE id = '.dbMakeSafe($row['id']).';');
+    $result = $db->query($sql);
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $db->exec('UPDATE xaction SET version = '.dbPostSafe($row['version']+1).', repeat = 0 WHERE id = '.dbMakeSafe($row['id']).';');
         switch ($row['repeat']) {
             case 1:
                 $row['date'] += 1304800 ;  //add on a week
@@ -273,28 +253,26 @@ while ($repeats_to_do) {
                 $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mday'],$info['mon'],$info['year']+1); //Quarterly
                 break;
            default:
-                dbQuery('ROLLBACK');
+                dbRollBack();
                 die('invalid repeat period in database, transaction id = '.$row['id']);
         }
         if ($row['date'] < $repeattime) $repeats_to_do = true; //still have to do some more after this, since this didn't finish the job
-        dbQuery('INSERT INTO transaction (date, src, dst, version, rno, srcclear, dstclear, srcamount, dstamount, 
+        $db->exec('INSERT INTO xaction (date, src, dst, rno , srcamount, dstamount, 
                  repeat, currency, amount, description)
-                 VALUES ('.dbPostSafe($row['date']).','.dbPostSafe($row['src']).','.dbPostSafe($row['dst']).', DEFAULT,'.dbPostSafe($row['rno']).
-                 ','.dbPostBoolean($row['srcclear']).','.dbPostBoolean($row['dstclear']).','.dbPostSafe($row['srcamount']).
-                 ','.dbPostSafe($row['dstamount']).','.dbPostSafe($row['repeat']).
+                 VALUES ('.dbPostSafe($row['date']).','.dbPostSafe($row['src']).','.dbPostSafe($row['dst']).','.dbPostSafe($row['rno']).
+                 ','.dbPostSafe($row['srcamount']).','.dbPostSafe($row['dstamount']).','.dbPostSafe($row['repeat']).
                  ','.dbPostSafe($row['currency']).','.dbPostSafe($row['amount']).','.dbPostSafe($row['description']).');');
     }
-    dbQuery('COMMIT;');
-    dbFree($result);
+    $result->finalize();
 }
 //Having updated the entire account of repeated transactions, we now read and display everything
 $locatedNow=false;
-$result = dbQuery('SELECT transaction.*, currency.name AS cname, currency.rate AS rate FROM transaction,currency WHERE transaction.currency = currency.name AND (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).') ORDER BY date ASC;');
+$result = $db->query('SELECT transaction.*, currency.name AS cname, currency.rate AS rate FROM transaction,currency WHERE transaction.currency = currency.name AND (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).') ORDER BY date ASC;');
 $r = 0;
 ?>
 <div id="transactions">
 <?php
-while ($row = dbFetch($result)) {
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $r++;
     $cleared = false;
     $dual = false;
@@ -357,7 +335,7 @@ while ($row = dbFetch($result)) {
 </div>
 <?php
 }
-dbFree($result);
+$result->finalize();
 if (!$locatedNow) {
 ?><div id="now" class="hidden"></div>
 <?php
@@ -379,15 +357,15 @@ if (!$locatedNow) {
             <select name="currency" title="<?php echo $cdesc;?>" tabindex="30" >
 <?php
 $sql = 'SELECT name, rate, display, priority, description FROM currency WHERE display = true';
-$result=dbQuery($sql.' ORDER BY priority ASC;');
-while($row = dbFetch($result)) {
+$result=$db->query($sql.' ORDER BY priority ASC;');
+while($row = $result->fetchArray(SQLITE3_ASSOC)) {
     if(!isset($_SESSION['dc_description'])  && $row['name'] == $_SESSION['default_currency']) $_SESSION['dc_description'] = $row['description'];
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
                             echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
-dbFree($result);
+$result->finalize();
 ?>          </select>
         </div>
     </div>
@@ -403,14 +381,14 @@ dbFree($result);
         <div class="repeatsel">
             <select name="repeat" tabindex="60" >
 <?php
-$result=dbQuery('SELECT * FROM repeat;');
-while($row = dbFetch($result)) {
+$result=$db->query('SELECT * FROM repeat;');
+while($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>              <option value="<?php echo $row['rkey']; ?>" <?php
                         if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
                           echo $row['description']; ?></option>
 <?php    
 }
-dbFree($result);
+$result->finalize();
 ?>          </select>
         </div>
         <div class="buttoncontainer">
@@ -435,6 +413,7 @@ dbFree($result);
 </div>
 
 <?php
+dbEnd();
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
 ?>

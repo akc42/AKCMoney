@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@ date_default_timezone_set  ('Europe/London');
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<link rel="stylesheet" type="text/css" href="/site.css"/>
+	<link rel="stylesheet" type="text/css" href="/css/template.css"/>
 <?php
 head_content();
 ?></head>
@@ -56,8 +56,8 @@ menu_items();
 <?php
 content(); 
 ?><div id="footer">
-	<div id="copyright"><?php include(dirname(__FILE__).'/../app/copyright.php');?></div>
-	<div id="version"><?php include(dirname(__FILE__).'/../app/version.php');?></div>
+	<div id="copyright"><?php include('./money/inc/copyright.inc');?></div>
+	<div id="version"><?php include('./money/inc/version.inc');?></div>
 </div>
 
 </body>

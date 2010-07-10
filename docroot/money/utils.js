@@ -65,7 +65,7 @@ Utils = function () {
                 var that = this;
                 if(!this.requests.has(myUrl)) {
                     this.requests.set(myUrl,new Request ({
-                        url:myUrl,
+                        url:that.pageURL,
                         onSuccess: function(html) {
                             var holder = new Element('div').set('html',html);
                             if (holder.getElement('error')) {
@@ -86,7 +86,7 @@ Utils = function () {
                     this.running = true;
                     var calling = myCallback.bind(bind)
                     this.reCall = calling;
-                    this.requests.get(myUrl).post(myParams);
+                    this.requests.get(myUrl).post($merge({q:myURL},myParams));
                 }                       
             }
         })

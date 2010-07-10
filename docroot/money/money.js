@@ -108,7 +108,7 @@ Amount = new Class({
     }
 });
 
-var AKCMoney = function () {
+var AKCMoney = function (pageURL) {
 //    Key variables holding info about the account that the transactions might need to refer to 
     var accountName;
     var currency;
@@ -117,7 +117,7 @@ var AKCMoney = function () {
     var minMaxBalance;
     var clearedBalance;
     var sorting;
-    var request = new Utils.Queue('index.php');
+    var request = new Utils.Queue(pageURL);
 // Key class for transaction
     var Transaction = new Class({
         Implements: [Class.Occlude],
@@ -661,6 +661,6 @@ var AKCMoney = function () {
             recalculate();
         }
     }
-}();
+};
 
 

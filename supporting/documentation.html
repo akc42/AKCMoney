@@ -530,22 +530,43 @@ It is an error to attempt to create a blank account or one with the same name as
 
 When a transaction is dragged down the list it operates in the anagolous manner to being dragged up.  If  it is between two transactions with the same day, then the transaction takes that day too.  If they are of different dates, the new transaction will take the date of one day after the last transaction</pre>
 </div>
-<div title="CopyRight" modifier="AlanChandler" created="200906141434" changecount="1">
-<pre> 	Copyright (c) 2009 Alan Chandler
-    This file is part of AKCMoney.
+<div title="ApplicationStructure" creator="AlanChandler" modifier="AlanChandler" created="201007020912" modified="201007020920" changecount="4">
+<pre>The application needs to be structured so that we can run multiple instances on the same machine, using mainly shared code (and include files) and a minimal amount of code that is instance specific.  This effectively will define access to instance specific data.
 
-    AKCMoney is free software: you can redistribute it and/or modify
+Data and Include Files need to be protected from direct viewing from web clients, so need to reside in a directory which the web server does not permit access to.  The instance code needs to be minimal and will effectively consist of a single php file.  All web access to php scripts (including ajax) will be routed through this single file so that an instance specific session name can be used.  This single decision means that all the remaining php scripts will in fact become include files.  Other //web visible// code will be javascript files, a css templates and images.  
+
+In the //master// version (as in git branch name //master//) of the code, this single file will be located at documentroot as index.php - but there will be no restriction or requirement that this name is used, or it is the Directory Index file, or it is located in the Document Root of the web site where it is deployed.  In the //site// branch two files will be provides, money.php for use in production and moneydemo.php for use as a demo environment.  Git hooks will deploy them to appropriate web sites.
+
+The application will therefore consist of 4 top level directories
+* ''supporting'' containing files that will not be deployed in production but are relevent to the code such as this documentation file
+* ''docroot'' containing the instance file (index.php) and the template (template.php).  It will have subdirectories :
+** ''css'' css files and the related images
+** ''js'' generic (such as mootools library and calender) js files
+** ''money'' the shared code files
+*** ''css'' money specific css and related image files
+*** ''images'' money specific images files
+*** ''js'' money specific javascript files
+* ''inc'' shared php code including version, copyright and the database initialisation files.
+* ''data'' database directory for testing in the code directory (it will contain money.db - an instance specific test database, NOT under git management)
+</pre>
+</div>
+<div title="CopyRight" modifier="AlanChandler" created="200906141434" modified="201007051258" changecount="3">
+<pre> 	Copyright (c) 2009,2010 Alan Chandler
+    This file is part of ''~AKCMoney''.
+
+    ~AKCMoney is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    AKCMoney is distributed in the hope that it will be useful,
+    ~AKCMoney is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with AKCMoney (file COPYING.txt).  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+    along with ~AKCMoney (file COPYING.txt in the //supporting// directory).If not, 
+    see &lt;http://www.gnu.org/licenses/&gt;.
 
 </pre>
 </div>
@@ -582,22 +603,29 @@ There are longer term plans for two key changes:-
 UserDocumentation
 </pre>
 </div>
-<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="201003221929" changecount="16">
+<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="201007071104" changecount="22">
 <pre>!Overview
 
-This project is a copy of my Java based [[AKCmoney|#]] application re-implemented using PHP and Javascript.  My motivation for doing so was to 
+This project is a copy of my Java based [[AKCmoney|http://www.chandlerfamily.org.uk/sites/default/files/files/akcmoney-2007-02-05.tar.gz]] application re-implemented using PHP and Javascript.  My motivation for doing so was to 
 * allow me to retire the separate application server needed for running java applications
 * allow me produce a richer client experience my moving some of the functionaility to the client level using Javascript/Ajax functionaility.
 
-The software will use [[Postgresql|http://www.postgresql.org]] as the main database engine, with the database design copied from the existing application.  There will some changes to this specified in DatabaseDesign
+The software currently uses[[Postgresql|http://www.postgresql.org]] as the main database engine, with the database design copied from the java application.  There have been some changes to this specified in DatabaseDesign.  The next release will be ported to run using [[SQLite|www.sqlite.org]].
 
-In order to keep the look and feel of the site for all pages, but separate from the application itself, the application will, regardless of which function it is executing be routed through a TemplateSystem.  A default template will be used as a example for a demo, but it will be constructed so that the application can be embedded into existing template designs.
+In order to keep the look and feel of the site for all pages, but separate from the application itself, the application will, regardless of which function it is executing be routed through a TemplateSystem.  A default template will be used as a example for a demo, but it will be constructed so that the application can be embedded into existing template designs. If that is desired
 
 UserDocumentation specifies how the pages of the application appear
 
 I have chosen  [[Mootools|http://www.mootools.net]] for the framework used to build this application. See [[Mootools v JQuery]] for the reasons.  The UseOfMootools contains more details
 
-</pre>
+V1.1 of this application has been released.  Documentation (ie this document) is now being updated to reflect a planned v2 of the application.  The changes that are planned are:-
+* restructuring the application (see ApplicationStructure) to provide for multiple instances to run on the same machine with shared code but a separate database.  This entails
+** a small front end that is the instance software which defines access to instance data
+** the database for an instance that should not be visible from any url
+** shared include files that enable the software to run, but should not be visible via a URL
+** shared images and php action software which does need to be visible via a URL
+* moving from Postgres to ''~SQLite''.  Having had experience of using ~SQLite on another project, it is ideally suited to this application which tends to be a single user. ~SQLite is fast (especially if you do not have to worry to  much about parallel working) and its easy to carry the database with you as a single file.  Existing users will be moved from Postgres to ~SQLite as defined in the MigrationSqlite tiddler. 
+* enhancing the functionality to support the requirements of mixing personal and business accounts, and for business accounts allowing the generation of the correct accounting data for year end accounts.</pre>
 </div>
 <div title="EditTransaction" creator="AlanChandler" modifier="AlanChandler" created="201004041239" modified="201004041240" changecount="2">
 <pre>When the transactions is double clicked on it grows to provide a form so that it can be edited.  The key parameters of the transaction are here
@@ -624,6 +652,10 @@ You'll also need to enter your username for signing your edits: &lt;&lt;option t
 
 
 Help with markup http://tiddlywiki.org/wiki/TiddlyWiki_Markup</pre>
+</div>
+<div title="InstallationGuide" creator="AlanChandler" modifier="AlanChandler" created="201007051248" modified="201007051251" changecount="2">
+<pre>!Overview
+AKC Money is designed to be installed on a server where there are multiple installations.  </pre>
 </div>
 <div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="201004040635" changecount="14">
 <pre>The main index page is where the user will perform their main activities.  It comprises three main sections.
@@ -654,11 +686,27 @@ A separate [[money.js]] script will control everything.
 
 This page responsibility will be to collect initial start up parameters from the database (default account) and then to display the core header and footer of the applications, put up the menu (with initial classes to define the selected menu item) and to start up the javascript.</pre>
 </div>
-<div title="MainMenu" modifier="AlanChandler" created="200906111831" modified="200906141434" changecount="4">
-<pre>DesignDocumentation
-UserDocumentation
+<div title="MainMenu" modifier="AlanChandler" created="200906111831" modified="201007020828" changecount="5">
+<pre>UserDocumentation
+InstallationGuide
+DesignDocumentation
+
 
 CopyRight</pre>
+</div>
+<div title="MigrationSqlite" creator="AlanChandler" modifier="AlanChandler" created="201006141638" modified="201007051256" changecount="9">
+<pre>Migration from Postgres to SQLlite will be a manual relatively manual process. In order to perform the migration the following steps are required.
+
+* An initial money configuration should have been initialised, with the money database installed 
+* A migration script is prepared and loaded into the same machine as the database as follows:
+** on the host with the an existing database (assumed to be called //money//) run {{{pg_dump -a --column-inserts money &gt; money.sql}}}
+** ensure that money.sql is transfered to the host (and a user account) with write access to the new money database.
+** execute from the command line {{{./migrate /path/to/money.sql /path/to/money.db}}}  (this script is found in the supporting directory)
+
+NOTE: The migration script will automatically adjust the first few lines of money sql to remove postgres headers and extract the important parameter related to the //&quot;version&quot;// sequence (transaction id allocation will be handled by sqlite itself)
+
+
+</pre>
 </div>
 <div title="Mootools v JQuery" modifier="AlanChandler" created="200906180731" modified="200912091314" changecount="6">
 <pre>!!The Pro for [[Mootools|http://www.mootools.net]]

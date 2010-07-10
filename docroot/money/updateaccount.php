@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -17,16 +17,8 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-error_reporting(E_ALL);
-
-session_start();
-
-if( !isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key should have been '".$_SESSION['key']."'</error>");
-
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
-
-dbQuery("BEGIN;");
+check_key();
+db_begin(true);
 
 $result=dbQuery("SELECT name,dversion FROM account WHERE name =".dbMakeSafe($_POST['original']).";");
 
