@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -21,28 +21,24 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
+$row=$db->querySingle("SELECT id, version, amount, src , srcamount, dst, dstamount FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";",true);
 
-$result=dbQuery("SELECT id, version, amount, src , srcamount, dst, dstamount FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
 information we are going to reload the page</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-
+$version = $row['version'] + 1;
 
 $amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
-$sql = "UPDATE transaction SET version = DEFAULT,";
+$sql = "UPDATE transaction SET version = $version ,";
 if($_POST['account'] == $row['src']) {
     $amount = -$amount;
 }
@@ -58,12 +54,10 @@ if ($row['amount'] != 0) {
         $sql .= ' dstamount = '.(round($scaling*$row['dstamount']));
     }
 }
-dbFree($result);
 
-$sql .= ' amount = '.$amount.' WHERE id = '.dbPostSafe($_POST['tid']).' RETURNING version;';
-$result = dbQuery($sql);
-$row = dbFetch($result);
-$version = $row['version'];
-dbFree($result);
-dbQuery("COMMIT;");
+
+$sql .= ' amount = '.$amount.' WHERE id = '.dbPostSafe($_POST['tid']).';';
+$db->exec($sql);
+$db->exec("COMMIT");
+
 ?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>

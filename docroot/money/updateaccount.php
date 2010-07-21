@@ -17,40 +17,42 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-check_key();
-db_begin(true);
+error_reporting(E_ALL);
 
-$result=dbQuery("SELECT name,dversion FROM account WHERE name =".dbMakeSafe($_POST['original']).";");
+session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if (!($row = dbFetch($result))  || $row['dversion'] != $_POST['dversion']) {
+
+$db->exec("BEGIN IMMEDIATE");
+
+$version=$db->querySingle("SELECT dversion FROM account WHERE name =".dbMakeSafe($_POST['original']).";");
+if ( $version != $_POST['dversion']) {
     //account with this name already exists so we cannot create one
 ?><error>It appears someone else is editing accounts in parallel.  We need to reload the page to ensure you are working with consistent data</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
+$version++;
+
+
 if($_POST['original'] != $_POST['account']) {
     //planning on changing the name - just check the new name has not been created in the meantime
-    $result=dbQuery("SELECT name FROM account WHERE name =".dbMakeSafe($_POST['account']).";");
-    if($row = dbFetch($result)) {
+    if($db->querySingle("SELECT COUNT(*) FROM account WHERE name =".dbMakeSafe($_POST['account']).";") > 0) {
     //its there - this must mean someone just put it there
-?><error>It appears someone else is editing accounts in parallel.  We need to reload the page to ensure you are working with consistent data</error>
+?><error>You have attempted to rename the account to one that already exists.  We will reload the page in case someone else created it in parallel with you</error>
 <?php
-        dbFree($result);
-        dbQuery("ROLLBACK;");
+        $db->exec("ROLLBACK");
         exit;
     }
-    dbFree($result);
-}
-$result = dbQuery("UPDATE account SET name = ".dbPostSafe($_POST['account']).
-        ", dversion = DEFAULT, currency = ".dbPostSafe($_POST['currency']).", atype = ".dbPostSafe($_POST['type']).
-        " WHERE name = ".dbPostSafe($_POST['original'])." RETURNING name, dversion ;");
-$row = dbFetch($result);
-?><account name="<?php echo $row['name']; ?>" version="<?php echo $row['dversion']; ?>" ></account> 
-<?php
-dbFree($result);
-dbQuery("COMMIT;");
 
+}
+$db->exec("UPDATE account SET name = ".dbPostSafe($_POST['account']).
+        ", dversion = $version, currency = ".dbPostSafe($_POST['currency']).", domain = ".dbPostSafe($_POST['domain']).
+        " WHERE name = ".dbPostSafe($_POST['original']).";");
+
+?><account name="<?php echo $_POST['account']; ?>" version="<?php echo $version; ?>" ></account> 
+<?php
+
+$db->exec("COMMIT");
 ?>

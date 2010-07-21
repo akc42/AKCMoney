@@ -108,16 +108,15 @@ Amount = new Class({
     }
 });
 
-var AKCMoney = function (pageURL) {
+var AKCMoney = function () {
 //    Key variables holding info about the account that the transactions might need to refer to 
     var accountName;
     var currency;
-    var isSrc;
     var openingBalance;
     var minMaxBalance;
     var clearedBalance;
     var sorting;
-    var request = new Utils.Queue(pageURL);
+    var request = new Utils.Queue();
 // Key class for transaction
     var Transaction = new Class({
         Implements: [Class.Occlude],
@@ -530,20 +529,15 @@ var AKCMoney = function (pageURL) {
             var xaction = el.retrieve('transaction');
             runningTotal.add(xaction.getAmount());
             xaction.setCumulative(runningTotal);
-            if(isSrc) {
-                if(runningTotal.getValue() < minMaxBalance.getValue()) minMaxBalance.setValue(runningTotal);
-            } else {
-                if(runningTotal.getValue() > minMaxBalance.getValue()) minMaxBalance.setValue(runningTotal);
-            }
+            if(runningTotal.getValue() < minMaxBalance.getValue()) minMaxBalance.setValue(runningTotal);
             if (xaction.isCleared()) {
                 clearedBalance.add(xaction.getAmount());
             }           
         },this);
     };
     return {
-        Account: function(aN, c, isS) {
+        Account: function(aN, c) {
             currency = c;
-            isSrc = isS;
             accountName = aN;
             $('transactions').getElements('.xaction').each(function(transaction) {
                 new Transaction(transaction); //Class attaches to the transaction as it is occluded
@@ -661,6 +655,6 @@ var AKCMoney = function (pageURL) {
             recalculate();
         }
     }
-};
+}();
 
 

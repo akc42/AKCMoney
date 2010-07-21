@@ -22,57 +22,25 @@
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
-	if (!defined('MONEY'))
-		die('Hacking attempt...');
+if( !isset($_REQUEST['key']) || $_REQUEST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key</error>");
 
-    require_once('settings.php');
-    
-	pg_connect("host=$dbserver dbname=$dbname user=$dbuser password=$dbpassword") 
-			or die('Could not connect to database: ' . pg_last_error());
-	function dbQuery($sql) {
-		$result = pg_query($sql);
-		if (!$result) {
-			echo '<tt>';
-			echo "<br/><br/>\n";
-			print_r(debug_backtrace());			
-			echo "<br/><br/>\n";
-			echo $sql;
-			echo "<br/><br/>\n\n";
-			echo pg_last_error();
-			echo "<br/><br/>\n\n";
-			echo '</tt>';
-			die('<p>Please inform <i>alan@chandlerfamily.org.uk</i> that a database query failed and include the above text.<br/><br/>Thank You</p>');
-		}
-		return $result;
+function dbMakeSafe($value) {
+	if (!get_magic_quotes_gpc()) {
+		$value=pg_escape_string($value);
 	}
-	function dbMakeSafe($value) {
-		if (!get_magic_quotes_gpc()) {
-			$value=pg_escape_string($value);
-		}
-		return "'".$value."'" ;
-	}
-	function dbPostSafe($text) {
-	  if (((string)$text) == '') return 'NULL';
-	  return dbMakeSafe(htmlentities($text,ENT_QUOTES,'UTF-8',false));
-	}
-	function dbPostBoolean($text) {
-	  if ($text == '') return 'NULL';
-	  return ($text == 't')?'TRUE':'FALSE';
-	}
-	function dbNumRows($result) {
-		return pg_num_rows($result);
-	}
-	function dbFetch($result) {
-		return pg_fetch_assoc($result);
-	}
-	function dbFree($result){
-		pg_free_result($result);
-	}
-	function dbRestartQuery($result) {
-		pg_result_seek($result,0);
-	}
-	function fmtAmount($value) {
-        return substr_replace(sprintf('%03d',$value),'.',-2,0);
-    }
+	return "'".$value."'" ;
+}
+function dbPostSafe($text) {
+  if (((string)$text) == '') return 'NULL';
+  return dbMakeSafe(htmlentities($text,ENT_QUOTES,'UTF-8',false));
+}
+function fmtAmount($value) {
+    return substr_replace(sprintf('%03d',$value),'.',-2,0);
+}
+
+$db = new SQLite3($_SESSION['database']);
+
+//$db->setBusyTimeout(25000);  //set 25 second timeout on obtaining a lock
+$db->exec("PRAGMA foreign_keys = ON");
 
 ?>

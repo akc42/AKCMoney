@@ -20,37 +20,31 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
 
-dbQuery("BEGIN;");
-$result=dbQuery("SELECT id, version,src,dst FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-dbFree($result);
-if ($row['version'] != $_POST['version'] ) {
+$db->exec("BEGIN IMMEDIATE");
+
+$row=$db->querySingle("SELECT id, version,src,dst FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";",true);
+if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>Someone else has updated this transaction in parallel with you.  In order to ensure you are working with the latest version we
 are going to update the page</error>
 <?php
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-$sql = "UPDATE transaction SET version = DEFAULT, ";
+$version = $row['version'] +1;
+
+$sql = "UPDATE xaction SET version = $version, ";
 if($_POST['account'] == $row['src']) {
     $sql .= "srcclear = ";
 } else {
     $sql .= "dstclear = ";
 }
-$sql .= ($_POST['clear'] == 'true')? 'TRUE' : 'FALSE' ;
-$sql .= ' WHERE id = '.dbPostSafe($_POST['tid']).' RETURNING version;';
-$result = dbQuery($sql);
-
-$row = dbFetch($result);
-$version = $row['version'];
-dbFree($result);
-
-dbQuery("COMMIT;");
+$sql .= ($_POST['clear'] == 'true')? '1' : '0' ;
+$sql .= ' WHERE id = '.dbPostSafe($_POST['tid']).';';
+$db->exec($sql);
+$db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" clear="<?php echo $_POST['clear']; ?>" version="<?php echo $version ?>" ></xaction>
 
 

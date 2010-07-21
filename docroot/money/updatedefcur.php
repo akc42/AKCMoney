@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009, 2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,42 +20,38 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
-$result=dbQuery("SELECT version, default_currency FROM config;");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+$version=$db->querySingle("SELECT version, default_currency FROM config;");
+if ( $row['version'] != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We will reload the page</error>
 <?php
     $_SESSION['default_currency'] = $row['default_currency'];
     $_SESSION['config_version'] = $row['version'];
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
+$version = $row['version'] + 1;
+$
+
 $_SESSION['default_currency'] = $_POST['currency'];
-dbQuery('UPDATE config SET version = DEFAULT, default_currency = '.dbPostSafe($_POST['currency']).';');
-$result = dbQuery('SELECT config.version, config.default_currency, currency.name , currency.description, currency.rate, currency.priority 
-                    FROM config, currency WHERE config.default_currency = currency.name;');
-$row = dbFetch($result);
-$_SESSION['config_version'] = $row['version'];
-$_SESSION['default_currency'] = $row['default_currency'];
-$_SESSION['dc_description'] = $row['description'];
+$_SESSION['config_version'] = $version;
+
+$db->exec("UPDATE config SET version = $version, default_currency = ".dbPostSafe($_POST['currency']).';');
+$row = $db->querySingle('SELECT * FROM currency WHERE name = '.dbMakeSafe($_POST['currency'])),true);
+
 $oldrate = $row['rate'];
 $oldpriority = $row['priority'];
-dbFree($result);
 
-dbQuery("UPDATE currency SET version = DEFAULT, rate = CASE WHEN name = '".$_SESSION['default_currency']."' THEN 1.0 ELSE rate / "
+// We now go through all currencies adjusting relative priorities so that new default currency is always first
+$db->exec("UPDATE currency SET version = (version + 1), rate = CASE WHEN name = '".$_SESSION['default_currency']."' THEN 1.0 ELSE rate / "
         .$oldrate." END, priority = CASE WHEN name = '".$_SESSION['default_currency']."'"
-        .' THEN 0 WHEN display = false THEN NULL WHEN priority < '.$oldpriority.' THEN priority + 1 ELSE priority END ;');
+        .' THEN 0 WHEN display = 0 THEN NULL WHEN priority < '.$oldpriority.' THEN priority + 1 ELSE priority END ;');
 
-dbQuery('COMMIT;');
+
 ?><selector>
     <div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
     <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
@@ -63,9 +59,10 @@ dbQuery('COMMIT;');
     <div class="currency">
         <select id="currencyselector" name="currency">
 <?php            
-$result=dbQuery('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
+
+$result = $db->query('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
 $currencies = Array();
-while($row = dbFetch($result)) {
+while($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate']);
 ?>                <option value="<?php echo $row['name']; ?>" <?php
                     if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
@@ -77,8 +74,8 @@ $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate
     </div>
 </selector>
 <?php
-dbFree($result);
-dbQuery("COMMIT;");
+$result->finalize();
+$db->exec("COMMIT");
 $r=0;
 foreach($currencies as $name => $values)  {
     $r++;

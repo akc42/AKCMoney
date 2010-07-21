@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,24 +20,20 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
-$result=dbQuery('SELECT version FROM currency WHERE name = '.dbPostSafe($_POST['currency']).';');
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+$version=$db->querySingle('SELECT version FROM currency WHERE name = '.dbPostSafe($_POST['currency']).';');
+if ($version != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We need to reload the page in order to pickup
     their changes</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
+$version++;
 
 if(($_POST['newpriority']+0) > ($_POST['oldpriority']+0)) {
     $sql1 = 'priority - 1';
@@ -48,15 +44,15 @@ if(($_POST['newpriority']+0) > ($_POST['oldpriority']+0)) {
 }
 
 
-dbQuery('UPDATE currency SET version = DEFAULT, priority = CASE WHEN name = '.dbPostSafe($_POST['currency']).' THEN '
-            .dbPostSafe($_POST['newpriority']).' ELSE '.$sql1.' END WHERE display = true AND '.$sql2.' ;');
+$db->exec("UPDATE currency SET version = $version, priority = CASE WHEN name = ".dbPostSafe($_POST['currency']).' THEN '
+            .dbPostSafe($_POST['newpriority'])." ELSE $sql1 END WHERE display = 1 AND $sql2 ;");
 
 ?><currencies>
 <?php       
-$result=dbQuery('SELECT * FROM currency WHERE display = true AND priority > 0 ORDER BY priority ASC;');
+$result = $db->query('SELECT * FROM currency WHERE display = true AND priority > 0 ORDER BY priority ASC;');
 $r=0;
 $options = Array();
-while($row = dbFetch($result)) {
+while($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $r++;
     $options[$row['name']] = $row['description'];
 ?><div class="xcurrency<?php if($r%2 != 0) echo ' even';?>">
@@ -69,8 +65,8 @@ while($row = dbFetch($result)) {
 </div>
 <?php
 }
-dbFree($result);
-dbQuery("COMMIT;");
+$result->finalize();
+$db->exec("COMMIT");
 ?></currencies>
 <selectoptions><select>
 <option value="<?php echo $_SESSION['default_currency']; ?>" title="<?php echo $_SESSION['dc_description']; ?>" selected="selected"><?php

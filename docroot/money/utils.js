@@ -49,12 +49,11 @@ Utils = function () {
             }    
         },
         Queue: new Class({
-            initialize: function(pageUrl) {
+            initialize: function() {
                 this.queue = new Chain();
                 this.running = false;
                 this.requests = new Hash();
                 this.reCall = null;
-                this.pageUrl = pageUrl;
             },
             
             /* this is the main worker.  It appears that if myParams is configured as
@@ -65,7 +64,7 @@ Utils = function () {
                 var that = this;
                 if(!this.requests.has(myUrl)) {
                     this.requests.set(myUrl,new Request ({
-                        url:that.pageURL,
+                        url:myUrl,
                         onSuccess: function(html) {
                             var holder = new Element('div').set('html',html);
                             if (holder.getElement('error')) {
@@ -86,7 +85,7 @@ Utils = function () {
                     this.running = true;
                     var calling = myCallback.bind(bind)
                     this.reCall = calling;
-                    this.requests.get(myUrl).post($merge({q:myURL},myParams));
+                    this.requests.get(myUrl).post(myParams);
                 }                       
             }
         })

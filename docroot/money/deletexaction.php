@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -21,25 +21,20 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
+$version=$db->querySingle("SELECT version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']));
 
-$result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+if ($version != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  We have not deleted it, and are going to
 reload the page so that we can ensure you see consistent data before taking this major step.</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
-dbQuery("DELETE FROM transaction WHERE id = ".dbMakeSafe($_POST['tid']).";");
-dbQuery("COMMIT;");
+$db->exec("DELETE FROM transaction WHERE id = ".dbMakeSafe($_POST['tid']).";");
+$db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" ></xaction>

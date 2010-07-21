@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,28 +20,23 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if( !isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key should have been '".$_SESSION['key']."'</error>");
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
-
-$result=dbQuery("SELECT name,dversion FROM account WHERE name =".dbMakeSafe($_POST['account']).";");
-
-if (!($row = dbFetch($result))  || $row['dversion'] != $_POST['dversion']) {
+$version=$db->querySingle("SELECT dversion FROM account WHERE name =".dbMakeSafe($_POST['account']));
+if ($version != $_POST['dversion']) {
     //account with this name already exists so we cannot create one
 ?><error>It appears someone else is editing accounts in parallel.  We need to reload the page to ensure you are working with consistent data</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
 
-dbQuery("DELETE FROM account WHERE name = ".dbPostSafe($_POST['account'])." ;");
+$db->exec("DELETE FROM account WHERE name = ".dbPostSafe($_POST['account'])." ;");
 
-dbQuery("COMMIT;");
+$db->exec("COMMIT");
+
 ?><status>OK</status>
 

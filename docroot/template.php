@@ -55,9 +55,11 @@ menu_items();
 <div id="main">
 <?php
 content(); 
-?><div id="footer">
-	<div id="copyright"><?php include('./money/inc/copyright.inc');?></div>
-	<div id="version"><?php include('./money/inc/version.inc');?></div>
+?>
+</div>
+<div id="footer">
+	<div id="copyright"><?php include($_SESSION['inc_dir'].'copyright.inc');?></div>
+	<div id="version"><?php include($_SESSION['inc_dir'].'version.inc');?></div>
 </div>
 
 </body>

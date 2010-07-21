@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,40 +20,34 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
-$result=dbQuery("SELECT transaction.version, transaction.currency, ct.rate AS trate, ".
-    "transaction.src, srcacc.currency AS srccurrency, cs.rate AS srate, ".
-    "transaction.dst, dstacc.currency AS dstcurrency, cd.rate AS drate FROM transaction ".
-    "LEFT JOIN currency AS ct ON transaction.currency = ct.name ".
-    "LEFT JOIN account AS srcacc ON transaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
-    "LEFT JOIN account AS dstacc ON transaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
-    "WHERE transaction.id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
-?><error>Someone else has changed this transaction in parallel with you.  In order to ensure consistent data, we have not updated the transaction
-with your updates, and we are about to reload the page.  Sorry it has been necessary to do this.</error>
+$row=$db->querySingle("SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency, ".
+     "cd.rate AS drate, srcacode.description AS sacdesc, dstacode.description AS dacdesc FROM xaction ".
+     "LEFT JOIN currency AS ct ON xaction.currency = ct.name ".
+    "LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
+    "LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
+    "LEFT JOIN account_code AS srcacode ON xaction.srccode = srcacode.id ".
+    "LEFT JOIN account_code AS dstacode ON xaction.dstcode = dstacode.id ".
+    "WHERE xaction.id=".dbMakeSafe($_POST['tid']).";",true);
+if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
+?><error>Someone else is editing this transaction in parallel to you.  In order to ensure you are working with consistent
+data we will reload the page</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
+$version = $row['version'] + 1;
 
-$cleared = (isset($_POST['cleared']))?"TRUE":"FALSE";
+$cleared = (isset($_POST['cleared']))?1:0;
 
 $accounttype = $_POST['accounttype'];
 $amount = round($_POST['amount']*100);
-if($amount < 0 ) { //if the amount is negative, we are going to switch over
-   $amount = -$amount;
-   $accounttype = ($accounttype == "src")?"dst":"src";
-} 
 
-$sql = "UPDATE transaction SET version = DEFAULT, date = ".dbPostSafe($_POST['xdate']);
+$sql = "UPDATE xaction SET version = $version, date = ".dbPostSafe($_POST['xdate']);
 $sql .= ", amount = ".$amount.", currency = ".dbPostSafe($_POST['currency']) ;
 $sql .= ", rno = ".dbPostSafe($_POST['rno']).", description = ".dbPostSafe($_POST['desc']);
 
@@ -76,7 +70,7 @@ if($accounttype == "src") {
     if($_POST['repeat'] == "0") {
         $sql .= ", srcclear = ".$cleared.", repeat = 0";
     } else {
-        $sql .= ",srcclear = false, repeat = ".dbPostSafe($_POST['repeat']);
+        $sql .= ",srcclear = 0, repeat = ".dbPostSafe($_POST['repeat']);
     }
     if($_POST['account'] != '') {
         $sql .= ", dst = ".dbPostSafe($_POST['account']);
@@ -90,10 +84,8 @@ if($accounttype == "src") {
                 $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
-                $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-                $row2 = dbFetch($result2);
-                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
-                dbFree($result2);
+                $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$rate));
             }
         } elseif (isset($row['src']) && $_POST['account'] == $row['src']) {
             $arate = $row['srate'];
@@ -105,18 +97,14 @@ if($accounttype == "src") {
                 $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
-                $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-                $row2 = dbFetch($result2);
-                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
-                dbFree($result2);
+                $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$rate));
             }
         } else {
-            $result2 = dbQuery("SELECT account.name,account.currency,currency.rate FROM account, currency".
-                " WHERE currency.name = account.currency AND account.name = ".dbMakeSafe($_POST['account'])." ;");
-            $row2 = dbFetch($result2);
+            $row2 = $db->querySingle("SELECT account.name,account.currency,currency.rate FROM account, currency".
+                " WHERE currency.name = account.currency AND account.name = ".dbMakeSafe($_POST['account'])." ;",true);
             $arate = $row2['rate'];
             $bcurrency = $row2['currency'];
-            dbFree($result2);
             if ($_POST['currency'] == $bcurrency) {
                 $sql .= ", dstamount = NULL";
             } elseif($_POST['currency'] == $row['srccurrency']) {
@@ -127,14 +115,12 @@ if($accounttype == "src") {
                 $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
-                $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-                $row2 = dbFetch($result2);
-                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
-                dbFree($result2);
+                $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
+                $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$rate));
             }
        }      
     } else {
-        $sql .= ", dst = NULL, dstclear = false, dstamount = NULL";
+        $sql .= ", dst = NULL, dstclear = 0, dstamount = NULL";
     }
     
 } else {
@@ -156,7 +142,7 @@ if($accounttype == "src") {
     if($_POST['repeat'] == "0") {
         $sql .= ", dstclear = ".$cleared.", repeat = 0";
     } else {
-        $sql .= ",dstclear = false, repeat = ".dbPostSafe($_POST['repeat']);
+        $sql .= ",dstclear = 0, repeat = ".dbPostSafe($_POST['repeat']);
     }
     if($_POST['account'] != '') {
         $sql .= ", src = ".dbPostSafe($_POST['account']);
@@ -170,10 +156,8 @@ if($accounttype == "src") {
                 $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
-                $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-                $row2 = dbFetch($result2);
-                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
-                dbFree($result2);
+                $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$rate));
             }
         } elseif (isset($row['src']) && $_POST['account'] == $row['dst']) {
             $arate = $row['drate'];
@@ -185,18 +169,14 @@ if($accounttype == "src") {
                 $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
-                $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-                $row2 = dbFetch($result2);
-                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
-                dbFree($result2);
+                $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$rate));
             }
         } else {
-            $result2 = dbQuery("SELECT account.name,account.currency,currency.rate FROM account, currency".
-                " WHERE currency.name = account.currency AND account.name = ".dbMakeSafe($_POST['account'])." ;");
-            $row2 = dbFetch($result2);
+            $row2 = $db->querySingle("SELECT account.name,account.currency,currency.rate FROM account, currency".
+                " WHERE currency.name = account.currency AND account.name = ".dbMakeSafe($_POST['account'])." ;",true);
             $arate = $row2['rate'];
             $bcurrency = $row2['currency'];
-            dbFree($result2);
             if ($_POST['currency'] == $bcurrency) {
                 $sql .= ", srcamount = NULL";
             } elseif($_POST['currency'] == $row['srccurrency']) {
@@ -207,55 +187,45 @@ if($accounttype == "src") {
                 $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
             } else {
                 // not any of the currencies we know about - we will have to go read it to find the rate
-                $result2 = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-                $row2 = dbFetch($result2);
-                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row2['rate']));
-                dbFree($result2);
+                $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
+                $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$rate));
             }
        }      
     } else {
-        $sql .= ", src = NULL, srcclear = false, srcamount = NULL";
+        $sql .= ", src = NULL, srcclear = 0, srcamount = NULL";
     }
 }
-$sql .= " WHERE id = ".dbMakeSafe($_POST['tid'])." RETURNING version, date, repeat,";
-if($accounttype == "src") {
-    $sql .= " srcclear AS clear;";
-} else {
-    $sql .= " dstclear AS clear;";
-}
-dbFree($result);    
-$result = dbQuery($sql);
-$row = dbFetch($result);
-$version = $row['version'];
-$date = $row['date'];
-$repeat = $row['repeat'];
-$clear = $row['clear'];
-dbFree($result);
+$sql .= " WHERE id = ".dbMakeSafe($_POST['tid']).";";
+
+$db->exec($sql);
+
+
+$date = $_POST['xdate'];
+$repeat = $_POST['repeat'];
+$clear = ($repeat == '0')? (($cleared == 0)?'f':'t'):'f';
+
 
 if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we requested to set the currencies and they are not the same
     if($amount != 0 && $aamount != 0) { //can only do this if neither value is 0
         //we asked to set the rate from the current transaction.
         $ratio = abs($aamount/$amount);
         
-        $result = dbQuery("SELECT name, rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency'])." ;");
-        $row = dbFetch($result);
-        $brate = $row['rate'];
-        dbFree($result);
+        $brate = $db->query("SELECT  rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
        
         if($_POST['currency'] == $_SESSION['default_currency']) {
             //we need to change the rate of the account currency
-            dbQuery("UPDATE currency SET version = DEFAULT, rate = ".dbPostSafe($ratio).
+            $db->exec("UPDATE currency SET version = version + 1, rate = ".dbPostSafe($ratio).
                 " WHERE name = ".dbMakeSafe($acurrency)." ;"); 
         } else {
             //we are changing the rate of the transaction currency
-            dbQuery("UPDATE currency SET version = DEFAULT, rate = ".dbPostSafe($brate/$ratio).
+            $db->exec("UPDATE currency SET version = version + 1, rate = ".dbPostSafe($brate/$ratio).
                 " WHERE name = ".dbMakeSafe($_POST['currency'])." ;"); 
         }
     }
 }
 
 
-dbQuery("COMMIT;");
+$db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" 
     version="<?php echo $version ?>" 
     date="<?php echo $date; ?>" repeat="<?php echo $repeat; ?>" 

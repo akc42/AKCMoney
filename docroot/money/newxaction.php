@@ -20,32 +20,12 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if( !isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key should have been '".$_SESSION['key']."'</error>");
+$db->exec("BEGIN EXCLUSIVE");
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
-
-dbQuery("BEGIN;");
-
-$result=dbQuery("SELECT name FROM account WHERE name =".dbMakeSafe($_POST['account']).";");
-
-if (!($row = dbFetch($result)) ) {
-    dbFree($result);
-    dbQuery("ROLLBACK;");
-/* Refresh the page and session.  If this account is no longer there (as is suspected) this will then cause an error
-    message to be displayed - but allowing the user to restart without the account selected */
-    header("Location: index.php?account=".$_POST['account']."&refresh=1"); 
-    exit;
-}
-dbFree($result);
-
-$result = dbQuery("INSERT INTO transaction (id,version,".(($_POST['issrc'] == "true")?"src":"dst").
-            ",currency) VALUES(DEFAULT,DEFAULT,".dbPostSafe($_POST['account']).
-            ",".dbPostSafe($_POST['currency']).") RETURNING * ;");
-
-$row = dbFetch($result);
-
+$db->exec("INSERT INTO xaction (src,currency) VALUES (".dbPostSafe($_POST['account']).",".dbPostSafe($_POST['currency']).");");
+$row = $db->querySingle("SELECT * FROM xaction WHERE id = ".$db->lastInsertRowID(),true);
 ?><transaction>
 <div id="<?php echo 't'.$row['id']; ?>" class="xaction arow">
     <div class="wrapper">    
@@ -61,9 +41,10 @@ $row = dbFetch($result);
         <div class="description clickable"><?php echo $row['description'];?></div>
         <div class="amount aamount clickable"><?php echo fmtAmount(0);?></div>
         <div class="amount cumulative"><?php echo fmtAmount(0);?></div>
+        <div class="code"></div>
     </div>
 </div>
 <?php
-dbFree($result);
-dbQuery("COMMIT;");
+
+$db->exec("COMMIT");
 ?></transaction>

@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,34 +20,29 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
+$db->exec("BEGIN IMMEDIATE");
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
-
-dbQuery("BEGIN;");
-$result = dbQuery("SELECT name, bversion, balance, currency FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
-if (!($row = dbFetch($result)) || $row['bversion'] != $_POST['bversion'] || $row['currency'] != $_POST['currency'] ) {
+$row = $db->querySingle("SELECT name, bversion, balance, currency FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;",true);
+if (!isset($row['bversion']) || $row['bversion'] != $_POST['bversion'] || $row['currency'] != $_POST['currency'] ) {
 ?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
 ensure you have the correct version</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-
+$version = $row['bversion'] + 1;
 $balance = $row['balance'];
 $currency = $row['currency'];
 $oldbalance = $balance;
-dbFree($result);
 
-$result=dbQuery("SELECT * FROM transaction WHERE ( src = ".dbMakeSafe($_POST['account']).
-                " AND srcclear IS TRUE ) OR dst = ".dbMakeSafe($_POST['account'])." AND dstclear IS TRUE ;");
 ?><xactions>
 <?php
-while($row = dbFetch($result)) {
+$result = $db->query("SELECT * FROM xaction WHERE ( src = ".dbMakeSafe($_POST['account']).
+                " AND srcclear = 1 ) OR (dst = ".dbMakeSafe($_POST['account'])." AND dstclear = 1) ;");
+while($row = $result->fetchArray(SQLITE3_ASSOC)) {
     if($row['src'] == $_POST['account']) {
         if($row['currency'] == $_POST['currency']) {
             $balance -= $row['amount'];
@@ -55,9 +50,9 @@ while($row = dbFetch($result)) {
             $balance -= $row['srcamount'];
         }
         if (is_null($row['dst'])) {
-            dbQuery("DELETE FROM transaction WHERE id = ".$row['id']." ;");
+            $db->exec("DELETE FROM xaction WHERE id = ".$row['id']." ;");
         } else {
-            dbQuery("UPDATE transaction SET version = DEFAULT, src = NULL, srcamount = NULL, srcclear = false WHERE id = ".$row['id']." ;");
+            $db->exec("UPDATE xaction SET version = version + 1, src = NULL, srcamount = NULL, srcclear = 0 WHERE id = ".$row['id']." ;");
         }
     } else {
         if($row['currency'] == $_POST['currency']) {
@@ -66,20 +61,19 @@ while($row = dbFetch($result)) {
             $balance += $row['dstamount'];
         }
         if (is_null($row['src'])) {
-            dbQuery("DELETE FROM transaction WHERE id = ".$row['id']." ;");
+            $db->exec("DELETE FROM xaction WHERE id = ".$row['id']." ;");
         } else {
-            dbQuery("UPDATE transaction SET version = DEFAULT, dst = NULL, dstamount = NULL, dstclear = false WHERE id = ".$row['id']." ;");
+            $db->exec("UPDATE xaction SET version = version + 1, dst = NULL, dstamount = NULL, dstclear = 0 WHERE id = ".$row['id']." ;");
         }
     }
 ?><xaction tid="<?php echo $row['id']; ?>"></xaction>
 <?php
 }
-dbFree($result);
-$result = dbQuery("UPDATE account SET bversion = DEFAULT, balance = ".$balance.
-    " WHERE name = ".dbMakeSafe($_POST['account'])." RETURNING bversion;");
-$row = dbFetch($result);
-?></xactions><balance version="<?php echo $row['bversion']; ?>"><?php echo fmtAmount($balance) ; ?></balance>
+$result->finalize();
+
+$db->exec("UPDATE account SET bversion = $version, balance = ".$balance.
+    " WHERE name = ".dbMakeSafe($_POST['account']).";");
+?></xactions><balance version="<?php echo $version; ?>"><?php echo fmtAmount($balance) ; ?></balance>
 <?php
-dbFree($result);
-dbQuery("COMMIT ;");
+$db->exec("COMMIT");
 ?>

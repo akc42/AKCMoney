@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -19,34 +19,29 @@
 */
 error_reporting(E_ALL);
 
-session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
-$result=dbQuery('SELECT version FROM currency WHERE name = '.dbPostSafe($_POST['currency']).';');
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
-?><error>Someone else has edited the configuration in parallel with you.  We need to reload the page in order to pickup
-    their changes</error>
+
+$version=$db->querySingle('SELECT version FROM currency WHERE name = '.dbPostSafe($_POST['currency']).';');
+
+if ( $version != $_POST['version'] ) {
+?><error>It appears that someone else has been editing the configuration in parallel to you.  In order to ensure you have consistent
+information we are going to reload the page</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
+$version = $row['version'] + 1;
 
-dbQuery('UPDATE currency SET version = DEFAULT, priority = '.dbPostSafe($_POST['priority']).', display = '
-    .$_POST['show'].' WHERE name = '.dbPostSafe($_POST['currency']).';');
-$result=dbQuery("SELECT currval('version') AS version;");
-$row = dbFetch($result);
-$version = $row['version'];
-dbFree($result);
 
-dbQuery("COMMIT;");
+$db->exec("UPDATE currency SET version = $version, priority = ".dbPostSafe($_POST['priority']).', display = '
+    .($_POST['show'] == 'true')?'1':'0'.' WHERE name = '.dbPostSafe($_POST['currency']).';');
+
+$db->exec("COMMIT");
+
 ?><show currency="<?php echo $_POST['currency']; ?>"
     status="<?php echo ($_POST['show'] == "true")?'show':'hide'; ?>" <?php 
         if (isset($_POST['priority'])) echo 'priority="'.$_POST['priority'].'"'; ?> version="<?php echo $version; ?>"></show>

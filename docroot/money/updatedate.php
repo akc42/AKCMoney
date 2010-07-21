@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,33 +20,26 @@
 
 error_reporting(E_ALL);
 
+
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
 
-$result=dbQuery("SELECT id, version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+$version=$db->querySingle("SELECT version FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";");
+
+if ( $version != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
 information we are going to reload the page</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
+$version = $row['version'] + 1;
 
-$result=dbQuery("UPDATE transaction SET version = DEFAULT, date = ".dbPostSafe($_POST['date']).
-    " WHERE id = ".dbPostSafe($_POST['tid'])."RETURNING version;");
+$db->exec("UPDATE transaction SET version = $version , date = ".dbPostSafe($_POST['date'])." WHERE id = ".dbPostSafe($_POST['tid']).";");
 
-
-$row = dbFetch($result);
-$version = $row['version'];
-dbFree($result);
-dbQuery("COMMIT;");
+$db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>

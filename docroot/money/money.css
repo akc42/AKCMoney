@@ -50,8 +50,9 @@ div#positive {
 div#currency {
 	width:300px;
     }
-div#currency span.title {
+div#positive span.title, div#currency span.title {
     font-weight:bolder;
+    font-style:normal;
     }
 .xaction, .xaccount {
     padding:2px 0;

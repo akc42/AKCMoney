@@ -19,32 +19,29 @@
 */
 error_reporting(E_ALL);
 
+error_reporting(E_ALL);
+
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
+$db->exec("BEGIN IMMEDIATE");
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$version = $db->querySingle("SELECT bversion FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
 
-dbQuery("BEGIN;");
-$result = dbQuery("SELECT name, bversion FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
-if (!($row = dbFetch($result)) || $row['bversion'] != $_POST['bversion'] ) {
+if ( $version != $_POST['bversion'] ) {
 ?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
 ensure you have the correct version</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
 
-dbFree($result);
+$version++;
 $balance = round(100*$_POST['balance']);
-$result = dbQuery("UPDATE account SET bversion = DEFAULT, balance = ".$balance.
-    " WHERE name = ".dbMakeSafe($_POST['account'])." RETURNING bversion;");
-$row = dbFetch($result);
-?><balance version="<?php echo $row['bversion']; ?>"><?php echo fmtAmount($balance) ; ?></balance>
+$db->exec("UPDATE account SET bversion = $version, balance = $balance WHERE name = ".dbMakeSafe($_POST['account']).";");
+
+?><balance version="<?php echo $version; ?>"><?php echo fmtAmount($balance) ; ?></balance>
 <?php
-dbFree($result);
-dbQuery("COMMIT ;");
+$db->exec("COMMIT");
 ?>

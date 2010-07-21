@@ -20,16 +20,7 @@
 error_reporting(E_ALL);
 
 session_start();
-
-//Stop us remaining on this page if we haven't yet started a session
-if(!isset($_SESSION['key'])) {
-	header( 'Location: index.php' ) ;
-	exit;
-};
-
-
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once($_SESSION['inc_dir'].'db.inc');
 
 function head_content() {
 
@@ -42,7 +33,7 @@ function head_content() {
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="/js/mootools-1.2.4-core-nc.js"></script>
+	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
 	<script type="text/javascript" src="account.js" ></script>
 <?php
@@ -50,13 +41,13 @@ function head_content() {
 
 function menu_items() {
 
-?> 
-        <li><a href="index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="accounts.php" target="_self" title="Account Manager" class="current">Account Manager</a></li>
-        <li><a href="currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
+?>      <li><a href="/money/index.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account">Account</a></li>
+        <li><a href="/money/accounts.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account Manager" class="current">Account Manager</a></li>
+        <li><a href="/money/currency.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Currency Manager">Currency Manager</a></li>
 <?php
 }
 function content() {
+    global $db;
 ?><h1>Account Manager</h1>
 <?php
 
@@ -85,12 +76,14 @@ window.addEvent('domready', function() {
         <div class="accountsel">
             <select name="extnaccount" tabindex="10">
 <?php
-$result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
-while ($row = dbFetch($result) ) {
+$db->exec("BEGIN");
+$result = $db->query('SELECT name FROM account ORDER BY name ASC;');
+while ($row = $result->fetchArray(SQLITE3_ASSOC) ) {
 ?>              <option <?php echo ($_SESSION['extn_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
-dbfree($result);
+$result->finalize();
+
 ?>          </select>
 
         </div>
@@ -100,12 +93,12 @@ dbfree($result);
         <div class="accountsel">
            <select name="homeaccount" tabindex="20">
 <?php
-$result = dbQuery('SELECT name FROM account ORDER BY name ASC;');
-while ($row = dbFetch($result) ) {
+$result=db->query('SELECT name FROM account ORDER BY name ASC;');
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>            <option <?php echo ($_SESSION['home_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
-dbfree($result);
+$result->finalize();
 ?>        </select>
         </div>
     </div>
@@ -122,40 +115,20 @@ dbfree($result);
     <form id="newaccount" action="newaccount.php" method="post" onSubmit="return false;">
         <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
         <div class="account"><input type="text" name="account" value=""/></div>
-        <div class="type">
-<?php
-$atype = Array();
-$result=dbQuery('SELECT atype,description FROM account_type');
-if($row=dbFetch($result)) { /* first row is the default, so read it first to set it up*/
-    $defaultatype = $row['atype'];
-    $atype[$defaultatype] = $row['description'];
-/* Note we've given the select statement an id because its going to become a template for all the other accounts */
-?>            <select name="type" title="<?php echo $row['description'];?>">
-                <option selected="selected" title="<?php echo $row['description'];?>"><?php echo $row['atype'];?></option>
-<?php
-    while($row=dbFetch($result)) {
-    $atype[$row['atype']] = $row['description'];
-?>              <option title="<?php echo $row['description'];?>"><?php echo $row['atype'];?></option>
-<?php
-    }
-?>          </select>
-<?php
-}
-?>
-        </div>
+        <div class="domain"><input type="text" name="domain" value=""/></div>
         <div class="currency">
             <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
 $currencies = Array();            
-$result=dbQuery('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
-while($row = dbFetch($result)) {
+$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $currencies[$row['name']] = Array($row['rate'],$row['description']);
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
-dbFree($result);
+$result->finalize();
 ?>
             </select>
         </div>
@@ -168,9 +141,9 @@ dbFree($result);
 </div>
 <div id="accounts">
 <?php
-$result=dbQuery('SELECT * FROM account ORDER BY name ASC;');
+$result = $db->query('SELECT * FROM account ORDER BY name ASC;')
 $r=0;
-while($row = dbFetch($result)) {
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $r++
 ?>  <div class="xaccount<?php if($r%2 == 0) echo ' even';?>">
         <form action="updateaccount.php" method="post" onSubmit="return false;">
@@ -178,16 +151,7 @@ while($row = dbFetch($result)) {
             <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
             <input type="hidden" name="original" value="<?php echo $row['name']; ?>" />
             <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
-            <div class="type">
-                <select name="type" title="<?php echo $atype[$defaultatype]; ?>" />
-<?php
-    foreach($atype as $type => $description) { 
-?>                  <option value="<?php echo $type; ?>" 
-                        title="<?php echo $description; ?>" <?php if ($type == $row['atype']) echo 'selected="selected"';?> ><?php echo $type; ?></option>
-<?php
-    }
-?>              </select>
-            </div>
+            <div class="domain"><input type="text" name="domain" value="<?php echo $row['domain']; ?>"/></div>
             <div class="currency">
                 <select name="currency" title="<?php echo $currencies[$row['currency']][1]; ?>">
 <?php
@@ -208,9 +172,11 @@ while($row = dbFetch($result)) {
     </div>
 <?php            
 }
+$result->finalize();
 ?>
 </div>
 <?php
+$db->exec("COMMIT");
 }
 require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
 ?>

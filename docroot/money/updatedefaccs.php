@@ -20,40 +20,34 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
-$result=dbQuery("SELECT version, home_account, extn_account FROM config;");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+$row= $db->querySingle("SELECT version, home_account, extn_account FROM config;",true);
+if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We will reload the page to ensure you have consistent data</error>
 <?php
     $_SESSION['config_version'] = $row['version'];
     $_SESSION['extn_account'] = $row['extn_account'];
     $_SESSION['home_account'] = $row['home_account'];
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
+$version = $row['version'] + 1;
 
 $_SESSION['extn_account'] = $_POST['extnaccount'];
 $_SESSION['home_account'] = $_POST['homeaccount'];
 
-$result = dbQuery("UPDATE config SET version = DEFAULT, home_account = ".dbPostSafe($_POST['homeaccount']).
-                ", extn_account = ".dbPostSafe($_POST['extnaccount'])." RETURNING version;");
+$db->exec("UPDATE config SET version = $version, home_account = ".dbPostSafe($_POST['homeaccount']).
+                ", extn_account = ".dbPostSafe($_POST['extnaccount']).";");
 
-$row = dbFetch($result);
-$_SESSION['config_version'] = $row['version'];
+$_SESSION['config_version'] = $version;
 
-?><configuration version="<?php echo $row['version']; ?>" 
+?><configuration version="<?php echo $version; ?>" 
                 home_account="<?php echo $_POST['homeaccount'];?>" 
                 extn_account="<?php echo $_POST['extnaccount'];?>" ></configuration>
 <?php
-dbFree($result);
-dbQuery("COMMIT ;");
+$db->exec("COMMIT");
 ?>

@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,28 +20,25 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if(!isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die('Hacking attempt - wrong key');;
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN");
 
-dbQuery("BEGIN;");
+$row = $db->querySingle("SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency, ".
+     "cd.rate AS drate, srcacode.description AS sacdesc, dstacode.description AS dacdesc FROM xaction ".
+     "LEFT JOIN currency AS ct ON xaction.currency = ct.name ".
+    "LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
+    "LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
+    "LEFT JOIN account_code AS srcacode ON xaction.srccode = srcacode.id ".
+    "LEFT JOIN account_code AS dstacode ON xaction.dstcode = dstacode.id ".
+    "WHERE xaction.id=".dbMakeSafe($_POST['tid']).";",true);
 
-$result=dbQuery("SELECT transaction.id, transaction.version, transaction.currency, ct.rate AS trate, transaction.repeat, transaction.amount,".
-    "transaction.src, transaction.srcclear, transaction.srcamount, srcacc.currency AS srccurrency, cs.rate AS srate, ".
-    "transaction.dst, transaction.dstclear, transaction.dstamount, dstacc.currency AS dstcurrency, cd.rate AS drate FROM transaction ".
-    "LEFT JOIN currency AS ct ON transaction.currency = ct.name ".
-    "LEFT JOIN account AS srcacc ON transaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
-    "LEFT JOIN account AS dstacc ON transaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
-    "WHERE transaction.id=".dbMakeSafe($_POST['tid']).";");
-$row = dbFetch($result);
-if ($row['version'] != $_POST['version'] ) {
+if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>Someone else is editing this transaction in parallel to you.  In order to ensure you are working with consistent
 data we will reload the page</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
 
@@ -84,7 +81,7 @@ if($_POST['account'] == $row['src']) {
 }
 ?></xaction>
 <?php
-dbFree($result);
-dbQuery("COMMIT;");
+
+$db->exec("COMMIT");
 ?>
 

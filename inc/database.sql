@@ -21,16 +21,20 @@ BEGIN;
 -- account codes define the accounting code associated with this account (
 
 CREATE TABLE account_code (
-    id integer PRIMARY KEY,
+    id character varying PRIMARY KEY,
     type char(1) NOT NULL,          -- 'C' = cost, 'R' = revenue
     description character varying
 );
 
 
-INSERT INTO account_code VALUES (1, 'C','Operational Cost');
-INSERT INTO account_code VALUES (2, 'C', 'Billable Costs');
-INSERT INTO account_code VALUES (3, 'R', 'Invoice to Client'); 
-
+INSERT INTO account_code VALUES ('OpCost', 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
+INSERT INTO account_code VALUES ('BillCos', 'C', 'Billable Costs');
+INSERT INTO account_code VALUES ('Invoice', 'R', 'Invoice to Client'); 
+INSERT INTO account_code VALUES ('Salary', 'C', 'Salaries');
+INSERT INTO account_code VALUES ('OfEqup', 'C', 'Office Equipment');
+INSERT INTO account_code VALUES ('GenCos', 'C', 'General Costs'); -- costs not included elsewhere
+INSERT INTO account_code VALUES ('Miles', 'C', 'Mileage @40p per mile');
+INSERT INTO account_code VALUES ('Advert', 'C', 'Advertising');
 
 
 CREATE TABLE repeat (
@@ -233,12 +237,6 @@ INSERT INTO currency VALUES ('USD', 0.63499999, 1, 2, 'United States of America,
 
 -- domain is an area of the accounts that is a whole.  Used primarily so we can do special things to transactions between domains
 
-CREATE TABLE domain (
-    name character varying PRIMARY KEY, 
-    description character varying 
-);
-
-INSERT INTO domain (name, description) VALUES ('personal', 'my personal accounts'); -- default - the alternative is business
 
 -- an account, the fundemental accounting vehicle within the system.      
 CREATE TABLE account (
@@ -249,18 +247,12 @@ CREATE TABLE account (
     code integer REFERENCES account_code(id) ON DELETE SET NULL ON UPDATE CASCADE, -- account code for formal accounting (NULL says not used)
     balance bigint DEFAULT 0 NOT NULL, -- opening balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when opening balance was set
-    domain character varying NOT NULL REFERENCES domain(name) ON UPDATE CASCADE -- domain that account belongs to
+    domain character varying -- domain that account belongs to (free text at the moment)
 );
 
 INSERT INTO account (name,currency,balance,domain) VALUES ('Cash', 'GBP', 0, 'personal');
 
 
-CREATE TABLE interface (
-    srcdomain character varying REFERENCES domain(name) ON UPDATE CASCADE, -- interface is defined by the two ordered domains (src -> dst)
-    dstdomain character varying REFERENCES domain(name) ON UPDATE CASCADE, -- primary key is both fields
-    account character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- this is the account which increases for transactions from src
-    PRIMARY KEY (srcdomain,dstdomain)
-);
 
 -- a transaction, the key component related to movement of money, or notional money, between accounts
 
@@ -273,11 +265,11 @@ CREATE TABLE xaction (
     src character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- source account (debits this account when amount is +ve [the normal case])
     srcamount bigint,                 -- if the source account is a different currency then this is the amount (same sign as) in that currency
     srcclear boolean DEFAULT 0 NOT NULL,  -- the amount is cleared in the source account
-    srcrecord boolean DEFAULT 0 NOT NULL, -- if set and the transaction crosses domains, then the domain interface balance (on source side) is incremented
+    srccode character varying REFERENCES account_code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to increment with this transaction
     dst character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- destination account (credits this account when amount is +ve [the normal case])
     dstamount bigint,                 -- if the destination account is a different currency then this is the ammount in that currency
     dstclear boolean DEFAULT 0 NOT NULL, -- if the amount is cleared in the destination account
-    dstrecord boolean DEFAULT 0 NOT NULL, -- if set and the transaction crosses domains then the domain interface balance (on destination side) is decremented
+    dstcode character varying REFERENCES account_code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to decrement with this transaction
     description character varying,      -- details of the transaction
     rno character varying,              -- reference number for the transaction
     repeat integer DEFAULT 0 NOT NULL REFERENCES repeat(rkey) -- if the transaction is repeating
@@ -295,10 +287,9 @@ CREATE TABLE config (
     extn_account character varying REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
     repeat_days integer,
     default_currency character(3) REFERENCES currency(name) ON UPDATE CASCADE,
-    default_domain character varying REFERENCES domain(name) ON DELETE SET NULL ON UPDATE CASCADE,
     demo boolean DEFAULT 0 NOT NULL
 );
 
-INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency,default_domain) VALUES (1,'Cash','Cash', 90, 'GBP','personal');
+INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency) VALUES (1,'Cash','Cash', 90, 'GBP');
 
 END TRANSACTION;

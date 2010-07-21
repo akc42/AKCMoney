@@ -21,86 +21,38 @@
 error_reporting(E_ALL);
 
 /* 
-    This is a common instance file for defining instance specific data before directing the user to the 
-    appropriate part of the application
+    This is a the initialisation file that is called to start the application
 */
-   
-// Adjust the following for your installation
-
-define('INC_DIR','/home/alan/dev/money/inc/');
-
-define('DB_DIR','/home/alan/dev/money/db/');
-    
-
-
-
-//This is a convenient place to force everything we output to not be cached 
-header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
-
-define('LOCK_WAIT_TIME',rand(5000,10000));  //time to wait to see if database is unlocked (between 5 and 10 ms)
-class DBError extends Exception {
-
-    function __construct ($message) {
-        parent::__construct("<p> $messsage <br/></p>\n".
-	                "<p>Please inform <i>alan@chandlerfamily.org.uk</i> that a database query failed and include the above text.\n".
-	                "<br/><br/>Thank You</p>");
-	}
-    
-};
-
-function check_key() {
-if( !isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key</error>");
-}
-function dbMakeSafe($value) {
-	if (!get_magic_quotes_gpc()) {
-		$value=pg_escape_string($value);
-	}
-	return "'".$value."'" ;
-}
-function dbPostSafe($text) {
-  if (((string)$text) == '') return 'NULL';
-  return dbMakeSafe(htmlentities($text,ENT_QUOTES,'UTF-8',false));
-}
-function dbPostBoolean($text) {
-  if ($text == '') return 'NULL';
-  return ($text == 't')?'TRUE':'FALSE';
-}
-
-function dbBegin($ex) {
-    global $db;
-    $ext = $ex?'EXCLUSIVE':'';
-    while (!@$db->exec("BEGIN $ext")) {
-        if($db->lastErrorCode() != SQLITE_BUSY) {
-            throw new DBError("In trying to BEGIN $ext got Database Error:".$db->lastErrorMsg());
-        }
-        usleep(LOCK_WAIT_TIME);
-    }
-}
-
-function dbEnd() {
-    global $db;
-    $db->exec("COMMIT");
-}
-function dbRollBack() {
-    global $db;
-    $db->exec("ROLLBACK");
-}    
-
-    
-//Install if we haven't already
-if(!file_exists(DB_DIR.'money.db')) {
-    $db = new SQLite3(DB_DIR.'money.db');
-    $db->exec(file_get_contents(INC_DIR.'database.sql'));
-} else {
-    $db = new SQLite3(DB_DIR.'money.db');
-}
-$db->exec("PRAGMA foreign_keys = ON");
-
-// if called without parameters then default to account
-if(!isset($_REQUEST['q'])) $_REQUEST['q'] = 'account';
-
 session_start();
+   
+/*
+    The following two session variables define the two key parameters for the installation.  Adjust
+    these to match THIS INSTANCE of potentially multiple instances of the software on the server
+*/ 
 
-require(INC_DIR.$_REQUEST['q'].'.php');  //do what we need to (will fail if doesn't exist)
+$_SESSION['inc_dir'] = '/home/alan/dev/money/inc/';
+$_SESSION['database'] = '/home/alan/dev/money/db/money.db';
 
+//Install if we haven't already
+if(!file_exists($_SESSION['database'])) {
+    $db = new Sqlite3($_SESSION['database']);
+    $db->exec(file_get_contents($_SESSION['inc_dir'].'database.sql'));
+    /*
+    // TO BE ADDED WHEN THERE IS A NEXT UPDATE
+} else {
+    $db = new Sqlite3($_SESSION['database']);
+//    $db->setAttribute(PDO::ATTR_TIMEOUT,25);  //set 25 second timeout on obtaining a lock
+
+    $dbversion = $db->querySingle('SELECT db-version FROM config;');
+    if($dbversion < 2) { //update to version 2
+        $db->exec(file_get_contents($_SESSION['inc_dir'].'update1.sql'));
+    }
+*/ 
+}
+$charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+$key='';
+for ($i=0; $i<30; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
+$_SESSION['key'] = $key;
+
+header('Location: /money/index.php?key='.$key);  //get going with actual application
+?>

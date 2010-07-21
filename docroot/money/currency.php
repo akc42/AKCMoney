@@ -20,15 +20,7 @@
 error_reporting(E_ALL);
 
 session_start();
-
-//Stop us remaining on this page if we haven't yet started a session
-if(!isset($_SESSION['key'])) {
-	header( 'Location: index.php' ) ;
-	exit;
-};
-
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once($_SESSION['inc_dir'].'db.inc');
 
 function head_content() {
 
@@ -43,7 +35,7 @@ currency always appears first).  The current rate is also shown, but is adjusted
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="/js/mootools-1.2.4-core-yc.js"></script>
+	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
 	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
 	<script type="text/javascript" src="currency.js" ></script>
@@ -52,13 +44,14 @@ currency always appears first).  The current rate is also shown, but is adjusted
 }
 
 function menu_items() {
-?>        <li><a href="index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="currency.php" target="_self" title="Currency Manager" class="current">Currency Manager</a></li>
+?>      <li><a href="/money/index.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account">Account</a></li>
+        <li><a href="/money/accounts.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account Manager">Account Manager</a></li>
+        <li><a href="/money/currency.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Currency Manager" class="current">Currency Manager</a></li>
 <?php
 }
 
 function content () {
+    global $db;
 ?><h1>Currency Manager</h1>
 <?php 
 if ($_SESSION['demo']) {
@@ -85,13 +78,15 @@ window.addEvent('domready', function() {
         <div class="currency">
             <select id="currencyselector" name="currency">
 <?php            
-$result=dbQuery('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
-while($row = dbFetch($result)) {
+$db->exec("BEGIN");
+$result= $db->query('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>                <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
+$result->reset();
 ?>
             </select>
         </div>
@@ -105,8 +100,9 @@ while($row = dbFetch($result)) {
     <div class="rate">Rate</div>
 </div>
 <?php
-$result=dbQuery('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
-if ($row = dbFetch($result)) {  //First row is default currency and is not sortable
+
+
+if ($row = $result->fetchArray(SQLITE3_ASSOC)) {  //First row is default currency and is not sortable
 ?>
 <div id="defaultcurrency">
     <div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency">
@@ -121,7 +117,7 @@ if ($row = dbFetch($result)) {  //First row is default currency and is not sorta
 
 <?php
     $r=1;
-    while($row = dbFetch($result)) {
+    while($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $r++
 ?>
 
@@ -140,12 +136,12 @@ if ($row = dbFetch($result)) {  //First row is default currency and is not sorta
 ?></div>
 <?php
 }
-dbFree($result);
+$result->finalize();
 ?><div class="xcurrency heading"></div>
 <div id="othercurrencies">
 <?php
-$result=dbQuery('SELECT * FROM currency WHERE display = false ORDER BY name ASC;');
-while($row = dbFetch($result)) {
+$result = $db->query('SELECT * FROM currency WHERE display = false ORDER BY name ASC;');
+while($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $r++
 ?>
 <div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
@@ -158,7 +154,8 @@ $r++
 </div>
 <?php
 }
-dbFree($result);
+$result->finalize();
+$db->exec("COMMIT");
 ?></div>
 <input type="hidden" id="maxpriority" value="<?php echo $maxp; ?>" />
 <?php

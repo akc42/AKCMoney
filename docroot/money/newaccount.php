@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,66 +20,46 @@
 error_reporting(E_ALL);
 
 session_start();
+require_once($_SESSION['inc_dir'].'db.inc');
 
-if( !isset($_POST['key']) || $_POST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key should have been '".$_SESSION['key']."'</error>");
 
-define ('MONEY',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+$db->exec("BEGIN IMMEDIATE");
 
-dbQuery("BEGIN;");
+$name=$db->querySingle("SELECT name FROM account WHERE name =".dbMakeSafe($_POST['account']));
 
-$result=dbQuery("SELECT name FROM account WHERE name =".dbMakeSafe($_POST['account']).";");
-
-if ($row = dbFetch($result)) {
+if ($name == $_POST['account']) {
     //account with this name already exists so we cannot create one
 ?><error>It appears an account with this name already exists.  This is probably because someone else is editing the list of accounts
 in parallel to you.  We will reload the page to ensure that you have consistent data</error>
 <?php
-    dbFree($result);
-    dbQuery("ROLLBACK;");
+    $db->exec("ROLLBACK");
     exit;
 }
-dbFree($result);
 
-$result = dbQuery("INSERT INTO account (name, dversion, bversion, date, currency,atype) VALUES (".dbPostSafe($_POST['account']).
-            ", DEFAULT, DEFAULT, DEFAULT, ".dbPostSafe($_POST['currency']).",".dbPostSafe($_POST['type']).") RETURNING dversion ;");
-$row = dbFetch($result);
+
+$db->exec("INSERT INTO account (name, dversion, bversion, currency,domain) VALUES (".dbPostSafe($_POST['account']).
+            ", 1, 1, ".dbPostSafe($_POST['currency']).",".dbPostSafe($_POST['domain']).");");
+
 
 ?><div class="xaccount">
         <form action="updateaccount.php" method="post" onSubmit="return false;" >
             <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-            <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
+            <input type="hidden" name="dversion" value="1"/>
             <input type="hidden" name="original" value="<?php echo $_POST['account']; ?>" />
+            <input type="hidden" name="origdom" value="<?php echo $_POST['domain']; ?>" />
             <div class="account"><input type="text" name="account" value="<?php echo $_POST['account']; ?>"/></div>
-            <div class="type">
-                <select name="type" >
-<?php
-dbFree($result);
-dbQuery("COMMIT;");
-$result=dbQuery('SELECT atype,description FROM account_type');
-
-?>
-                
-<?php
- while($row=dbFetch($result)) {
-?>              <option title="<?php echo $row['description'];?>" <?php
-                        if ($row['atype'] == $_POST['type']) echo 'selected="selected"'; ?> ><?php echo $row['atype'];?></option>
-<?php
-}
-dbFree($result);
-?>          </select>
-            </div>
+            <div class="domain"><input type="text" name="account" value="<?php echo $_POST['domain']; ?>"/></div>
             <div class="currency">
             <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
-$result=dbQuery('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
-while($row = dbFetch($result)) {
+$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
+while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_POST['currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
-dbFree($result);
+$result->finalize();
 ?>
             </select>
             </div>
@@ -90,4 +70,6 @@ dbFree($result);
             </div>
         </div>
 </div>
-
+<?php
+$db->exec("COMMIT");
+?>
