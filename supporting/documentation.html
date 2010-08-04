@@ -525,6 +525,20 @@ It is an error to attempt to create a blank account or one with the same name as
 
 </pre>
 </div>
+<div title="AccountCodes" creator="AlanChandler" modifier="AlanChandler" created="201008040843" tags="design functions" changecount="1">
+<pre>Preview - Account Codes are not implemented in this release
+
+Account Codes are the mechanism whereby more formal accounting can be built on top of the underlying structure of Accounts and Transactions.  The source and destination of the transaction can optionally contain an account code, which is a bucket which the transaction is placed in for accounting purposes.  It is then possible to report on the contents of each bucket over a period of time (such as the account year).
+
+Each bucket (ie each account code) is designated a characteristic.  In the next release at least two, possibly three characteristics will be provided, namely:-
+* Cost -  the entire amount of the transaction is added to the bucket as a cost if the transaction date is within the accounting period
+* Revenue - the entire amount of the transaction is added to the bucket as a revenue if the transaction date is within the accounting period
+* Asset - the amount of the transaction is linearly spread (depreciated) over (36 months) after the date of the transaction as a cost, and only the appropriate amount allocated within the accounting period
+
+Clearly it will be possible to add additional &quot;//Account Code Characteristics//&quot; in future to provide even more flexibility.
+
+Reports on the database will enable an overview of all account codes to put together to provide an account over the period </pre>
+</div>
 <div title="Adjustments to Transaction Date" modifier="AlanChandler" created="200906151614" changecount="1">
 <pre>When a transaction is dragged up the list, it takes its date from one day prior to the item it was dropped in front of, unless the item ahead of it is also the the same date as the item after it - in which case it takes that date also
 
@@ -579,9 +593,9 @@ The list of currencies are predefined according to standards, and the system hol
 The default currency is selected from amongst those in the selected list with a radio button.
 The default currency must always be selected, and there is no mechanism to deselect it (the deselection item is removed). </pre>
 </div>
-<div title="DatabaseDesign" modifier="AlanChandler" created="200906142300" modified="201003211017" changecount="4">
-<pre>The database will be mainly the same as the previous version of the application except
-* The credit/debit type for an account will be actually specified as text rather than using the 0 1 ids as now
+<div title="DatabaseDesign" modifier="AlanChandler" created="200906142300" modified="201008021552" tags="design" changecount="7">
+<pre>The database will be mainly the same as the previous version of the application except that following changes will be made
+* The credit/debit type for an account will now be dropped, and changed for an open (unvalidated) domain field which will currently be informational but might later be validated against a known list
 * All money amounts will be held as a BIGINT at 100 times the monetary value in the appropriate currency
 * The concept of a normalised amount has been changed and enhanced.  The normalised amount has been removed and the following functions added:-
 ** There are two new fields (srcamount and dstamount) associated with the src account and dst account
@@ -593,24 +607,23 @@ The default currency must always be selected, and there is no mechanism to desel
 * Most fixed length text fields will become character varying (except currency which remains at 3 characters).
 * There will be different default accounts for clients coming in over the internet and for internal clients
 * The version of the database will be held in the config table. An update from an earlier version to a later version will be automatic
+* The transaction can optionally contain an &quot;account code&quot; for its source and destination accounts.  These can be used on reports to sum costs and or revenues over the year.(These may also contain accounting algorithmns - such as straight line depreciation etc)
 
-There are longer term plans for two key changes:-
-* Linked accounts in which either (dependent on account &quot;type&quot;) the source, or the destination transactions are replicated in the linked account as transactions in the opposite direction.  The idea is to allow multiple accounts groups to co-exist with transactions between them.  For instance personal v business cash accounts v business management accounts.  The full details are yet to be worked out
-* Balancing transactions, use to clear either its source or destination account to zero (on a single or repeating basis) will be added.  This will be used for accounts like credit cards which get paid off from the bank account each month dependant on the balance in the account at some previous point in the past.  Again full details still to be worked out.</pre>
+The full database design is held in the file ''inc/database.sql'' and this is the file that you should refer to for any comments</pre>
 </div>
 <div title="DefaultTiddlers" modifier="AlanChandler" created="200906111844" changecount="1">
 <pre>DesignDocumentation
 UserDocumentation
 </pre>
 </div>
-<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="201007071104" changecount="22">
+<div title="DesignDocumentation" modifier="AlanChandler" created="200906111830" modified="201008040843" tags="design functions" changecount="24">
 <pre>!Overview
 
 This project is a copy of my Java based [[AKCmoney|http://www.chandlerfamily.org.uk/sites/default/files/files/akcmoney-2007-02-05.tar.gz]] application re-implemented using PHP and Javascript.  My motivation for doing so was to 
 * allow me to retire the separate application server needed for running java applications
 * allow me produce a richer client experience my moving some of the functionaility to the client level using Javascript/Ajax functionaility.
 
-The software currently uses[[Postgresql|http://www.postgresql.org]] as the main database engine, with the database design copied from the java application.  There have been some changes to this specified in DatabaseDesign.  The next release will be ported to run using [[SQLite|www.sqlite.org]].
+Earlier releases used [[Postgresql|http://www.postgresql.org]] as the main database engine, with the database design copied from the java application.  This release uses [[SQLite|www.sqlite.org]], which makes it easier to manage the database, which now just resides in a file.  More information about the database can be found in the DatabaseDesign section.
 
 In order to keep the look and feel of the site for all pages, but separate from the application itself, the application will, regardless of which function it is executing be routed through a TemplateSystem.  A default template will be used as a example for a demo, but it will be constructed so that the application can be embedded into existing template designs. If that is desired
 
@@ -618,29 +631,26 @@ UserDocumentation specifies how the pages of the application appear
 
 I have chosen  [[Mootools|http://www.mootools.net]] for the framework used to build this application. See [[Mootools v JQuery]] for the reasons.  The UseOfMootools contains more details
 
-V1.1 of this application has been released.  Documentation (ie this document) is now being updated to reflect a planned v2 of the application.  The changes that are planned are:-
+This documentation reflects v2 of application.  This introduces :-
 * restructuring the application (see ApplicationStructure) to provide for multiple instances to run on the same machine with shared code but a separate database.  This entails
 ** a small front end that is the instance software which defines access to instance data
 ** the database for an instance that should not be visible from any url
 ** shared include files that enable the software to run, but should not be visible via a URL
 ** shared images and php action software which does need to be visible via a URL
-* moving from Postgres to ''~SQLite''.  Having had experience of using ~SQLite on another project, it is ideally suited to this application which tends to be a single user. ~SQLite is fast (especially if you do not have to worry to  much about parallel working) and its easy to carry the database with you as a single file.  Existing users will be moved from Postgres to ~SQLite as defined in the MigrationSqlite tiddler. 
-* enhancing the functionality to support the requirements of mixing personal and business accounts, and for business accounts allowing the generation of the correct accounting data for year end accounts.</pre>
+* moving from Postgres to ''~SQLite''.  Existing users can migrate their databases from Postgres to ~SQLite as defined in the MigrationSqlite tiddler. 
+* Introduction of a field for an account called the //Domain// which identifies an area of the accounts. In this release it is purely free text, but this might be controlled more tightly in future releases to add access controls based around the domain
+* Removal of the concept of Credit and Debit accounts.  By default, all new transactions assume the account in which they are created is the //Source// of the transaction which means for positive values for the amount of the transaction the account balance is decremented. A button on the edit screen allows this to be reversed.  This appears to slightly improve usability.  
+* Preparation for the use of AccountCodes in the next release.</pre>
 </div>
-<div title="EditTransaction" creator="AlanChandler" modifier="AlanChandler" created="201004041239" modified="201004041240" changecount="2">
-<pre>When the transactions is double clicked on it grows to provide a form so that it can be edited.  The key parameters of the transaction are here
+<div title="EditTransaction" creator="AlanChandler" modifier="AlanChandler" created="201004041239" modified="201008040904" tags="user" changecount="4">
+<pre>When the transactions is double clicked on it grows to provide a form so that it can be edited.  
 
-... (still to be edited)
+[&lt;img[Edit Transaction Form|edit_screen.png]]
 
 
 
-New facility for the next release:-
-;Open Balance Transactions
-:A transaction has a flag for each account it is party to which if set allows the amount to be set from the condition in the account.  It will always be at least the last amount set for the transaction, but if the cumulative balance of the account //at the point the transaction is currently inserted// is more that the value then the value is increased to cause the balance of the account to go to zero.  The ''amount'' field will be set to grey rather than black to show that this value is open.
-:The direction of the value is intended to be opposite to normal flow of transactions.  So for a debit account (one that is normally the source of transactions) this will only work for a transaction which credits the account (a debit transaction will immediately have its value negated, turning it into a credit transaction).
-;Link Transfer Transactions
-:Different parts of the overall database could hold accounts for different entities.  For instance, it may be that there are some business accounts in some part of the database and personal accounts in another.  Some transactions - for instance - claiming of personal expenses against the business may actually be relevant to both parts.  The problem with the first release of the software is that a transaction to move the sum of expenses to an invoice will set the balance on the account to zero, yet it would be nice to record that at some future time the balance would be re-embersed.  Similarly from the business side, there is no record that a liability exists to repay these expenses.
-:The solution is to provide the ability to signal to a transaction that one side of it is a ''link transfer''.  These transactions do not change the cumulative balance on the account, but instead contribute to a new amount shown for the account called the &quot;transfer liability&quot;.  Generally these apply on //credit// accounts, where some incurred costs from other sources (such as a credit card or cash) add to an account which will be re-embersed in the future.  Indeed an //Open Balance// transaction may be used to provide that.  The liability is transfered from this account to (say a client invoice account, or a cost ledger for the business, increasing the transfer liability.  When payment is made, a reverse transaction is applied, reducing the liability back to zero
+
+
 </pre>
 </div>
 <div title="GettingStarted" modifier="AlanChandler" created="200906111832" modified="200912091259" changecount="2">
@@ -657,24 +667,24 @@ Help with markup http://tiddlywiki.org/wiki/TiddlyWiki_Markup</pre>
 <pre>!Overview
 AKC Money is designed to be installed on a server where there are multiple installations.  </pre>
 </div>
-<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="201004040635" changecount="14">
+<div title="Main Index Page" modifier="AlanChandler" created="200906180747" modified="201008040901" tags="user" changecount="17">
 <pre>The main index page is where the user will perform their main activities.  It comprises three main sections.
 
 ;  Account selection
-: This provides a drop down selection button to select from the range of available accounts.  It includes the default currency for the account and whether the account is primarily debit or credit
+: This provides a drop down selection button to select from the range of available accounts.  It includes the default currency for the account and shows the //Domain// text if it exists
  
 ; Account summary
 : This provides a summary of the account which include
 :* a new transaction button to enter the data for a [[New Transaction]]
-:* a rebalance from cleared (with confirmation dialog) button to allow the cleared balance to be transfered to the opening balance and all the cleared transactions deleted from that account (they remain on the other account if there is one).
-:* either the minimum balance for debit accounts or maximum balance for credit accounts 
+:* a re-balance from cleared (with confirmation dialog) button to allow the cleared balance to be transfered to the opening balance and all the cleared transactions deleted from that account (they remain on the other account if there is one - a transaction is deleted when it has been deleted from both source and destination accounts).
+:*  the minimum balance 
 :* the cleared balance
 :* the opening balance 
 
 ; Transaction List
 : This is a list of transactions, ordered by date described on the account.  This list is like an accordian, in that if you double click on the description of the transaction it grows large, and the [[transaction can be edited|EditTransaction]].  
 
-: You can also drag transactions up and down the list to change their date (by dragging the date portion of the transaction).  If the transaction is dragged down the list it will have a date one day after the transaction immediately above it (unless the transaction below it is the same date as the transaction above).  If the transaction is dragged up the list it will take a date one day before the transaction below it, unless the one above has the same date, in which case it will take the same date. 
+: You can also drag transactions up and down the list to change their date (by dragging the description n of the transaction).  If the transaction is dragged down the list it will have a date one second after the transaction immediately above it (unless the transaction below it is the same date as the transaction above).  If the transaction is dragged up the list it will take a date one second before the transaction below it, unless the one above has the same date, in which case it will take the same date. 
 
 : Clicking on the date toggles whether the transaction is cleared, clicking on the amount (provided it is in the same currency as the account) will allow you to edit in place the amount.
 </pre>
@@ -686,22 +696,23 @@ A separate [[money.js]] script will control everything.
 
 This page responsibility will be to collect initial start up parameters from the database (default account) and then to display the core header and footer of the applications, put up the menu (with initial classes to define the selected menu item) and to start up the javascript.</pre>
 </div>
-<div title="MainMenu" modifier="AlanChandler" created="200906111831" modified="201007020828" changecount="5">
+<div title="MainMenu" modifier="AlanChandler" created="200906111831" modified="201008022116" changecount="7">
 <pre>UserDocumentation
 InstallationGuide
 DesignDocumentation
-
+TestSpecification
 
 CopyRight</pre>
 </div>
-<div title="MigrationSqlite" creator="AlanChandler" modifier="AlanChandler" created="201006141638" modified="201007051256" changecount="9">
-<pre>Migration from Postgres to SQLlite will be a manual relatively manual process. In order to perform the migration the following steps are required.
+<div title="MigrationSqlite" creator="AlanChandler" modifier="AlanChandler" created="201006141638" modified="201008040921" changecount="11">
+<pre>Migration from Postgres to ~SQLlite will be a manual process. In order to perform the migration the following steps are required.
 
-* An initial money configuration should have been initialised, with the money database installed 
-* A migration script is prepared and loaded into the same machine as the database as follows:
-** on the host with the an existing database (assumed to be called //money//) run {{{pg_dump -a --column-inserts money &gt; money.sql}}}
-** ensure that money.sql is transfered to the host (and a user account) with write access to the new money database.
-** execute from the command line {{{./migrate /path/to/money.sql /path/to/money.db}}}  (this script is found in the supporting directory)
+* Start ~AKCMoney and create an empty database
+* Take the script postgres_migrate.sh from the supporting directory and :-
+** edit it to change the database name to the correct one for your old postgres account (see the DATABASE variable at the head of the script
+** transfer it to the machine and account that allows access to the database and type {{{./postgres_migrate.sh}}}
+** this should create a file called money.sql. Transfer it to the host (and a user account) with write access to your latest database.
+** execute from the command line {{{sqlite3 .read money.sql money.db}}}
 
 NOTE: The migration script will automatically adjust the first few lines of money sql to remove postgres headers and extract the important parameter related to the //&quot;version&quot;// sequence (transaction id allocation will be handled by sqlite itself)
 
@@ -725,10 +736,13 @@ The decision is that I have chosen &quot;[[Mootools|http://www.mootools.net]]&qu
 
 See [UseOfMootools]</pre>
 </div>
-<div title="New Transaction" modifier="AlanChandler" created="200912091324" changecount="1">
-<pre>A new transaction
+<div title="New Transaction" modifier="AlanChandler" created="200912091324" modified="201008040902" tags="user" changecount="3">
+<pre>A new transaction is created at todays date within the account with a few simple default value.  The transaction then immediate goes into EditTransaction mode
 
 </pre>
+</div>
+<div title="Report Page" creator="AlanChandler" modifier="AlanChandler" created="201008021625" tags="user" changecount="1">
+<pre>The [[Report Page]] is very similar to the [[Main Index Page]] in that it its default form it will layout a series of transactions and show the balance</pre>
 </div>
 <div title="SiteSubtitle" modifier="AlanChandler" created="200906111827" changecount="1">
 <pre>A personal money management application</pre>
@@ -742,6 +756,42 @@ See [UseOfMootools]</pre>
 require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
 
 </pre>
+</div>
+<div title="TestSpecification" creator="AlanChandler" modifier="AlanChandler" created="201008022224" modified="201008040858" changecount="2">
+<pre>The purpose of this section is to write out a series of tests which will be conducted manually to show that the software works.  This is in lieu of more automated test methods which could be introduced, but which are probably too much work this late in the project.  
+
+This will not take the form of a detailed test specification detailing each test - starting with a blank database and slowly growing it with transactions taken during the test.  Instead it concentrates on major functions to be undertaken on a database that already has some data in in.  It is anticipated that this will be a copy of the migrated version of the existing system
+
+# Account Page
+## Change Accounts
+## Toggle Clear an item and check cleared balance updates
+## Change the amount and check that (if cleared) the cleared balance changes - and that other balances also change (min balance and cumulative balances)
+## Delete a transaction
+## Edit a transaction - change each of the fields
+### Date
+### Ref No
+### Description
+### Currency
+### Amount
+### Whether it is cleared
+### Destination Acount
+### Repeat Value
+### Currency Amount (when non standard currency)
+### Set Rate
+## New Transaction (should just go into Edit Transaction)
+## Update Opening Balance (check other balances all change as well)
+## Drag transaction to a new place so date change
+# Account Manager Page
+## Create New Account
+## Delete Account
+## Update Domain
+## Change account name (and check that duplicates are rejected, but good changes are reflected elsewhere)
+## Change account currency
+## Change Default Accounts
+# Currency Manager Page
+## Toggle Show and check account changes group
+## Change account priorities by dragging within the display group 
+## Change default currency</pre>
 </div>
 <div title="UseOfMootools" modifier="AlanChandler" created="200912091255" modified="201003221941" changecount="12">
 <pre>We will use Mootools core,in all pages of the application.  
@@ -766,26 +816,22 @@ I decided against selecting the form validator - there are only two tests I need
 		.##
 </pre>
 </div>
-<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="201004041553" changecount="7">
+<div title="UserDocumentation" modifier="AlanChandler" created="200906111831" modified="201008040845" tags="user" changecount="10">
 <pre>! Basic Concepts
-The whole concept of AKC Money is based around the concept of two key entities.  //Accounts// which have an opening balance and which contain (one side of) //transactions//.  Each transaction can either increase or increase the balance on the account, so that over time the account balance can reach a maximum or minimum amount.  Transactions can refer to two accounts{
+The whole concept of AKC Money is based around the concept of two key entities.  //Accounts// which have an opening balance and which contain (one side of) //transactions//.  Each transaction can either increase or increase the balance on the account, so that over time the account balance can reach a maximum or minimum amount.  Transactions can refer to two accounts
 # The ''source'' of the transaction.  The transaction amount is debited from this accounts balance, and
 # The ''destination'' of the transaction.  The transaction amount is credited to this accounts balance
 This forms the basis of the complete system.
 
 In addition, amounts may be specified in different currencies and accounts themselves operate in a currency. The system maintains estimated exchange rates between the currencies, although for any transaction when both sides of the transaction is known then this can be entered explicitly (as well as potentially using this new rate to set the rate used in the estimating process).
 
-The release 2 of AKCMoney adds to this basic ability with the concept of ''link'' accounts.  These are special accounts which sit at the interface between two areas ...
-
-
-
-There are three main screens in AKC Money
+There are three main screens in ~AKCMoney.
 
 * [[Main Index Page]] which is the initial screen on start up.  This is where the majority of the action takes place
 * [[Account Manager Page]] where you can define the accounts that are used in the system (including the account which is the first to be selected on the [[Main Index Page]]
 * [[Currency Manager Page]] where you can define both which currencies appear in selection lists, and in which order.
 
-There will be a small menu bar across the top of each page in order to select which page is displayed.</pre>
+There is a small menu bar across the top of each page in order to select which page is displayed.</pre>
 </div>
 <div title="editing of the transaction" modifier="AlanChandler" created="200906151617" modified="200906151631" changecount="3">
 <pre>when a transaction is closed for editing it contains

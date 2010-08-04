@@ -49,7 +49,7 @@ $db->exec("UPDATE currency SET version = $version, priority = CASE WHEN name = "
 
 ?><currencies>
 <?php       
-$result = $db->query('SELECT * FROM currency WHERE display = true AND priority > 0 ORDER BY priority ASC;');
+$result = $db->query('SELECT * FROM currency WHERE display = 1 AND priority > 0 ORDER BY priority ASC;');
 $r=0;
 $options = Array();
 while($row = $result->fetchArray(SQLITE3_ASSOC)) {

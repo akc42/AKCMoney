@@ -26,7 +26,7 @@ require_once($_SESSION['inc_dir'].'db.inc');
 
 $db->exec("BEGIN IMMEDIATE");
 
-$version=$db->querySingle("SELECT version FROM transaction WHERE id=".dbMakeSafe($_POST['tid']));
+$version=$db->querySingle("SELECT version FROM xaction WHERE id=".dbMakeSafe($_POST['tid']));
 
 if ($version != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  We have not deleted it, and are going to
@@ -35,6 +35,6 @@ reload the page so that we can ensure you see consistent data before taking this
     $db->exec("ROLLBACK");
     exit;
 }
-$db->exec("DELETE FROM transaction WHERE id = ".dbMakeSafe($_POST['tid']).";");
+$db->exec("DELETE FROM xaction WHERE id = ".dbMakeSafe($_POST['tid']).";");
 $db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" ></xaction>

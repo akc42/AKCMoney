@@ -48,11 +48,11 @@ $db->exec("INSERT INTO account (name, dversion, bversion, currency,domain) VALUE
             <input type="hidden" name="original" value="<?php echo $_POST['account']; ?>" />
             <input type="hidden" name="origdom" value="<?php echo $_POST['domain']; ?>" />
             <div class="account"><input type="text" name="account" value="<?php echo $_POST['account']; ?>"/></div>
-            <div class="domain"><input type="text" name="account" value="<?php echo $_POST['domain']; ?>"/></div>
+            <div class="domain"><input type="text" name="domain" value="<?php echo $_POST['domain']; ?>"/></div>
             <div class="currency">
             <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
-$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
+$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_POST['currency']) echo 'selected="selected"';?> 

@@ -124,7 +124,7 @@ div.date {
 
 .heading, div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount, div.sellabel, div.irow div.crate,
 div.clearacc, div.acclabel, div.xaccount .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
-div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate, div#dc_description  {
+div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate, div#dc_description, div.domain  {
     min-height:24px;
 }
 
@@ -317,7 +317,7 @@ div.topinfo{
     width:32em;
 }
 
-div.xaccount .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
+div.xaccount .account, div.xaccount div.domain, div.xaccount .currency, div.xaccount div.button,
 div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate {
     float:left;
     border:solid white 1px;
@@ -335,12 +335,12 @@ div.xaccount .account input {
     width:22.9em;
 }
 
-div.xaccount .type {
-    width:5em; 
+div.xaccount .domain {
+    width:7.5em; 
 }
 
-div.xaccount .type select {
-    width:4.9em;
+div.xaccount .domain input {
+    width:7.4em;
 }
 
 div.xaccount .currency {
@@ -353,11 +353,11 @@ div.xaccount .currency select {
 div.defaultcurrency .currency {
     float:right;
 }
-
+/*
 div.xaccount div.button {
     width:14em;
 }
-
+*/
 div.xaccount div.button div.buttoncontainer {
     padding:0 5px;
 }

@@ -49,7 +49,7 @@ var AKCMoney = function () {
                 }
             }
         });
-        form.type.addEvent('change', function() {
+        form.domain.addEvent('change', function() {
             updateAccount(xaccount);
         });
         form.currency.addEvent('change', function() {
@@ -69,6 +69,10 @@ var AKCMoney = function () {
                         redoOddEven();
                     });
                 }
+            }
+        }).addEvent('keydown', function(e) {
+            if(e.key == "enter"){
+                this.fireEvent('click',e);
             }
         });
     };
@@ -129,6 +133,7 @@ var AKCMoney = function () {
             shome.addEvent('change',function(){changestart(this);});
             sextn.addEvent('change',function(){changestart(this);});
             $('addaccount').addEvent('click', function(e) {
+                e.stop();
                 var accountName = $('newaccount').account.value;
                 if ( accountName == '') {
                     alert("This account name should not be blank, a new account is not being created");
@@ -138,7 +143,7 @@ var AKCMoney = function () {
                         request.callRequest('newaccount.php',$('newaccount'),$('newaccount'), function(holder) {
                             this.account.value = ''; //blank the new account name
                             this.currency.selectedIndex = 0; // and selections to default
-                            this.type.selectedIndex = 0;
+                            this.domain.value = '';
                             var xaccount = holder.getElement('.xaccount');
                             moveAccount(xaccount);
                             addAccountEvents(xaccount);
@@ -152,6 +157,10 @@ var AKCMoney = function () {
                         alert("Account name is not unique, please alter until it is");
                         resetFocus.delay(10,$('newaccount').account);
                     }
+                }
+            }).addEvent('keydown', function(e) {
+                if(e.key == "enter"){
+                    this.fireEvent('click',e);
                 }
             });
             $('accounts').getChildren().each(addAccountEvents);

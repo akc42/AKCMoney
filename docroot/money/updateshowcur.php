@@ -19,6 +19,7 @@
 */
 error_reporting(E_ALL);
 
+session_start();
 require_once($_SESSION['inc_dir'].'db.inc');
 
 
@@ -34,11 +35,11 @@ information we are going to reload the page</error>
     $db->exec("ROLLBACK");
     exit;
 }
-$version = $row['version'] + 1;
+$version++;
 
 
 $db->exec("UPDATE currency SET version = $version, priority = ".dbPostSafe($_POST['priority']).', display = '
-    .($_POST['show'] == 'true')?'1':'0'.' WHERE name = '.dbPostSafe($_POST['currency']).';');
+    .(($_POST['show'] == 'true')?'1':'0').' WHERE name = '.dbPostSafe($_POST['currency']).';');
 
 $db->exec("COMMIT");
 

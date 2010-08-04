@@ -76,10 +76,10 @@ window.addEvent('domready', function() {
         <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
         <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
         <div class="currency">
-            <select id="currencyselector" name="currency">
+            <select id="currencyselector" name="currency" tabindex="1">
 <?php            
 $db->exec("BEGIN");
-$result= $db->query('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
+$result= $db->query('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;');
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>                <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
@@ -126,7 +126,7 @@ if ($row = $result->fetchArray(SQLITE3_ASSOC)) {  //First row is default currenc
     <input type="hidden" name="priority" value="<?php echo $r-1 ?>" />
     <div class="description"><?php echo $row['description']; ?></div>
     <div class="currency"><?php echo $row['name']; ?></div>
-    <div class="show"><input type="checkbox" name="show" checked="checked" /></div>
+    <div class="show"><input type="checkbox" name="show" checked="checked" tabindex="<?php echo $r; ?>"/></div>
     <div class="rate"><?php echo $row['rate']; ?></div>
 </div>
 
@@ -140,7 +140,7 @@ $result->finalize();
 ?><div class="xcurrency heading"></div>
 <div id="othercurrencies">
 <?php
-$result = $db->query('SELECT * FROM currency WHERE display = false ORDER BY name ASC;');
+$result = $db->query('SELECT * FROM currency WHERE display = 0 ORDER BY name ASC;');
 while($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $r++
 ?>
@@ -149,7 +149,7 @@ $r++
     <input type="hidden" name="priority" value="1000" />
     <div class="description"><?php echo $row['description']; ?></div>
     <div class="currency"><?php echo $row['name']; ?></div>
-    <div class="show"><input type="checkbox" name="show" /></div>
+    <div class="show"><input type="checkbox" name="show"  tabindex="<?php echo $r; ?>"/></div>
     <div class="rate hidden"><?php echo $row['rate']; ?></div>
 </div>
 <?php

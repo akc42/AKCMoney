@@ -38,7 +38,7 @@ information we are going to reload the page</error>
 $version = $row['version'] + 1;
 
 $amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
-$sql = "UPDATE transaction SET version = $version ,";
+$sql = "UPDATE xaction SET version = $version ,";
 if($_POST['account'] == $row['src']) {
     $amount = -$amount;
 }

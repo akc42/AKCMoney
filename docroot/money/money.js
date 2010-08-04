@@ -331,7 +331,7 @@ var AKCMoney = function () {
                     var other = account.getNext();
                     Utils.selectValueSet(this.editForm,'account',(other)?other.get('name'):'');
                     var cleared = this.editForm.getElement('input[name=cleared]');
-                    cleared.checked = (account.get('cleared') == "t");
+                    cleared.checked = (account.get('cleared') != 0);
                     var repeat = this.editForm.getElement('select[name=repeat]');
                     Utils.selectValueSet(this.editForm,'repeat',xaction.get('repeat'));
                     repeat.addEvent('change', function () {
@@ -385,7 +385,7 @@ var AKCMoney = function () {
                                 var del= this.element.getElement('.date');
                                 if(xaction.get('repeat') == 0) {
                                     del.removeClass('repeat');
-                                    this.cleared = (xaction.get('clear') == "t");
+                                    this.cleared = (xaction.get('clear') != 0);
                                     if(this.cleared) {
                                         del.addClass('cleared');
                                         del.removeClass('passed');

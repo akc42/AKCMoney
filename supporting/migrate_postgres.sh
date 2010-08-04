@@ -17,17 +17,18 @@
 #  <http://www.gnu.org/licenses/>.
 #
 # Run as a valid database user on machine with Postgres Database.  Transmit output file (money.sql) to new host and
-# run sqlite3 .read money.sql
+# run sqlite3 .read money.sql money.db (where money.db is the name you are using for your new database)
 # 
 
 # Deal with currency - its easier to just delete and reload the whole table rather than just look for updates
+DATABASE=money
 
 echo "DELETE FROM currency;\n" > money.sql
 echo "DELETE FROM config;\n" >> money.sql
 echo "DELETE FROM account;\n" >> money.sql
-pg_dump -a --column-inserts -t currency money | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql
-pg_dump -a --column-inserts -t account money | sed 's/, atype//'  | sed "s/, 'Debit.'//"|sed "s/, 'Credit'//" | sed '/^SE/d' >> money.sql
-pg_dump -a --column-inserts -t config money | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql
-pg_dump -a --column-inserts -t transaction money | sed 's/transaction/xaction/' | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql 
+pg_dump -a --column-inserts -t currency $DATABASE | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql
+pg_dump -a --column-inserts -t account  $DATABASE | sed 's/, atype//'  | sed "s/, 'Debit.'//"|sed "s/, 'Credit'//" | sed '/^SE/d' >> money.sql
+pg_dump -a --column-inserts -t config $DATABASE | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql
+pg_dump -a --column-inserts -t transaction $DATABASE | sed 's/transaction/xaction/' | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql 
 
 

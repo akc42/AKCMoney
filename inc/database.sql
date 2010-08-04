@@ -293,3 +293,7 @@ CREATE TABLE config (
 INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency) VALUES (1,'Cash','Cash', 90, 'GBP');
 
 END TRANSACTION;
+
+-- set it all up as Write Ahead Log for max performance and minimum contention with other users.
+PRAGMA journal_mode=WAL;
+

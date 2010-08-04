@@ -37,9 +37,9 @@ information we are going to reload the page</error>
     $db->exec("ROLLBACK");
     exit;
 }
-$version = $row['version'] + 1;
+$version++;
 
-$db->exec("UPDATE transaction SET version = $version , date = ".dbPostSafe($_POST['date'])." WHERE id = ".dbPostSafe($_POST['tid']).";");
+$db->exec("UPDATE xaction SET version = $version , date = ".dbPostSafe($_POST['date'])." WHERE id = ".dbPostSafe($_POST['tid']).";");
 
 $db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>

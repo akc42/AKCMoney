@@ -22,19 +22,17 @@ require_once($_SESSION['inc_dir'].'db.inc');
 
 if(!isset($_SESSION['account']) || isset($_REQUEST['refresh'])) {
     //First time through, or if a refresh requested
-    $result = $db->query('SELECT * FROM config;',PDO::FETCH_ASSOC);
-    $row = $result->fetch();
+    $row = $db->querySingle('SELECT * FROM config;',true);
 
     // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
     $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
     $_SESSION['account'] = $row[$at.'_account'];
-    $_SESSION['demo'] = ($row['demo'] == 't');
+    $_SESSION['demo'] = ($row['demo'] != 0);
     $_SESSION['repeat_interval'] = 86400*$row['repeat_days'];  // 86400 = seconds in day
     $_SESSION['default_currency'] = $row['default_currency'];
     $_SESSION['extn_account'] = $row['extn_account'];
     $_SESSION['home_account'] = $row['home_account'];
     $_SESSION['config_version'] = $row['version'];
-    $result->closeCursor();
 }
 if(isset($_REQUEST['account'])) $_SESSION['account'] = $_REQUEST['account'];
 
@@ -74,8 +72,8 @@ function menu_items() {
 
 function content() {
     global $db;
-$account = $_SESSION['account'];
-$repeattime = time() + $_SESSION['repeat_interval'];
+    $account = $_SESSION['account'];
+    $repeattime = time() + $_SESSION['repeat_interval'];
     $db->exec("BEGIN");
 ?><h1>Account Data</h1>
 <?php 
@@ -114,7 +112,6 @@ an adminstrator, informing them that you had a problem with account name <strong
         $db->exec("ROLLBACK");
         return;
     }
-    $result->closeCursor();
     $currency = $row['currency'];
     $_SESSION['currency'] = $currency;
     $balance = $row['balance'];
@@ -286,7 +283,7 @@ $r = 0;
                     $amount = -$row['amount'];
                 }
             }
-            if ($row['srcclear'] == 't') $cleared = true;
+            if ($row['srcclear'] != 0) $cleared = true;
             if (!is_null($row['dst'])) $dual = true;
             if (!is_null($row['srccode'])) $code = $row['srccode'];
         } else {
@@ -299,7 +296,7 @@ $r = 0;
                     $amount = $row['amount'];
                 }
             }
-            if ($row['dstclear'] == 't') $cleared = true;
+            if ($row['dstclear'] !=0 ) $cleared = true;
             if (!is_null($row['src'])) $dual = true;
             if (!is_null($row['dstcode'])) $code = $row['dstcode'];
         }

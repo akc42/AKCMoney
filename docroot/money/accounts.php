@@ -74,7 +74,7 @@ window.addEvent('domready', function() {
     <div class="startaccount">
         <div class="acclabel">External Start Account</div>
         <div class="accountsel">
-            <select name="extnaccount" tabindex="10">
+            <select name="extnaccount" tabindex="1">
 <?php
 $db->exec("BEGIN");
 $result = $db->query('SELECT name FROM account ORDER BY name ASC;');
@@ -82,7 +82,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC) ) {
 ?>              <option <?php echo ($_SESSION['extn_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
-$result->finalize();
+$result->reset();
 
 ?>          </select>
 
@@ -91,14 +91,15 @@ $result->finalize();
     <div class="startaccount">
         <div class="acclabel">Home Start Account</div>
         <div class="accountsel">
-           <select name="homeaccount" tabindex="20">
+           <select name="homeaccount" tabindex="2">
 <?php
-$result=db->query('SELECT name FROM account ORDER BY name ASC;');
+
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 ?>            <option <?php echo ($_SESSION['home_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
 $result->finalize();
+$tabIndex = 3;
 ?>        </select>
         </div>
     </div>
@@ -107,20 +108,20 @@ $result->finalize();
 <h2>Account List</h2>
 <div class="xaccount heading">
     <div class="account">Name</div>
-    <div class="type">Type</div>
+    <div class="domain">Domain</div>
     <div class="currency">Currency</div>
     <div class="button">&nbsp;</div>
 </div>
 <div class="xaccount newaccount">
     <form id="newaccount" action="newaccount.php" method="post" onSubmit="return false;">
         <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-        <div class="account"><input type="text" name="account" value=""/></div>
-        <div class="domain"><input type="text" name="domain" value=""/></div>
+        <div class="account"><input type="text" name="account" value="" tabindex="<?php echo $tabIndex++; ?>"/></div>
+        <div class="domain"><input type="text" name="domain" value="" tabindex="<?php echo $tabIndex++; ?>"/></div>
         <div class="currency">
-            <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
+            <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>" tabindex="<?php echo $tabIndex++; ?>">
 <?php
 $currencies = Array();            
-$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = true ORDER BY priority ASC;');
+$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $currencies[$row['name']] = Array($row['rate'],$row['description']);
 ?>              <option value="<?php echo $row['name']; ?>" <?php
@@ -135,13 +136,13 @@ $result->finalize();
     </form>
     <div class="button">
         <div class="buttoncontainer">
-            <a id="addaccount" class="button"><span><img src="add.png"/>Add Account</span></a>
+            <a id="addaccount" class="button"><span><img src="add.png" tabindex="<?php echo $tabIndex++; ?>"/>Add Account</span></a>
         </div>
     </div>
 </div>
 <div id="accounts">
 <?php
-$result = $db->query('SELECT * FROM account ORDER BY name ASC;')
+$result = $db->query('SELECT * FROM account ORDER BY lower(name) ASC;');
 $r=0;
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $r++
@@ -150,10 +151,10 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
             <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
             <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
             <input type="hidden" name="original" value="<?php echo $row['name']; ?>" />
-            <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>"/></div>
-            <div class="domain"><input type="text" name="domain" value="<?php echo $row['domain']; ?>"/></div>
+            <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
+            <div class="domain"><input type="text" name="domain" value="<?php echo $row['domain']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
             <div class="currency">
-                <select name="currency" title="<?php echo $currencies[$row['currency']][1]; ?>">
+                <select name="currency" title="<?php echo $currencies[$row['currency']][1]; ?>" tabindex="<?php echo $tabIndex++; ?>">
 <?php
     foreach($currencies as $currency => $values) {
 ?>                <option value="<?php echo $currency; ?>" title="<?php
@@ -166,7 +167,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         </form>
         <div class="button">
             <div class="buttoncontainer">
-                <a class="button"><span><img src="delete.png"/>Delete Account</span></a>
+                <a class="button" tabindex="<?php echo $tabIndex++; ?>"><span><img src="delete.png"/>Delete Account</span></a>
             </div>
         </div>
     </div>

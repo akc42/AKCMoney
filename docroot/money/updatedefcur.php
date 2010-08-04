@@ -26,7 +26,7 @@ require_once($_SESSION['inc_dir'].'db.inc');
 $db->exec("BEGIN IMMEDIATE");
 
 $version=$db->querySingle("SELECT version, default_currency FROM config;");
-if ( $row['version'] != $_POST['version'] ) {
+if ( $version != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We will reload the page</error>
 <?php
     $_SESSION['default_currency'] = $row['default_currency'];
@@ -34,14 +34,14 @@ if ( $row['version'] != $_POST['version'] ) {
     $db->exec("ROLLBACK");
     exit;
 }
-$version = $row['version'] + 1;
-$
+$version++;
+
 
 $_SESSION['default_currency'] = $_POST['currency'];
 $_SESSION['config_version'] = $version;
 
 $db->exec("UPDATE config SET version = $version, default_currency = ".dbPostSafe($_POST['currency']).';');
-$row = $db->querySingle('SELECT * FROM currency WHERE name = '.dbMakeSafe($_POST['currency'])),true);
+$row = $db->querySingle('SELECT * FROM currency WHERE name = '.dbMakeSafe($_POST['currency']),true);
 
 $oldrate = $row['rate'];
 $oldpriority = $row['priority'];
@@ -60,7 +60,7 @@ $db->exec("UPDATE currency SET version = (version + 1), rate = CASE WHEN name = 
         <select id="currencyselector" name="currency">
 <?php            
 
-$result = $db->query('SELECT * FROM currency WHERE display = true ORDER BY priority ASC;');
+$result = $db->query('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;');
 $currencies = Array();
 while($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate']);
