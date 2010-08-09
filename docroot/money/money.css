@@ -124,7 +124,8 @@ div.date {
 
 .heading, div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount, div.sellabel, div.irow div.crate,
 div.clearacc, div.acclabel, div.xaccount .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
-div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate, div#dc_description, div.domain  {
+div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate, div#dc_description, div.domain,
+div.codesel  {
     min-height:24px;
 }
 
@@ -153,7 +154,7 @@ div.sellabel {
     padding:3px;
     float:left;
     border:1px solid white;
-    width:106px;
+    width:92px;
 }
 
 div.acclabel {
@@ -184,18 +185,18 @@ div.description {
 }
 
 div.accountsel {
-    width:410px;
+    width:262px;
     padding:0 3px;
     height:25px;
     border:solid white 1px;
     float:left;
 }
 div.accountsel select {
-    width:227px;
+    width:260px;
 }
 
 div.repeatsel {
-    width:129px;
+    width:149px;
     padding:0 1px;
     height:24px;
     border:solid white 1px;
@@ -203,9 +204,65 @@ div.repeatsel {
 }
 
 div.repeatsel select{
-    width:104px;
+    width:140px;
 }
 
+div.codesel {
+    width:274px;
+    padding:0 1px;
+    height:24px;
+    border:solid white 1px;
+    float:left;
+}
+div.codesel select{
+    width:265px;
+}
+div.codetype {
+    margin:2px auto;
+    padding:0;
+    width:20px;
+    height:20px;
+    float:left;
+    border:none;
+    position:relative;
+}
+div.codetype span {
+    display:none;
+}
+
+div.code_ {
+    background:transparent url(codes.png) no-repeat 0 0;
+}
+
+div.code_C {
+    background:transparent url(codes.png) no-repeat 0 -20px;
+}
+div.code_R {
+    background:transparent url(codes.png) no-repeat 0 -40px;
+}
+div.code_A {
+    background:transparent url(codes.png) no-repeat 0 -60px;
+}
+div.code_B {
+    background:transparent url(codes.png) no-repeat 0 -80px;
+}
+
+
+div.codetype:hover .codedesc {
+    display:block;
+    position:absolute;
+    background:#FFFD7C;
+    border:1px solid black;
+    z-index:5;
+    top:-30px;
+    left:-90px;
+    width:150px;
+    padding:2px;
+}
+
+div.codetype:hover span.nocode {
+    display:none;
+}
 div.actual {
     width:49px;
     padding:0 3px;
@@ -263,7 +320,7 @@ div.accountbuttons {
 }
 
 div.switchaccounts {
-    width:227px;
+    width:160px;
 }
 
 div.spacer1 {

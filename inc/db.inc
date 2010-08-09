@@ -40,7 +40,7 @@ function fmtAmount($value) {
 
 $db = new SQLite3($_SESSION['database']);
 
-//$db->setBusyTimeout(25000);  //set 25 second timeout on obtaining a lock
+$db->busyTimeout(25000);  //set 25 second timeout on obtaining a lock
 $db->exec("PRAGMA foreign_keys = ON");
 
 ?>

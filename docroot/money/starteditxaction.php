@@ -20,18 +20,17 @@
 error_reporting(E_ALL);
 
 session_start();
+if(!isset($_SESSION['inc_dir'])) die('<error>AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart</error>');
 require_once($_SESSION['inc_dir'].'db.inc');
 
 
 $db->exec("BEGIN");
 
 $row = $db->querySingle("SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency, ".
-     "cd.rate AS drate, srcacode.description AS sacdesc, dstacode.description AS dacdesc FROM xaction ".
+     "cd.rate AS drate FROM xaction ".
      "LEFT JOIN currency AS ct ON xaction.currency = ct.name ".
     "LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
     "LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
-    "LEFT JOIN account_code AS srcacode ON xaction.srccode = srcacode.id ".
-    "LEFT JOIN account_code AS dstacode ON xaction.dstcode = dstacode.id ".
     "WHERE xaction.id=".dbMakeSafe($_POST['tid']).";",true);
 
 if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
@@ -52,7 +51,7 @@ data we will reload the page</error>
 <?php 
 if($_POST['account'] == $row['src']) {
     if($row['currency'] == $row['srccurrency']) {
-        $aamount = -$row['amount'];
+        $aamount = $row['amount'];
     } else {
         $aamount = $row['srcamount'];
     }
@@ -61,7 +60,7 @@ if($_POST['account'] == $row['src']) {
     </account>
 <?php
     if(isset($row['dst'])) {
-?>  <account name="<?php echo $row['dst']; ?>" cleared="<?php echo $row['dstclear']; ?>"></account>
+?>  <account name="<?php echo $row['dst']; ?>"></account>
 <?php
     }
 } else {
@@ -75,7 +74,7 @@ if($_POST['account'] == $row['src']) {
     </account>
 <?php
     if(isset($row['src'])) {
-?>  <account name="<?php echo $row['src']; ?>" cleared="<?php echo $row['srcclear']; ?>"></account>
+?>  <account name="<?php echo $row['src']; ?>"></account>
 <?php
     }
 }

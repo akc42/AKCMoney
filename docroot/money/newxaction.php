@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 error_reporting(E_ALL);
 
 session_start();
+if(!isset($_SESSION['inc_dir'])) die('<error>AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart</error>');
 require_once($_SESSION['inc_dir'].'db.inc');
 
 $db->exec("BEGIN EXCLUSIVE");
@@ -41,7 +42,7 @@ $row = $db->querySingle("SELECT * FROM xaction WHERE id = ".$db->lastInsertRowID
         <div class="description clickable"><?php echo $row['description'];?></div>
         <div class="amount aamount clickable"><?php echo fmtAmount(0);?></div>
         <div class="amount cumulative"><?php echo fmtAmount(0);?></div>
-        <div class="code"></div>
+        <div class="codetype"><div class="code_">&nbsp;</div><span class="codeid">0</span><span class="codedesc"></span></div>
     </div>
 </div>
 <?php

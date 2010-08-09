@@ -213,7 +213,20 @@ var AKCMoney = function () {
             };
         },
         edit: function () {
-            this.editForm = $('xactiontemplate').clone().removeClass('hidden').inject(this.element,'bottom');
+            var codediv = this.element.getElement('.codetype')
+            var codeimg = codediv.getElement('div').clone();
+            this.editForm = $('xactiontemplate').clone().inject(this.element,'bottom');
+            var codeformdiv = this.editForm.getElement('.codetype');
+            codeimg.inject(codeformdiv); //inject image into form just after select
+            Utils.selectValueSet(this.editForm,'code',codediv.getElement('.codeid').get('text')); //and set selection to this correct value
+            this.editForm.getElement('select[name=code]').addEvent('change', function(e) {
+                e.stop();
+                codeformdiv.getElement('div').destroy();
+                var newimg = new Element('div');
+                newimg.addClass('code_'+this.getChildren()[this.selectedIndex].get('codetype'));
+                newimg.set('html','&nbsp;');
+                newimg.inject(codeformdiv);
+            });
             this.element.getFirst().addClass('hidden');
             this.editForm.getElement('input[name=tid]').value = this.tid;
             this.editForm.getElement('input[name=rno]').value = this.element.getElement('.ref').get('text');
@@ -239,6 +252,7 @@ var AKCMoney = function () {
                 this,
                 function(holder) {
                     this.element.removeClass('spinner');
+                    this.editForm.removeClass('hidden');
                     var rno = this.editForm.getElement('input[name=rno]');
                     rno.value = this.element.getElement('.ref').get('text');
                     var desc = this.editForm.getElement('input[name=desc]');
@@ -252,9 +266,12 @@ var AKCMoney = function () {
                     this.editForm.getElement('.sellabel').set('text',(accountType.value == 'src')?'Dst :':'Src :');
                     this.editForm.getElement('.switchsrcdst').addEvent('click',function(e) {
                         accountType.value = (accountType.value == 'src')?'dst':'src';
-                        aamount.negate();
-                        this.amount.setValue(aamount);
-                        this.editForm.getElement('.sellabel').set('text',(accountType.value == 'src')?'Dst :':'Src :');
+                        this.amount.negate();
+                        var newtype = (accountType.value == 'src')?'Dst':'Src' ;
+                        this.editForm.getElement('.sellabel').set('text',newtype+' :');
+                        var mover = this.editForm.getElement('.moveaccount');
+                        mover.set('title','Move to '+newtype+' account');
+                        mover.getElement('span').set('html','<img src="move.png" />Move to '+newtype);
                         recalculate();
                     }.bind(this));
                     
@@ -273,12 +290,12 @@ var AKCMoney = function () {
                             if(this.editForm.getElement('input[name=acchange]').value == 0) {
                                 if(isZero) {
                                     aamount.setValue(amount).multiply(arate/trate);
-                                    if (accountType.value == "src") aamount.negate();
                                     isZero = false;
                                 } else {
                                     aamount.multiply(amount.getValue()/oldValue);
                                 }
                                 this.amount.setValue(aamount);
+                                if (accountType.value == "src") this.amount.negate();
                                 recalculate();
                             }
                             oldValue = amount.getValue();                                
@@ -294,6 +311,7 @@ var AKCMoney = function () {
                                 acchange.value = 1;
                             }
                             this.amount.setValue(aamount);
+                            if (accountType.value == "src") this.amount.negate();
                             recalculate();
                         }
                     }.bind(this));
@@ -311,13 +329,15 @@ var AKCMoney = function () {
                                     aamount.element.readOnly = true;
                                     aamount.setValue(amount);
                                     this.amount.setValue(aamount);
+                                    if (accountType.value == "src") this.amount.negate();
                                     recalculate();
                                 } else {
                                     aamount.element.readOnly = false;
                                     if(!isZero && this.editForm.getElement('input[name=acchange]').value == 0) {
                                         aamount.multiply(trate/newrate);
                                         this.amount.setValue(aamount);
-                                        recalculate();
+                                        if (accountType.value == "src") this.amount.negate();
+                                      recalculate();
                                     }
                                 }
                                 trate = newrate;
@@ -369,6 +389,19 @@ var AKCMoney = function () {
                             );
                         }
                     }.bind(this));
+                    this.editForm.getElement('.moveaccount').addEvent('click',function(e) {
+                        e.stop();
+                        var account = this.editForm.getElement('select[name=account]');
+                        if(account.selectedIndex != 0) {
+                            //Only do this if we have selected a new account from the list
+                            this.editForm.getElement('input[name=move]').value=1; //indicates to update transaction to deal with this specially
+                            $('accountsel').getElement('input[name=tid]').value=this.tid; //tells next call to index.php to go straight into edit of this
+                            request.callRequest('updatexaction.php',this.editForm,this,function(holder) {
+                                Utils.selectValueSet($('accountsel'),'account',account.options[account.selectedIndex].value);
+                                $('accountsel').submit();                            
+                            });
+                        }
+                    }.bind(this));         
                     this.editForm.getElement('.closeeditform').addEvent('click',function(e) {
                         e.stop();
                         request.callRequest('updatexaction.php',this.editForm,this,
@@ -385,7 +418,7 @@ var AKCMoney = function () {
                                 var del= this.element.getElement('.date');
                                 if(xaction.get('repeat') == 0) {
                                     del.removeClass('repeat');
-                                    this.cleared = (xaction.get('clear') != 0);
+                                    this.cleared = (xaction.get('clear') != 'f');
                                     if(this.cleared) {
                                         del.addClass('cleared');
                                         del.removeClass('passed');
@@ -449,8 +482,13 @@ var AKCMoney = function () {
                                     this.element.getElement('.description').removeClass('dual');
                                     this.element.getElement('.aamount').removeClass('dual');
                                     this.element.getElement('.cumulative').removeClass('dual');
-                                }                                        
-                                 this.element.getElement('.wrapper').removeClass('hidden');
+                                }
+                                codediv.getElement('div').destroy();
+                                codeimg = new Element('div',{'class':'code_'+xaction.getElement('code').get('codetype'),'html':'&nbsp;'});
+                                codeimg.inject(codediv,'top');
+                                codediv.getElement('.codeid').set('text',xaction.getElement('code').get('codeid'));
+                                codediv.getElement('.codedesc').set('text',xaction.getElement('code').get('text'));
+                                this.element.getElement('.wrapper').removeClass('hidden');
                                 this.amount.setValue(holder.getElement('amount').get('text'));
                                 this.editForm.destroy();
                                 sorting.addItems(this.element);
@@ -471,9 +509,6 @@ var AKCMoney = function () {
         },
         getAmount: function () {
             return this.amount;
-        },
-        getCumulative: function() {
-            return this.cumulative;
         },
         setCumulative: function(amount) {
             this.cumulative.setValue(amount);
@@ -536,11 +571,14 @@ var AKCMoney = function () {
         },this);
     };
     return {
-        Account: function(aN, c) {
+        Account: function(aN, c,tid) {
             currency = c;
             accountName = aN;
             $('transactions').getElements('.xaction').each(function(transaction) {
-                new Transaction(transaction); //Class attaches to the transaction as it is occluded
+                var t = new Transaction(transaction); //Class attaches to the transaction as it is occluded
+                if (t.tid == tid) {
+                    t.edit.delay(10,t); //Allow all other transaction setups to complete and then edit this one
+                }
             });
             sorting = new Sortables($('transactions'),{
                 clone:true,

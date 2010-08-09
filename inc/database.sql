@@ -18,24 +18,42 @@
 
 BEGIN;
 
--- account codes define the accounting code associated with this account (
 
-CREATE TABLE account_code (
-    id character varying PRIMARY KEY,
-    type char(1) NOT NULL,          -- 'C' = cost, 'R' = revenue
+-- Account Code Types
+
+CREATE TABLE codeType (
+    type char(1) PRIMARY KEY,
+    description character varying
+);
+
+INSERT INTO codeType VALUES ('C','Direct Costs'); -- Direct Costs incurred by the business
+INSERT INTO codeType VALUES ('R','Revenue'); -- Revenues Due
+INSERT INTO codeType VALUES ('A','Computer Asset'); --Capital purchase of Computer Asset
+INSERT INTO codeType VALUES ('B','Balancing Account');  --Holds personal costs that are to be re-embersed by the business
+
+-- account codes define the accounting code associated with this account 
+
+CREATE TABLE code (
+    id integer PRIMARY KEY,
+    type char(1) NOT NULL REFERENCES codeType(type),          
     description character varying
 );
 
 
-INSERT INTO account_code VALUES ('OpCost', 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
-INSERT INTO account_code VALUES ('BillCos', 'C', 'Billable Costs');
-INSERT INTO account_code VALUES ('Invoice', 'R', 'Invoice to Client'); 
-INSERT INTO account_code VALUES ('Salary', 'C', 'Salaries');
-INSERT INTO account_code VALUES ('OfEqup', 'C', 'Office Equipment');
-INSERT INTO account_code VALUES ('GenCos', 'C', 'General Costs'); -- costs not included elsewhere
-INSERT INTO account_code VALUES ('Miles', 'C', 'Mileage @40p per mile');
-INSERT INTO account_code VALUES ('Advert', 'C', 'Advertising');
+INSERT INTO code VALUES (1, 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
+INSERT INTO code VALUES (2, 'C', 'Billable Costs'); -- costs incurred which will be invoiced from clients
+INSERT INTO code VALUES (3, 'C', 'Non Billable Mileage @40p per mile'); --Mileage Not Billable from Clients
+INSERT INTO code VALUES (4, 'C', 'Invoiceable Mileage @40p per mile'); --Mileage Costed at 40p but only Billed at 20p
+INSERT INTO code VALUES (5, 'C', 'Salaries'); --Salaries and Related Costs (Tax and NI)
+INSERT INTO code VALUES (6, 'C', 'Advertising'); --Advertising Costs
+INSERT INTO code VALUES (7, 'C', 'Office Cost'); --Stationary, Postage etc
+INSERT INTO code VALUES (99, 'C', 'General Costs'); -- costs not included elsewhere
+INSERT INTO code VALUES (100, 'R', 'Invoice for Professional Service');
+INSERT INTO code VALUES (101,'R', 'Invoice for Web Design and Hosting'); 
+INSERT INTO code VALUES (200,'A','Computer Equipment'); --Depreciable Computer Equipment
+INSERT INTO code VALUES (300,'B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
 
+-- Define valid Repeat Values for Transactions
 
 CREATE TABLE repeat (
     rkey integer PRIMARY KEY, -- key used in transaction 
@@ -244,7 +262,6 @@ CREATE TABLE account (
     bversion bigint DEFAULT 1 NOT NULL,    -- this is incremented when the balance is updated to check that parallel edits are not happening
     dversion bigint DEFAULT 1 NOT NULL,    -- this is incremented when the details of the account are updated to check for parallel edits
     currency character(3) REFERENCES currency(name),  -- currency in which to show transactions
-    code integer REFERENCES account_code(id) ON DELETE SET NULL ON UPDATE CASCADE, -- account code for formal accounting (NULL says not used)
     balance bigint DEFAULT 0 NOT NULL, -- opening balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when opening balance was set
     domain character varying -- domain that account belongs to (free text at the moment)
@@ -265,11 +282,11 @@ CREATE TABLE xaction (
     src character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- source account (debits this account when amount is +ve [the normal case])
     srcamount bigint,                 -- if the source account is a different currency then this is the amount (same sign as) in that currency
     srcclear boolean DEFAULT 0 NOT NULL,  -- the amount is cleared in the source account
-    srccode character varying REFERENCES account_code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to increment with this transaction
+    srccode integer REFERENCES code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to account for this transaction
     dst character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- destination account (credits this account when amount is +ve [the normal case])
-    dstamount bigint,                 -- if the destination account is a different currency then this is the ammount in that currency
+    dstamount bigint,                 -- if the destination account is a different currency then this is the amount in that currency
     dstclear boolean DEFAULT 0 NOT NULL, -- if the amount is cleared in the destination account
-    dstcode character varying REFERENCES account_code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to decrement with this transaction
+    dstcode integer REFERENCES code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to account for this transaction
     description character varying,      -- details of the transaction
     rno character varying,              -- reference number for the transaction
     repeat integer DEFAULT 0 NOT NULL REFERENCES repeat(rkey) -- if the transaction is repeating

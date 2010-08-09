@@ -20,6 +20,7 @@
 error_reporting(E_ALL);
 
 session_start();
+if(!isset($_SESSION['inc_dir'])) die('AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart');
 require_once($_SESSION['inc_dir'].'db.inc');
 
 function head_content() {

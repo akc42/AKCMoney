@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -19,9 +19,9 @@
 */
 error_reporting(E_ALL);
 
-error_reporting(E_ALL);
 
 session_start();
+if(!isset($_SESSION['inc_dir'])) die('<error>AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart</error>');
 require_once($_SESSION['inc_dir'].'db.inc');
 
 

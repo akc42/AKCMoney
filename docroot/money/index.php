@@ -18,6 +18,7 @@
 
 */
 session_start();
+if(!isset($_SESSION['inc_dir'])) die('AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart');
 require_once($_SESSION['inc_dir'].'db.inc');
 
 if(!isset($_SESSION['account']) || isset($_REQUEST['refresh'])) {
@@ -83,6 +84,7 @@ function content() {
     } 
 ?>      <form id="accountsel" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
             <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
+            <input type="hidden" name="tid" value="0" />
 Account Name:		
             <select id="account" name="account" tabindex="300">
 <?php
@@ -159,6 +161,8 @@ window.addEvent('domready', function() {
     currentSelected.destroy();
     var blankOption = new Element('option'); // and add a "selected" blank entry at top
     blankOption.set('selected','selected');
+    blankOption.set('value','');
+    blankOption.set('text','-- Select (Optional) Other Account --');
     blankOption.inject(accountList,'top');
 // Insert this new list into the new transaction template
     accountList.inject($('xactiontemplate').getElement('.accountsel'));
@@ -167,7 +171,7 @@ window.addEvent('domready', function() {
         e.stop();
         $('accountsel').submit();
     });
-    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>");
+    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php if(isset($_POST['tid'])) {echo $_POST['tid'];} else {echo '0';} ?>);
 });
 </script>
 
@@ -263,8 +267,10 @@ $r = 0;
 ?>
 <div id="transactions">
 <?php
-    $sql = 'SELECT xaction.*, currency.name AS cname, currency.rate AS rate FROM xaction,currency ';
-    $sql .= 'LEFT JOIN account_code AS sc ON sc.id = xaction.srccode LEFT JOIN account_code AS dc ON dc.id = xaction.dstcode ';
+    $sql = 'SELECT xaction.*, currency.name AS cname, currency.rate AS rate, srcacc.domain AS srcdom, dstacc.domain AS dstdom, ';
+    $sql .= 'sc.type AS sct, sc.description AS scd, dc.type AS dct, dc.description AS dcd  FROM xaction,currency ';
+    $sql .= 'LEFT JOIN code AS sc ON sc.id = xaction.srccode LEFT JOIN code AS dc ON dc.id = xaction.dstcode ';
+    $sql .= 'LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name ';
     $sql .= 'WHERE xaction.currency = currency.name ';
     $sql .= 'AND (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).') ORDER BY date ASC;';
     $result = $db->query($sql);
@@ -272,10 +278,12 @@ $r = 0;
         $r++;
         $cleared = false;
         $dual = false;
-        $code = '';
+        $codetype = '';
+        $codedesc = '';
+        $codeid = 0;
         if($row['src'] == $account) {
             if(!is_null($row['srcamount'])) {
-                $amount = $row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
+                -$amount = $row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
             } else {
                 if($row['currency'] != $currency) {
                     $amount = -$row['amount']*$crate/$row['rate'];
@@ -285,7 +293,16 @@ $r = 0;
             }
             if ($row['srcclear'] != 0) $cleared = true;
             if (!is_null($row['dst'])) $dual = true;
-            if (!is_null($row['srccode'])) $code = $row['srccode'];
+            if (!is_null($row['srccode'])) {
+                $codeid = $row['srccode'];
+                $codetype = $row['sct'];
+                $codedesc = $row['scd'];
+            } elseif (!is_null($row['dstcode']) && $row['srcdom'] == $row['dstdom'] ) {
+            /* if the dst account is in the same domain as the src account, then we can borrow the dst account code */
+                $codeid = $row['dstcode'];
+                $codetype = $row['dct'];
+                $codedesc = $row['dcd'];
+            }
         } else {
             if(!is_null($row['dstamount'])) {
                 $amount = $row['dstamount'];
@@ -298,7 +315,16 @@ $r = 0;
             }
             if ($row['dstclear'] !=0 ) $cleared = true;
             if (!is_null($row['src'])) $dual = true;
-            if (!is_null($row['dstcode'])) $code = $row['dstcode'];
+            if (!is_null($row['dstcode'])) {
+                $codeid = $row['dstcode'];
+                $codetype = $row['dct'];
+                $codedesc = $row['dcd'];
+            } elseif (!is_null($row['srccode']) && $row['srcdom'] == $row['dstdom'] ) {
+            /* if the src account is in the same domain as the dst account, then we can borrow the src account code */
+                $codeid = $row['srccode'];
+                $codetype = $row['sct'];
+                $codedesc = $row['scd'];
+            }
         }
         $cumbalance += $amount;
         if (!$locatedNow && $row['date'] > time()) {
@@ -330,7 +356,11 @@ $r = 0;
             };
             if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></div>
         <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
-        <div class="code"><?php echo $code; ?></div>
+        <div class="codetype">
+            <div class="code_<?php echo $codetype; ?>">&nbsp;</div>
+            <span class="codeid"><?php echo $codeid; ?></span>
+            <span class="codedesc<?php if ($codeid==0) echo ' nocode';?>"><?php echo $codedesc; ?></span>
+        </div>
     </div>
 </div>
 <?php
@@ -348,6 +378,7 @@ $r = 0;
     <input type="hidden" name="accounttype" value="src"/>
     <input type="hidden" name="accountname" value="<?php echo $account;?>" />
     <input type="hidden" name="acchange" value="0" />
+    <input type="hidden" name="move" value="0" />
     <div class="xaction irow">
         <div class="date" ><input type="hidden" name="xdate" value="0" /></div>
         <div class="ref"><input class="ref" type="text" name="rno" value="" tabindex="50"/></div>
@@ -374,10 +405,6 @@ $r = 0;
             <input type="checkbox" name="cleared" tabindex="40"/>
             <label for="cleared">Cleared</label>
         </div>
-        <div class="spacer1"></div>
-        <div class="buttoncontainer switchaccounts">
-            <a class="button switchsrcdst" title="switch source and destination accounts" ><span><img src="switch.png"/>Switch Accounts (S&lt;-&gt;D)</span></a>
-        </div>
         <div class="repeatsel">
             <select name="repeat" tabindex="60" >
 <?php
@@ -391,6 +418,19 @@ $r = 0;
     $result->finalize();
 ?>          </select>
         </div>
+        <div class="codesel">
+            <select name="code" tabindex="63">
+                <option value="0" type="" selected="selected">-- Select (Optional) Account Code --</option>
+<?php
+    $result = $db->query('SELECT * FROM code ORDER BY id ASC;');
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+?>              <option value="<?php echo $row['id']; ?>" codetype="<?php echo $row['type']; ?>"><?php echo $row['description']; ?></option>
+<?php
+    }
+    $result->finalize();
+?>            </select>
+        </div>
+        <div class="codetype"></div>
         <div class="buttoncontainer">
             <a class="button setcurrency" title="set currency rate from this transaction" ><span><img src="set.png"/>Set Currency Rate</span></a>
         </div>
@@ -398,6 +438,9 @@ $r = 0;
     <div class="xaction brow">
         <div class="sellabel">Dst :</div>
         <div class="accountsel"></div>
+        <div class="buttoncontainer switchaccounts">
+            <a class="button switchsrcdst" title="switch source and destination accounts" ><span><img src="switch.png"/>Switch (S&lt;-&gt;D)</span></a>
+        </div>
         <div class="amount crate">1.0</div>
         <div class="amount cumcopy">0.00</div>
     </div>
@@ -405,7 +448,8 @@ $r = 0;
         <div class="buttoncontainer xactionactions">
             <a class="button revertxaction" title="close form and revert transaction" ><span><img src="revert.png"/>Cancel</span></a>
             <a class="button closeeditform" title="close form and save transaction" ><span><img src="save.png"/>Save and Close</span></a>
-            <a class="button deletexaction" title="delete this transaction" ><span><img src="delete.png"/>Delete This Transaction</span></a>
+            <a class="button moveaccount" title="move to Dst account" ><span><img src="move.png"/>Move to Dst</span></a>
+            <a class="button deletexaction" title="delete this transaction" ><span><img src="delete.png"/>Delete</span></a>
         </div>
         <div class="amount"><input class="amount" name="aamount" type="text" value="0.00" tabindex="200"/></div>
         <div class="amount"><?php echo $currency; ?></div>
