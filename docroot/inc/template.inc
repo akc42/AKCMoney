@@ -19,20 +19,21 @@
 */
 
 /*This template file shows the prefered way of providing a site template in which to fit
-the application.  This file should be placed in the document root of the site where each page of the application
+the application.  This file should be placed in the document root of the site where each page of the application (and other applications also)
 will call it to display the site surround, and expect it to call it back via "head_content()", "menu_items()" and "content()" functions.
-
-The application itself is initialised by calling index.php in the application directory where it will see if it has already created a settings.php
-file (do not create this manually - its presence or otherwise causes the application to go into installation mode). 
-
-Updates from one version of the database to another are also handled in installation mode, so when installing a new release of the application, you should delete (or move to a backup location) the settings.php file and allow the application to recreate it.
 
 Full instructions are given in the documentation.html file contained in the "supporting" directory of the overall source package.  This is a 
 tiddly wiki and is a full standalone web site inside a single file.  
 
 This inclusion of the copyright file is the prefered way of providing attribution as required by the licence (obviously adjusting the
-relative path to locate the the file in the delivered application), the inclusion of the version number is entirely optional, but is
-a useful information when users wish to report faults */
+relative path to locate the the file in the delivered application).  If this template covers several applications, then each one should be included with a separate div as shown. 
+
+The inclusion of the application version number is entirely optional, but is
+a useful information when users wish to report faults
+
+*/
+
+define('MONEY_APP','/home/alan/dev/money/app/inc');  //Repeat for all apps that are to be included in footer
   
 error_reporting(E_ALL);
 date_default_timezone_set  ('Europe/London');
@@ -58,8 +59,8 @@ content();
 ?>
 </div>
 <div id="footer">
-	<div id="copyright"><?php include($_SESSION['inc_dir'].'copyright.inc');?></div>
-	<div id="version"><?php include($_SESSION['inc_dir'].'version.inc');?></div>
+	<div class="copyright"><?php include(MONEY_APP.'inc/copyright.inc');?></div>
+	<div class="version">AKCMoney <?php include(MONEY_APP.'inc/version.inc');?></div>
 </div>
 
 </body>

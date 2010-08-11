@@ -17,28 +17,29 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
 error_reporting(E_ALL);
 
-session_start();
-if(!isset($_SESSION['inc_dir'])) die('<error>AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart</error>');
 
-require_once($_SESSION['inc_dir'].'db.inc');
+session_start();
+require_once('./inc/db.inc');
 
 
 $db->exec("BEGIN IMMEDIATE");
 
-$version=$db->querySingle("SELECT dversion FROM account WHERE name =".dbMakeSafe($_POST['account']));
-if ($version != $_POST['dversion']) {
-    //account with this name already exists so we cannot create one
-?><error>It appears someone else is editing accounts in parallel.  We need to reload the page to ensure you are working with consistent data</error>
+
+$version=$db->querySingle("SELECT version FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";");
+
+if ( $version != $_POST['version'] ) {
+?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
+information we are going to reload the page</error>
 <?php
     $db->exec("ROLLBACK");
     exit;
 }
+$version++;
 
-$db->exec("DELETE FROM account WHERE name = ".dbPostSafe($_POST['account'])." ;");
+$db->exec("UPDATE xaction SET version = $version , date = ".dbPostSafe($_POST['date'])." WHERE id = ".dbPostSafe($_POST['tid']).";");
 
 $db->exec("COMMIT");
-
-?><status>OK</status>
-
+?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>

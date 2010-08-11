@@ -17,30 +17,30 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
 error_reporting(E_ALL);
 
 
 session_start();
-if(!isset($_SESSION['inc_dir'])) die('<error>AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart</error>');
-require_once($_SESSION['inc_dir'].'db.inc');
+require_once('./inc/db.inc');
 
 
 $db->exec("BEGIN IMMEDIATE");
 
+$version = $db->querySingle("SELECT bversion FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
 
-$version=$db->querySingle("SELECT version FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";");
-
-if ( $version != $_POST['version'] ) {
-?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
-information we are going to reload the page</error>
+if ( $version != $_POST['bversion'] ) {
+?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
+ensure you have the correct version</error>
 <?php
     $db->exec("ROLLBACK");
     exit;
 }
+
 $version++;
+$balance = round(100*$_POST['balance']);
+$db->exec("UPDATE account SET bversion = $version, balance = $balance WHERE name = ".dbMakeSafe($_POST['account']).";");
 
-$db->exec("UPDATE xaction SET version = $version , date = ".dbPostSafe($_POST['date'])." WHERE id = ".dbPostSafe($_POST['tid']).";");
-
+?><balance version="<?php echo $version; ?>"><?php echo fmtAmount($balance) ; ?></balance>
+<?php
 $db->exec("COMMIT");
-?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>
+?>

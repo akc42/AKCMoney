@@ -1,0 +1,35 @@
+<virtualhost *:80 >
+    ServerName money
+    ServerAlias money.home money.local
+    DocumentRoot /home/alan/dev/money/docroot
+
+    AssignUserId alan alan
+
+    <Directory / >
+    	       Order	allow,deny
+	       Deny from all
+    </Directory>
+
+    <Directory /home/alan/dev/money/docroot/>
+        Order  deny,allow
+	Allow  from all
+    </Directory>
+
+    <Directory /home/alan/dev/money/docroot/inc/ >
+        Order  allow,deny
+	Deny   from all
+    </Directory>
+
+    Alias /money/ /home/alan/dev/money/app/
+    <Directory /home/alan/dev/money/app/ >
+    	Order  deny,allow
+	Allow  from all
+    </Directory>
+    
+    <Directory /home/alan/dev/money/app/inc/ >
+    	Order  allow,deny
+	Deny   from all
+    </Directory>
+
+
+</virtualhost>

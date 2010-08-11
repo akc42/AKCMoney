@@ -295,6 +295,8 @@ CREATE TABLE xaction (
 
 CREATE INDEX xaction_idx_dst ON xaction (dst);
 CREATE INDEX xaction_idx_src ON xaction (src);
+CREATE INDEX xaction_idx_scode ON xaction(srccode);
+CREATE INDEX xaction_idx_dcode ON xaction(dstcode);
 
 
 CREATE TABLE config (

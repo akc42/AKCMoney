@@ -17,10 +17,34 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+define('DB_DIR','/home/alan/dev/money/db/');
 session_start();
-if(!isset($_SESSION['inc_dir'])) die('AKC Money - session timed out and I do not know what instance of the application you were running.  Please restart');
-require_once($_SESSION['inc_dir'].'db.inc');
+if(isset($_GET['db'])) $_SESSION['database'] = DB_DIR.$_GET['db'].'.db';
+//Install if we haven't already
+if(isset($_SESSION['database'])) { 
+    if(!file_exists($_SESSION['database'])) {
+        $db = new Sqlite3($_SESSION['database']);
+        $db->exec(file_get_contents('inc/database.sql'));
+        /*
+        // TO BE ADDED WHEN THERE IS A NEXT UPDATE
+    } else {
+        $db = new Sqlite3($_SESSION['database']);
+    //    $db->setAttribute(PDO::ATTR_TIMEOUT,25);  //set 25 second timeout on obtaining a lock
 
+        $dbversion = $db->querySingle('SELECT db-version FROM config;');
+        if($dbversion < 2) { //update to version 2
+            $db->exec(file_get_contents($_SESSION['inc_dir'].'update1.sql'));
+        }
+    */ 
+    }
+}
+require_once('./inc/db.inc');
+if(!isset($_SESSION['key'])) {
+    $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    $key='';
+    for ($i=0; $i<10; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
+    $_SESSION['key'] = $key;
+}
 if(!isset($_SESSION['account']) || isset($_REQUEST['refresh'])) {
     //First time through, or if a refresh requested
     $row = $db->querySingle('SELECT * FROM config;',true);
@@ -64,9 +88,9 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 
 function menu_items() {
 
-?>      <li><a href="/money/index.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account" class="current">Account</a></li>
-        <li><a href="/money/accounts.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="/money/currency.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Currency Manager">Currency Manager</a></li>
+?>      <li><a href="/money/index.php" target="_self" title="Account" class="current">Account</a></li>
+        <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
+        <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
 
 <?php
 }
@@ -459,6 +483,6 @@ $r = 0;
 <?php
     $db->exec("COMMIT");
 } 
-require_once($_SERVER['DOCUMENT_ROOT'].'/template.php'); 
+require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
 ?>
 

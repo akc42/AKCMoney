@@ -22,7 +22,7 @@
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
-if( !isset($_REQUEST['key']) || $_REQUEST['key'] != $_SESSION['key'] ) die("<error>Hacking attempt - wrong key</error>");
+if( !isset($_SESSION['database'])) header('Location: error.php');
 
 function dbMakeSafe($value) {
 	if (!get_magic_quotes_gpc()) {
