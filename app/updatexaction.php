@@ -21,16 +21,69 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+
+$sstmt = $db->prepare("
+    SELECT 
+        xaction.*,  
+        ct.rate AS trate, 
+        srcacc.currency AS srccurrency,
+        cs.rate AS srate,
+        dstacc.currency AS dstcurrency,
+        cd.rate AS drate,
+        srcacc.domain AS srcdom,
+        dstacc.domain AS dstdom 
+    FROM xaction 
+    JOIN currency AS ct ON xaction.currency = ct.name
+    LEFT JOIN account AS srcacc ON xaction.src = srcacc.name
+    LEFT JOIN currency AS cs ON srcacc.currency = cs.name
+    LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name
+    LEFT JOIN currency AS cd ON dstacc.currency = cd.name
+    WHERE xaction.id= ?;
+");
+$sstmt->bindValue(1,$_POST['tid']);
+
+$cleared = (isset($_POST['cleared']))?1:0;
+$accounttype = $_POST['accounttype'];
+$amount = round($_POST['amount']*100);
+
+
+$ustmt = $db->prepare("
+    UPDATE xaction SET 
+        version = version + 1,
+        date = ? ,
+        amount = ?,
+        currency = ?,
+        rno = ?,
+        description = ?,
+        src = ?,
+        srcamount = ?,
+        srcclear = ?,
+        srccode = ?,
+        dst = ?,
+        dstamount = ?,
+        dstclear = ?,
+        dstcode = ?,
+        repeat = ?
+    WHERE id = ?
+");
+$ustmt->bindValue(1,$_POST['xdate']);
+$ustmt->bindValue(2,$amount);
+$ustmt->bindValue(3,$_POST['currency']);
+$ustmt->bindValue(4,$_POST['rno']);
+$ustmt->bindValue(5,$_POST['desc']);
+
+$ustmt->bindValue(15,$_POST['tid']);
+
+$cstmt = $db->prepare("SELECT rate FROM currency WHERE name = ? ;");
+$cstmt->bindValue(1,$_POST['currency']);
 
 
 $db->exec("BEGIN IMMEDIATE");
 
-$row=$db->querySingle("SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency, ".
-     "cd.rate AS drate, srcacc.domain AS srcdom, dstacc.domain AS dstdom FROM xaction ".
-     "LEFT JOIN currency AS ct ON xaction.currency = ct.name ".
-    "LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
-    "LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
-    "WHERE xaction.id=".dbMakeSafe($_POST['tid']).";",true);
+$sstmt->execute();
+$row = $sstmt->fetch(PDO::FETCH_ASSOC);
+$sstmt->closeCursor();
 if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>Someone else is editing this transaction in parallel to you.  In order to ensure you are working with consistent
 data we will reload the page</error>
@@ -40,17 +93,8 @@ data we will reload the page</error>
 }
 $version = $row['version'] + 1;
 
-$cleared = (isset($_POST['cleared']))?1:0;
-
-$accounttype = $_POST['accounttype'];
-$amount = round($_POST['amount']*100);
-
-$sql = "UPDATE xaction SET version = $version, date = ".dbPostSafe($_POST['xdate']);
-$sql .= ", amount = ".$amount.", currency = ".dbPostSafe($_POST['currency']) ;
-$sql .= ", rno = ".dbPostSafe($_POST['rno']).", description = ".dbPostSafe($_POST['desc']);
-
 if($accounttype == "src") {
-    $sql .= ", srccode = ".(($_POST['code'] != '0')?$_POST['code']:'NULL');
+    $ustmt->bindValue(9,($_POST['code'] != '0')?$_POST['code']:NULL);
     if($_POST['accountname'] == $row['src']) {
     //account name is the same as before so we can rely on $row data for src information
         $acurrency = $row['srccurrency'];
@@ -59,83 +103,116 @@ if($accounttype == "src") {
         $acurrency = $row['dstcurrency'];
     }
     if($_POST['currency'] == $acurrency) {
-        $sql .= ",srcamount = NULL";
+        $ustmt->bindValue(7,NULL);
         $aamount = $amount;
     } else {
         $aamount = round(100*$_POST['aamount']);
-        $sql .= ",srcamount = ".dbPostSafe($aamount);
+        $ustmt->bindValue(7,$aamount);
     }
     $aamount = -$aamount;  //we negate it here so that when used at end, it delivers a negative account value if its source
     if($_POST['repeat'] == "0") {
-        $sql .= ", srcclear = ".$cleared.", repeat = 0";
+        $ustmt->bindValue(8,$cleared);
+        $ustmt->bindValue(14,0);
     } else {
-        $sql .= ",srcclear = 0, repeat = ".dbPostSafe($_POST['repeat']);
+        $ustmt->bindValue(8,0);
+        $ustmt->bindValue(14,$_POST['repeat']);
     }
-    if($_POST['move'] == 1 && is_null($row['dst']) && $_POST['account'] != '') {
-        $sql .= ", src = ".dbPostSafe($_POST['account']);
+    if($_POST['move'] == '1' && is_null($row['dst']) && $_POST['account'] != '') {
+        $ustmt->bindValue(6,$_POST['account']);
+        $ustmt->bindValue(10,NULL);
+        $ustmt->bindValue(11,NULL);
+        $ustmt->bindValue(12,0);
+        $ustmt->bindValue(13,NULL);
     } else {
-        $sql .= ", src = ".dbPostSafe($_POST['accountname']);
+        $ustmt->bindValue(6,$_POST['accountname']);
         if($_POST['account'] != '') {
             // We had a second account selected
-            $sql .= ", dst = ".dbPostSafe($_POST['account']);
+            $ustmt->bindValue(10,$_POST['account']);
             if(isset($row['dst']) && $_POST['account'] == $row['dst']) {
             //We have not changed it
                 $arate = $row['drate'];
                 if($_POST['currency'] == $row['dstcurrency']) {
-                    $sql .= ", dstamount = NULL";
+                    $ustmt->bindValue(11,NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['trate']));
                 } elseif ($_POST['currency'] == $row['srccurrency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['srate']));
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
-                    $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$rate));
+                    $cstmt->execute();
+                    $rate = $cstmt->fetchColumn();
+                    $cstmt->closeCursor();
+                    $ustmt->bindValue(11,round($amount*$arate/$rate));
                 }
-                if ($row['srcdom'] == $row['dstdom']) $sql .= ", dstcode = NULL"; //If domains the same then let our main specify codw
+                $ustmt->bindValue(12,$row['dstclear']);
+                if ($row['srcdom'] == $row['dstdom']) {
+                    $ustmt->bindValue(13,NULL);
+                } else {
+                    $ustmt->bindValue(13,$row['dstcode']);
+                }
             } elseif (isset($row['src']) && $_POST['account'] == $row['src']) {
             // Must have swapped source and destination
                 $arate = $row['srate'];
                 if($_POST['currency'] == $row['srccurrency']) {
-                    $sql .= ", dstamount = NULL";
+                    $ustmt->bindValue(11,NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['trate']));
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['drate']));
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
-                    $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$rate));
+                    $cstmt->execute();
+                    $rate = $cstmt->fetchColumn();
+                    $cstmt->closeCursor();
+                    $ustmt->bindValue(11,round($amount*$arate/$rate));
                 }
-                $sql .= ", dstclear = ".dbPostSafe($row['srcclear']);
-                if ($row['srcdom'] == $row['dstdom']) $sql .= ", dstcode = NULL"; //If domains the same then let our main specify codw
+                $ustmt->bindValue(12,$row['srcclear']);
+                if ($row['srcdom'] == $row['dstdom']) {
+                    $ustmt->bindValue(13,NULL);
+                } else {
+                    $ustmt->bindValue(13,$row['dstcode']);
+                }
             } else {
-                $row2 = $db->querySingle("SELECT account.name,account.currency,currency.rate  FROM account, currency".
-                    " WHERE currency.name = account.currency AND account.name = ".dbMakeSafe($_POST['account'])." ;",true);
-                $arate = $row2['rate'];
-                $bcurrency = $row2['currency'];
+                $rstmt = $db->prepare("
+                    SELECT
+                        account.currency AS currency,
+                        currency.rate AS rate
+                    FROM account, currency
+                    WHERE currency.name = account.currency AND account.name = ? ;
+                ");
+                $rstmt->bindValue(1,$_POST['account']);
+                $rstmt->execute();
+                $rstmt->bindColumn(1,$bcurrency);
+                $rstmt->bindColumn(2,$arate);
+                $rstmt->fetch(PDO::FETCH_BOUND);
                 if ($_POST['currency'] == $bcurrency) {
-                    $sql .= ", dstamount = NULL";
+                    $ustmt->bindValue(11,NULL);
                 } elseif($_POST['currency'] == $row['srccurrency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['srate']));
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['trate']));
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(11,round($amount*$arate/$row['drate']));
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
-                    $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-                    $sql .= ", dstamount = ".dbPostSafe(round($amount*$arate/$rate));
+                    $cstmt->execute();
+                    $rate = $cstmt->fetchColumn();
+                    $cstmt->closeCursor();
+                    $ustmt->bindValue(11,round($amount*$arate/$rate));
                 }
-                $sql .= ", dstclear = 0 , dstcode = NULL";
+                $ustmt->bindValue(12,0);
+                $ustmt->bindValue(13,NULL);
             } 
         } else {
-            $sql .= ", dst = NULL, dstclear = 0, dstamount = NULL, dstcode = NULL";
+            $ustmt->bindValue(10,NULL);
+            $ustmt->bindValue(11,NULL);
+            $ustmt->bindValue(12,0);
+            $ustmt->bindValue(13,NULL);
         }
     }
     
 } else {
-    $sql .= ", dstcode = ".(($_POST['code'] != '0')?$_POST['code']:'NULL');
+    $ustmt->bindValue(13,($_POST['code'] != '0')?$_POST['code']:NULL);
     if($_POST['accountname'] == $row['dst']) {
     //account name is the same as before so we can rely on $row data for src information
         $acurrency = $row['dstcurrency'];
@@ -144,83 +221,114 @@ if($accounttype == "src") {
         $acurrency = $row['srccurrency'];
     }
     if($_POST['currency'] == $acurrency) {
-        $sql .= ",dstamount = NULL";
+        $ustmt->bindValue(11,NULL);
         $aamount = $amount;
     } else {
         $aamount = round(100*$_POST['aamount']);
-        $sql .= ",dstamount = ".dbPostSafe($aamount);
+        $ustmt->bindValue(11,$aamount);
     }
     if($_POST['repeat'] == "0") {
-        $sql .= ", dstclear = ".$cleared.", repeat = 0";
+        $ustmt->bindValue(12,$cleared);
+        $ustmt->bindValue(14,0);
     } else {
-        $sql .= ",dstclear = 0, repeat = ".dbPostSafe($_POST['repeat']);
+        $ustmt->bindValue(12,0);
+        $ustmt->bindValue(14,$_POST['repeat']);
     }
-    if($_POST['move'] == 1 && is_null($row['src']) && $_POST['account'] != '') {
-        $sql .= ", dst = ".dbPostSafe($_POST['account']);
+    if($_POST['move'] == '1' && is_null($row['src']) && $_POST['account'] != '') {
+        $ustmt->bindValue(10,$_POST['account']);
+        $ustmt->bindValue(6,NULL);
+        $ustmt->bindValue(7,NULL);
+        $ustmt->bindValue(8,0);
+        $ustmt->bindValue(9,NULL);
     } else {
-        $sql .= ", dst = ".dbPostSafe($_POST['accountname']);
+        $ustmt->bindValue(10,$_POST['accountname']);
         if($_POST['account'] != '') {
-            $sql .= ", src = ".dbPostSafe($_POST['account']);
+            $ustmt->bindValue(6,$_POST['account']);
             if(isset($row['src']) && $_POST['account'] == $row['src']) {
             // The other account has not changed
                 $arate = $row['srate'];
                 if($_POST['currency'] == $row['srccurrency']) {
-                    $sql .= ", srcamount = NULL";
+                    $ustmt->bindValue(7,NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['trate']));
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['drate']));
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
-                    $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$rate));
+                    $cstmt->execute();
+                    $rate = $cstmt->fetchColumn();
+                    $cstmt->closeCursor();
+                    $ustmt->bindValue(7,round($amount*$arate/$rate));
                 }
-                if ($row['srcdom'] == $row['dstdom']) $sql .= ", srccode = NULL"; //If domains the same then let our main specify code                
+                $ustmt->bindValue(8,$row['srcclear']);
+                if ($row['srcdom'] == $row['dstdom']) {
+                    $ustmt->bindValue(9,NULL);
+                } else {
+                    $ustmt->bindValue(9,$row['srccode']);
+                }
             } elseif (isset($row['src']) && $_POST['account'] == $row['dst']) {
             //We must have swapped source and destinations
                 $arate = $row['drate'];
                 if($_POST['currency'] == $row['dstcurrency']) {
-                    $sql .= ", srcamount = NULL";
+                    $ustmt->bindValue(7,NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['trate']));
                 } elseif ($_POST['currency'] == $row['srccurrency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['srate']));
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
-                    $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$rate));
+                    $cstmt->execute();
+                    $rate = $cstmt->fetchColumn();
+                    $cstmt->closeCursor();
+                    $ustmt->bindValue(7,round($amount*$arate/$rate));
                 }
-                $sql .= ", srcclear = ".dbPostSafe($row['dstclear']);
-                if ($row['srcdom'] == $row['dstdom']) $sql .= ", srccode = NULL"; //If domains the same then let our main specify codw
+                $ustmt->bindValue(8,$row['dstclear']);
+                if ($row['srcdom'] == $row['dstdom']) {
+                    $ustmt->bindValue(9,NULL);
+                } else {
+                    $ustmt->bindValue(9,$row['srccode']);
+                }
             } else {
-                $row2 = $db->querySingle("SELECT account.name,account.currency,currency.rate FROM account, currency".
-                    " WHERE currency.name = account.currency AND account.name = ".dbMakeSafe($_POST['account'])." ;",true);
-                $arate = $row2['rate'];
-                $bcurrency = $row2['currency'];
-                if ($_POST['currency'] == $bcurrency) {
-                    $sql .= ", srcamount = NULL";
+                $rstmt = $db->prepare("
+                    SELECT
+                        account.currency AS currency,
+                        currency.rate AS rate
+                    FROM account, currency
+                    WHERE currency.name = account.currency AND account.name = ? ;
+                ");
+                $rstmt->bindValue(1,$_POST['account']);
+                $rstmt->execute();
+                $rstmt->bindColumn(1,$bcurrency);
+                $rstmt->bindColumn(2,$arate);
+                $rstmt->fetch(PDO::FETCH_BOUND);
+               if ($_POST['currency'] == $bcurrency) {
+                    $ustmt->bindValue(7,NULL);
                 } elseif($_POST['currency'] == $row['srccurrency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['srate']));
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['trate']));
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(7,round($amount*$arate/$row['drate']));
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
-                    $rate = $db->querySingle("SELECT rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-                    $sql .= ", srcamount = ".dbPostSafe(round($amount*$arate/$rate));
+                    $cstmt->execute();
+                    $rate = $cstmt->fetchColumn();
+                    $cstmt->closeCursor();
+                    $ustmt->bindValue(7,round($amount*$arate/$rate));
                 }
-                $sql .= ", srcclear= 0, srccode = NULL"; //Totally new source account, so can't have set the code for it yet.
-           }      
+                $ustmt->bindValue(8,0);
+                $ustmt->bindValue(9,NULL);
+            } 
         } else {
-            $sql .= ", src = NULL, srcclear = 0, srcamount = NULL, srccode = NULL";
+            $ustmt->bindValue(6,NULL);
+            $ustmt->bindValue(7,NULL);
+            $ustmt->bindValue(8,0);
+            $ustmt->bindValue(9,NULL);
         }
     }
 }
-$sql .= " WHERE id = ".dbMakeSafe($_POST['tid']).";";
-
-$db->exec($sql);
-
+$ustmt->execute();
+$ustmt->closeCursor();
 
 $date = $_POST['xdate'];
 $repeat = $_POST['repeat'];
@@ -231,26 +339,33 @@ if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we
     if($amount != 0 && $aamount != 0) { //can only do this if neither value is 0
         //we asked to set the rate from the current transaction.
         $ratio = abs($aamount/$amount);
+
+        $ustmt = $db->prepare("UPDATE currency SET version = version+1, rate = ? WHERE name = ? ;");
         
-        $brate = $db->query("SELECT  rate FROM currency WHERE name = ".dbMakeSafe($_POST['currency']));
-       
         if($_POST['currency'] == $_SESSION['default_currency']) {
-            //we need to change the rate of the account currency
-            $db->exec("UPDATE currency SET version = version + 1, rate = ".dbPostSafe($ratio).
-                " WHERE name = ".dbMakeSafe($acurrency)." ;"); 
+            $ustmt->bindValue(1,$ratio);
+            $ustmt->bindValue(2,$acurrency);//we need to change the rate of the account currency
         } else {
-            //we are changing the rate of the transaction currency
-            $db->exec("UPDATE currency SET version = version + 1, rate = ".dbPostSafe($brate/$ratio).
-                " WHERE name = ".dbMakeSafe($_POST['currency'])." ;"); 
+            $cstmt->execute();
+            $brate = $cstmt->fetchColumn();
+            $cstmt->closeCursor();
+            $ustmt->bindValue(1,$brate/$ratio);
+            $ustmt->bindValue(2,$_POST['currency']);//we are changing the rate of the transaction currency
         }
+        $ustmt->execute();
+        $ustmt->closeCursor();
     }
 }
 $codetype = '';
 $codedesc = '';
 if($_POST['code'] != 0) {
-    $row = $db->querySingle("SELECT * FROM code WHERE id = ".dbPostSafe($_POST['code']),true);
-    $codetype = $row['type'];
-    $codedesc = $row['description'];
+    $cstmt = $db->prepare("SELECT * FROM code WHERE id = ? ;");
+    $cstmt->bindValue(1,$_POST['code']);
+    $cstmt->execute();
+    $cstmt->bindColumn(1,$codetype);
+    $cstmt->bindColumn(2,$codedesc);
+    $cstmt->fetch(PDO::FETCH_BOUND);
+    $cstmt->closeCursor();
 }
 
 $db->exec("COMMIT");

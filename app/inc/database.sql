@@ -47,6 +47,7 @@ INSERT INTO code VALUES (4, 'C', 'Invoiceable Mileage @40p per mile'); --Mileage
 INSERT INTO code VALUES (5, 'C', 'Salaries'); --Salaries and Related Costs (Tax and NI)
 INSERT INTO code VALUES (6, 'C', 'Advertising'); --Advertising Costs
 INSERT INTO code VALUES (7, 'C', 'Office Cost'); --Stationary, Postage etc
+INSERT INTO code VALUES (8,'C','Professional Membership Fees'); -- Fees for British Computer Society and PCG
 INSERT INTO code VALUES (99, 'C', 'General Costs'); -- costs not included elsewhere
 INSERT INTO code VALUES (100, 'R', 'Invoice for Professional Service');
 INSERT INTO code VALUES (101,'R', 'Invoice for Web Design and Hosting'); 
@@ -301,15 +302,34 @@ CREATE INDEX xaction_idx_dcode ON xaction(dstcode);
 
 CREATE TABLE config (
     version integer DEFAULT 1 NOT NULL,
-    db_version integer,
-    home_account character varying REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
-    extn_account character varying REFERENCES account(name) ON DELETE SET NULL ON UPDATE CASCADE,
-    repeat_days integer,
-    default_currency character(3) REFERENCES currency(name) ON UPDATE CASCADE,
-    demo boolean DEFAULT 0 NOT NULL
+    db_version integer, -- version of the databae
+    home_account character varying REFERENCES account(name) ON UPDATE CASCADE, -- initial account when accessing from 192.168.x.x
+    extn_account character varying REFERENCES account(name) ON UPDATE CASCADE, -- initial account when accessing from the internet
+    repeat_days integer, -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
+    default_currency character(3) REFERENCES currency(name) ON UPDATE CASCADE, 
+    demo boolean DEFAULT 0 NOT NULL, -- if true(1) this is a demo account and a warning is printed on each page
+    year_end character varying, --last day of accounting year in MMDD form (this allows numeric comparisons to work)
+    default_domain character varying --default domain to select for reporting
 );
 
-INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency) VALUES (1,'Cash','Cash', 90, 'GBP');
+INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency,year_end) VALUES (1,'Cash','Cash', 90, 'GBP','1231','Business');
+CREATE VIEW dfxaction AS
+    SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,
+        CASE 
+            WHEN t.currency = 'GBP' THEN t.amount
+            WHEN t.srcamount IS NOT NULL AND sa.currency = 'GBP' THEN t.srcamount
+            WHEN t.dstamount IS NOT NULL AND da .currency = 'GBP' THEN t.dstamount
+            ELSE CAST ((CAST (t.amount AS REAL) / currency.rate) AS INTEGER)
+        END AS dfamount
+    FROM
+        xaction AS t
+        LEFT JOIN account AS sa ON t.src = sa.name
+        LEFT JOIN account AS da ON t.dst = da.name
+        LEFT JOIN currency ON 
+            t.currency != 'GBP' AND
+            (t.srcamount IS NULL OR sa.currency != 'GBP') AND
+            (t.dstamount IS NULL OR da.currency != 'GBP') AND 
+            t.currency = currency.name;
 
 END TRANSACTION;
 

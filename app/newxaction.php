@@ -21,11 +21,19 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+$istmt = $db->prepare("INSERT INTO xaction (src,currency) VALUES (? , ? );");
+$istmt->bindValue(1,$_POST['account']);
+$istmt->bindValue(2,$_POST['currency']);
+$sstmt = $db->prepare("SELECT * FROM xaction WHERE id = ? ;");
+$sstmt->bindParam(1,$tid,PDO::PARAM_INT);
 
 $db->exec("BEGIN EXCLUSIVE");
-
-$db->exec("INSERT INTO xaction (src,currency) VALUES (".dbPostSafe($_POST['account']).",".dbPostSafe($_POST['currency']).");");
-$row = $db->querySingle("SELECT * FROM xaction WHERE id = ".$db->lastInsertRowID(),true);
+$istmt->execute();
+$tid=round($db->lastInsertId());
+$istmt->closeCursor();
+$sstmt->execute();
+$row = $sstmt->fetch(PDO::FETCH_ASSOC);
 ?><transaction>
 <div id="<?php echo 't'.$row['id']; ?>" class="xaction arow">
     <div class="wrapper">    
@@ -45,6 +53,6 @@ $row = $db->querySingle("SELECT * FROM xaction WHERE id = ".$db->lastInsertRowID
     </div>
 </div>
 <?php
-
+$sstmt->closeCursor();
 $db->exec("COMMIT");
 ?></transaction>

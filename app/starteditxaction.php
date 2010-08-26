@@ -22,21 +22,27 @@ error_reporting(E_ALL);
 session_start();
 require_once('./inc/db.inc');
 
+$stmt = $db->prepare("
+        SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency,cd.rate AS drate 
+        FROM xaction LEFT JOIN currency AS ct ON xaction.currency = ct.name 
+        LEFT JOIN account AS srcacc ON xaction.src = srcacc.name 
+        LEFT JOIN currency AS cs ON srcacc.currency = cs.name 
+        LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
+        LEFT JOIN currency AS cd ON dstacc.currency = cd.name
+        WHERE xaction.id= ? ;
+        ");
 
-$db->exec("BEGIN");
-
-$row = $db->querySingle("SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency, ".
-     "cd.rate AS drate FROM xaction ".
-     "LEFT JOIN currency AS ct ON xaction.currency = ct.name ".
-    "LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN currency AS cs ON srcacc.currency = cs.name ".
-    "LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name LEFT JOIN currency AS cd ON dstacc.currency = cd.name ".
-    "WHERE xaction.id=".dbMakeSafe($_POST['tid']).";",true);
+$db->beginTransaction();
+$stmt->bindValue(1,$_POST['tid']);
+$stmt->execute();
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>Someone else is editing this transaction in parallel to you.  In order to ensure you are working with consistent
 data we will reload the page</error>
 <?php
-    $db->exec("ROLLBACK");
+    $stmt->closeCursor();
+    $db->rollBack();
     exit;
 }
 
@@ -79,7 +85,7 @@ if($_POST['account'] == $row['src']) {
 }
 ?></xaction>
 <?php
-
-$db->exec("COMMIT");
+$stmt->closeCursor();
+$db->commit();
 ?>
 

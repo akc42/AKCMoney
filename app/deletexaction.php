@@ -22,12 +22,18 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+//prepare ahead of starting transaction - making transaction faster
+$vstmt = $db->prepare("SELECT version FROM xaction WHERE id = ? ;");
+$vstmt->bindValue(1,$_POST['tid']);
+$dstmt = $db->prepare("DELETE FROM xaction WHERE id = ? ;");
+$dstmt->bindValue(1,$_POST['tid']);
 
 $db->exec("BEGIN IMMEDIATE");
-
-$version=$db->querySingle("SELECT version FROM xaction WHERE id=".dbMakeSafe($_POST['tid']));
-
+$vstmt->execute();
+$version = $vstmt->fetchColumn();
+$vstmt->closeCursor();
 if ($version != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  We have not deleted it, and are going to
 reload the page so that we can ensure you see consistent data before taking this major step.</error>
@@ -35,6 +41,8 @@ reload the page so that we can ensure you see consistent data before taking this
     $db->exec("ROLLBACK");
     exit;
 }
-$db->exec("DELETE FROM xaction WHERE id = ".dbMakeSafe($_POST['tid']).";");
+$dstmt->execute();
+$dstmt->closeCursor();
+
 $db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" ></xaction>

@@ -23,12 +23,19 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+$sstmt = $db->prepare("SELECT version FROM xaction WHERE id= ? ;");
+$sstmt->bindValue(1,$_POST['tid']);
+
+$ustmt = $db->prepare("UPDATE xaction SET version = version + 1 , date = ? WHERE id = ? ;");
+$ustmt->bindValue(1,$_POST['date']);
+$ustmt->bindValue(2,$_POST['tid']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-
-$version=$db->querySingle("SELECT version FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";");
+$sstmt->execute();
+$version=$sstmt->fetchColumn();
 
 if ( $version != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing this transaction in parallel to you.  In order to ensure you have consistent
@@ -39,7 +46,8 @@ information we are going to reload the page</error>
 }
 $version++;
 
-$db->exec("UPDATE xaction SET version = $version , date = ".dbPostSafe($_POST['date'])." WHERE id = ".dbPostSafe($_POST['tid']).";");
+$ustmt->execute();
+$ustmt->closeCursor();
 
 $db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>

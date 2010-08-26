@@ -21,11 +21,36 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+$sstmt = $db->prepare("SELECT version FROM currency WHERE name = ? ;");
+$sstmt->bindValue(1,$_POST['currency']);
 
+$ustmt = $db->prepare("
+    UPDATE currency SET 
+        version = version + 1, 
+        priority = 
+            CASE 
+                WHEN name = ? THEN ? 
+                ELSE priority + ? 
+            END
+     WHERE display = 1 AND priority >= ? AND priority <= ? ;
+");
+$ustmt->bindValue(1,$_POST['currency']);
+$ustmt->bindValue(2,$_POST['newpriority']);
+if(($_POST['newpriority']+0) > ($_POST['oldpriority']+0)) {
+    $ustmt->bindValue(3,-1);
+    $ustmt->bindValue(4,$_POST['oldpriority']);
+    $ustmt->bindValue(5,$_POST['newpriority']);
+} else {
+    $ustmt->bindValue(3,1);
+    $ustmt->bindValue(4,$_POST['newpriority']);
+    $ustmt->bindValue(5,$_POST['oldpriority']);
+}
 
 $db->exec("BEGIN IMMEDIATE");
-
-$version=$db->querySingle('SELECT version FROM currency WHERE name = '.dbPostSafe($_POST['currency']).';');
+$sstmt->execute();
+$version=$sstmt->fetchColumn();
+$sstmt->closeCursor();
 if ($version != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We need to reload the page in order to pickup
     their changes</error>
@@ -33,26 +58,16 @@ if ($version != $_POST['version'] ) {
     $db->exec("ROLLBACK");
     exit;
 }
-$version++;
 
-if(($_POST['newpriority']+0) > ($_POST['oldpriority']+0)) {
-    $sql1 = 'priority - 1';
-    $sql2 = 'priority >= '.dbPostSafe($_POST['oldpriority']).' AND priority <= '.dbPostSafe($_POST['newpriority']);
-} else {
-    $sql1 = 'priority + 1';
-    $sql2 = 'priority >= '.dbPostSafe($_POST['newpriority']).' AND priority <= '.dbPostSafe($_POST['oldpriority']);
-}
-
-
-$db->exec("UPDATE currency SET version = $version, priority = CASE WHEN name = ".dbPostSafe($_POST['currency']).' THEN '
-            .dbPostSafe($_POST['newpriority'])." ELSE $sql1 END WHERE display = 1 AND $sql2 ;");
+$ustmt->execute();
+$ustmt->closeCursor();
 
 ?><currencies>
 <?php       
 $result = $db->query('SELECT * FROM currency WHERE display = 1 AND priority > 0 ORDER BY priority ASC;');
 $r=0;
 $options = Array();
-while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while($row = $result->fetch(PDO::FETCH_ASSOC)) {
     $r++;
     $options[$row['name']] = $row['description'];
 ?><div class="xcurrency<?php if($r%2 != 0) echo ' even';?>">
@@ -65,7 +80,7 @@ while($row = $result->fetchArray(SQLITE3_ASSOC)) {
 </div>
 <?php
 }
-$result->finalize();
+$result->closeCursor();
 $db->exec("COMMIT");
 ?></currencies>
 <selectoptions><select>

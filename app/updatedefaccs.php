@@ -21,12 +21,18 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+$ustmt = $db->prepare("UPDATE config SET version = ?, home_account = ? , extn_account = ? ;");
+$ustmt->bindParam(1,$version,PDO::PARAM_INT);
+$ustmt->bindValue(2,$_POST['homeaccount']);
+$ustmt->bindValue(3,$_POST['extnaccount']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$row= $db->querySingle("SELECT version, home_account, extn_account FROM config;",true);
-if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
+$result = $db->query("SELECT version, home_account, extn_account FROM config;");
+$row = $result->fetch(PDO::FETCH_ASSOC);
+if ($row['version'] != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We will reload the page to ensure you have consistent data</error>
 <?php
     $_SESSION['config_version'] = $row['version'];
@@ -40,8 +46,8 @@ $version = $row['version'] + 1;
 $_SESSION['extn_account'] = $_POST['extnaccount'];
 $_SESSION['home_account'] = $_POST['homeaccount'];
 
-$db->exec("UPDATE config SET version = $version, home_account = ".dbPostSafe($_POST['homeaccount']).
-                ", extn_account = ".dbPostSafe($_POST['extnaccount']).";");
+$ustmt->execute();
+$ustmt->closeCursor();
 
 $_SESSION['config_version'] = $version;
 

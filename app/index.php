@@ -21,24 +21,14 @@ define('DB_DIR','/home/alan/dev/money/db/');
 session_start();
 if(isset($_GET['db'])) $_SESSION['database'] = DB_DIR.$_GET['db'].'.db';
 //Install if we haven't already
-if(isset($_SESSION['database'])) { 
-    if(!file_exists($_SESSION['database'])) {
-        $db = new Sqlite3($_SESSION['database']);
-        $db->exec(file_get_contents('inc/database.sql'));
-        /*
-        // TO BE ADDED WHEN THERE IS A NEXT UPDATE
-    } else {
-        $db = new Sqlite3($_SESSION['database']);
-    //    $db->setAttribute(PDO::ATTR_TIMEOUT,25);  //set 25 second timeout on obtaining a lock
-
-        $dbversion = $db->querySingle('SELECT db-version FROM config;');
-        if($dbversion < 2) { //update to version 2
-            $db->exec(file_get_contents($_SESSION['inc_dir'].'update1.sql'));
-        }
-    */ 
-    }
+if(isset($_SESSION['database']) && !file_exists($_SESSION['database'])) {
+    $db = new PDO('sqlite:'.$_SESSION['database']);
+    $db->exec(file_get_contents('./inc/database.sql'));
+    unset($db);
 }
+
 require_once('./inc/db.inc');
+
 if(!isset($_SESSION['key'])) {
     $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     $key='';
@@ -47,7 +37,17 @@ if(!isset($_SESSION['key'])) {
 }
 if(!isset($_SESSION['account']) || isset($_REQUEST['refresh'])) {
     //First time through, or if a refresh requested
-    $row = $db->querySingle('SELECT * FROM config;',true);
+    $result = $db->query('SELECT * FROM config;');
+    $row = $result->fetch(PDO::FETCH_ASSOC);
+/*
+       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
+    if($row['db_version'] < 2) { //update to version 2
+        $result->closeCursor();
+        $db->exec(file_get_contents('./inc/update1.sql'));
+        $result = $db->query('SELECT * FROM config;');
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+    }
+*/ 
 
     // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
     $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
@@ -58,6 +58,8 @@ if(!isset($_SESSION['account']) || isset($_REQUEST['refresh'])) {
     $_SESSION['extn_account'] = $row['extn_account'];
     $_SESSION['home_account'] = $row['home_account'];
     $_SESSION['config_version'] = $row['version'];
+    $_SESSION['year_end'] = $row['year_end'];
+    $result->closeCursor();
 }
 if(isset($_REQUEST['account'])) $_SESSION['account'] = $_REQUEST['account'];
 
@@ -89,8 +91,10 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 function menu_items() {
 
 ?>      <li><a href="/money/index.php" target="_self" title="Account" class="current">Account</a></li>
+        <li><a href="/money/reports.php" target="_self" title="Reports">Reports</a></li>
         <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
         <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
+        <li><a href="/money/config.php" target="_self" title="Config Manager">Config Manager</a></li>
 
 <?php
 }
@@ -99,7 +103,7 @@ function content() {
     global $db;
     $account = $_SESSION['account'];
     $repeattime = time() + $_SESSION['repeat_interval'];
-    $db->exec("BEGIN");
+    $db->beginTransaction();
 ?><h1>Account Data</h1>
 <?php 
     if ($_SESSION['demo']) {
@@ -107,35 +111,36 @@ function content() {
 <?php
     } 
 ?>      <form id="accountsel" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-            <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
             <input type="hidden" name="tid" value="0" />
 Account Name:		
             <select id="account" name="account" tabindex="300">
 <?php
     $result = $db->query('SELECT name FROM account ORDER BY name ASC;');
-    while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>            <option <?php echo ($account == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
     }
-    $result->finalize();
+    $result->closeCursor();
 
 ?>        </select>
         </form>	
 		<div id="accountinfo">
 			<div id="positive">
 <?php
-    $sql = 'SELECT a.name, bversion, dversion,balance,date, domain, a.currency, c.description AS cdesc, c.rate ';
-    $sql .= 'FROM account AS a JOIN currency AS c ON a.currency = c.name ';
-    $sql .= 'WHERE a.name = '.dbMakeSafe($account).';';
+    $stmt = $db->prepare('SELECT a.name, bversion, dversion,balance,date, domain, a.currency, c.description AS cdesc, c.rate 
+                            FROM account AS a JOIN currency AS c ON a.currency = c.name 
+                            WHERE a.name = ? ;');
+    $stmt->bindValue(1,$account);
+    $stmt->execute();
 
-    if(!($row = $db->querySingle($sql,true))) {
+    if(!($row = $stmt->fetch(PDO::FETCH_ASSOC))) {
 ?><h1>Problem with Account</h1>
 <p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
 working in parallel with you has deleted it.  You can try to restart the software by
 clicking <a href="<?php echo $_SERVER['PHP_SELF']; ?>?refresh=yes"><strong>here</strong></a>, but if that still fails then you should report the fault to
 an adminstrator, informing them that you had a problem with account name <strong><?php echo $account; ?></strong> not being in the database</p>
 <?php
-        $db->exec("ROLLBACK");
+        $db->rollBack();
         return;
     }
     $currency = $row['currency'];
@@ -150,7 +155,8 @@ an adminstrator, informing them that you had a problem with account name <strong
     $crate = $row['rate'];
     if(!is_null($row['domain'])) {
 ?>              <span class="title">Domain:</span> <?php echo $row['domain'];
-    }    
+    }
+    $stmt->closeCursor();    
 ?>			</div> 
 			<div id="currency">
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
@@ -242,13 +248,21 @@ window.addEvent('domready', function() {
     new repeat position, and removing the repeat flag from the current entry.
 */
     $repeats_to_do = true;
+    $stmt = $db->prepare('SELECT * FROM xaction WHERE (src = ? OR dst = ? ) AND repeat <> 0 AND date < ? ;');
+    $stmt->bindValue(1,$account);
+    $stmt->bindValue(2,$account);
+    $stmt->bindValue(3,$repeattime);
+    $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
+    $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
+                     repeat, currency, amount, description)
+                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?);');
     while ($repeats_to_do) {
         $repeats_to_do = false; //lets be optimistic and plan to be done
-        $sql ='SELECT * FROM xaction WHERE (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).')'; 
-        $sql .= 'AND repeat <> 0 AND date < '.dbMakeSafe($repeattime).';';
-        $result = $db->query($sql);
-        while($row = $result->fetchArray(SQLITE3_ASSOC)) {
-            $db->exec('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = '.dbMakeSafe($row['id']).';');
+        $stmt->execute();
+        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $upd->bindValue(1,$row['id']);
+            $upd->execute();
+            $upd->closeCursor();
             switch ($row['repeat']) {
                 case 1:
                     $row['date'] += 604800 ;  //add on a week
@@ -275,14 +289,11 @@ window.addEvent('domready', function() {
                     die('invalid repeat period in database, transaction id = '.$row['id']);
             }
             if ($row['date'] < $repeattime) $repeats_to_do = true; //still have to do some more after this, since this didn't finish the job
-            $db->exec('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
-                     repeat, currency, amount, description)
-                     VALUES ('.dbPostSafe($row['date']).','.dbPostSafe($row['src']).','.dbPostSafe($row['dst']).
-                     ','.dbPostSafe($row['srcamount']).','.dbPostSafe($row['dstamount']).','.dbPostSafe($row['srccode']).','.dbPostSafe($row['dstcode']).
-                     ','.dbPostSafe($row['rno']).','.dbPostSafe($row['repeat']).
-                     ','.dbPostSafe($row['currency']).','.dbPostSafe($row['amount']).','.dbPostSafe($row['description']).');');
+            $ins->execute(array($row['date'],$row['src'],$row['dst'],$row['srcamount'],$row['dstamount'],$row['srccode'],$row['dstcode'],
+                                $row['rno'],$row['repeat'],$row['currency'],$row['amount'],$row['description']));
+            $ins->closeCursor();
         }
-        $result->finalize();
+        $stmt->closeCursor();
     }
     
 //Having updated the entire account of repeated transactions, we now read and display everything
@@ -291,14 +302,19 @@ $r = 0;
 ?>
 <div id="transactions">
 <?php
-    $sql = 'SELECT xaction.*, currency.name AS cname, currency.rate AS rate, srcacc.domain AS srcdom, dstacc.domain AS dstdom, ';
-    $sql .= 'sc.type AS sct, sc.description AS scd, dc.type AS dct, dc.description AS dcd  FROM xaction,currency ';
-    $sql .= 'LEFT JOIN code AS sc ON sc.id = xaction.srccode LEFT JOIN code AS dc ON dc.id = xaction.dstcode ';
-    $sql .= 'LEFT JOIN account AS srcacc ON xaction.src = srcacc.name LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name ';
-    $sql .= 'WHERE xaction.currency = currency.name ';
-    $sql .= 'AND (src = '.dbMakeSafe($account).' OR dst = '.dbMakeSafe($account).') ORDER BY date ASC;';
-    $result = $db->query($sql);
-    while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    $stmt = $db->prepare('
+        SELECT 
+            xaction.*, currency.name AS cname, currency.rate AS rate, srcacc.domain AS srcdom, dstacc.domain AS dstdom,
+            sc.type AS sct, sc.description AS scd, dc.type AS dct, dc.description AS dcd  
+        FROM xaction,currency 
+        LEFT JOIN code AS sc ON sc.id = xaction.srccode 
+        LEFT JOIN code AS dc ON dc.id = xaction.dstcode 
+        LEFT JOIN account AS srcacc ON xaction.src = srcacc.name 
+        LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
+        WHERE xaction.currency = currency.name AND (src = :account OR dst = :account) ORDER BY date ASC;');
+    $stmt->bindValue(':account',$account);
+    $stmt->execute();
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $r++;
         $cleared = false;
         $dual = false;
@@ -361,24 +377,24 @@ $r = 0;
         <input type="hidden" class="version" name="version" value="<?php echo $row['version']; ?>"/>
         <div class="date clickable<?php 
         if($row['repeat'] != 0) {
-            echo " repeat";
+            echo ' repeat';
             if($cleared) $clrbalance += $amount; //do this because in this case we would otherwise miss it
         } elseif($cleared) {
             $clrbalance += $amount;
-            echo " cleared";
+            echo ' cleared';
         } else {
-            if ($row['date'] < time()) echo " passed"; //only indicate passed if not indicating cleared
+            if ($row['date'] < time()) echo ' passed'; //only indicate passed if not indicating cleared
         }
        ?>" ><input type="hidden" name="xxdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
         <div class="ref"><?php echo $row['rno'];?></div>
         <div class="description clickable<?php if ($dual) echo " dual";?>"><?php echo $row['description'];?></div>
         <div class="amount aamount<?php 
             if($currency != $row['currency']) {
-                echo " foreign";
+                echo ' foreign';
             } else {
-                echo " clickable";
+                echo ' clickable';
             };
-            if ($dual) echo " dual";?>"><?php echo fmtAmount($amount);?></div>
+            if ($dual) echo ' dual';?>"><?php echo fmtAmount($amount);?></div>
         <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
         <div class="codetype">
             <div class="code_<?php echo $codetype; ?>">&nbsp;</div>
@@ -389,7 +405,7 @@ $r = 0;
 </div>
 <?php
     }
-    $result->finalize();
+    $stmt->closeCursor();
     if (!$locatedNow) {
 ?><div id="now" class="hidden"></div>
 <?php
@@ -411,16 +427,15 @@ $r = 0;
         <div class="amount">
             <select name="currency" title="<?php echo $cdesc;?>" tabindex="30" >
 <?php
-    $sql = 'SELECT name, rate, display, priority, description FROM currency WHERE display = 1';
-    $result = $db->query($sql.' ORDER BY priority ASC;');
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    $result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
+    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
         if(!isset($_SESSION['dc_description'])  && $row['name'] == $_SESSION['default_currency']) $_SESSION['dc_description'] = $row['description'];
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
                             echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
     }
-    $result->finalize();
+    $result->closeCursor();
 ?>          </select>
         </div>
     </div>
@@ -433,13 +448,13 @@ $r = 0;
             <select name="repeat" tabindex="60" >
 <?php
     $result = $db->query('SELECT * FROM repeat;');
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['rkey']; ?>" <?php
                         if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
                           echo $row['description']; ?></option>
 <?php    
     }
-    $result->finalize();
+    $result->closeCursor();
 ?>          </select>
         </div>
         <div class="codesel">
@@ -447,11 +462,11 @@ $r = 0;
                 <option value="0" type="" selected="selected">-- Select (Optional) Account Code --</option>
 <?php
     $result = $db->query('SELECT * FROM code ORDER BY id ASC;');
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['id']; ?>" codetype="<?php echo $row['type']; ?>"><?php echo $row['description']; ?></option>
 <?php
     }
-    $result->finalize();
+    $result->closeCursor();
 ?>            </select>
         </div>
         <div class="codetype"></div>
@@ -481,7 +496,7 @@ $r = 0;
 </div>
 
 <?php
-    $db->exec("COMMIT");
+    $db->commit();
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
 ?>

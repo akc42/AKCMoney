@@ -33,7 +33,7 @@ a useful information when users wish to report faults
 
 */
 
-define('MONEY_APP','/home/alan/dev/money/app/inc');  //Repeat for all apps that are to be included in footer
+define('MONEY_APP','/home/alan/dev/money/app/');  //Repeat for all apps that are to be included in footer
   
 error_reporting(E_ALL);
 date_default_timezone_set  ('Europe/London');

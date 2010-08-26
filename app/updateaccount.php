@@ -21,11 +21,28 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+$sstmt = $db->prepare("SELECT dversion FROM account WHERE name = ? ;");
+$sstmt->bindValue(1,$_POST['original']);
 
+$astmt = $db->prepare("
+    UPDATE account SET
+        name = ? ,
+        dversion = dversion + 1,
+        currency = ? ,
+        domain = ?
+    WHERE name = ? ;
+");
+$astmt->bindValue(1,$_POST['account']);
+$astmt->bindValue(2,$_POST['currency']);
+$astmt->bindValue(3,$_POST['domain']);
+$astmt->bindValue(4,$_POST['original']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$version=$db->querySingle("SELECT dversion FROM account WHERE name =".dbMakeSafe($_POST['original']).";");
+$sstmt->execute();
+$version=$sstmt->fetchColumn();
+$sstmt->closeCursor();
 if ( $version != $_POST['dversion']) {
     //account with this name already exists so we cannot create one
 ?><error>It appears someone else is editing accounts in parallel.  We need to reload the page to ensure you are working with consistent data</error>
@@ -33,12 +50,15 @@ if ( $version != $_POST['dversion']) {
     $db->exec("ROLLBACK");
     exit;
 }
-$version++;
-
 
 if($_POST['original'] != $_POST['account']) {
     //planning on changing the name - just check the new name has not been created in the meantime
-    if($db->querySingle("SELECT COUNT(*) FROM account WHERE name =".dbMakeSafe($_POST['account']).";") > 0) {
+    $sstmt = $db->prepare("SELECT COUNT(*) FROM account WHERE name = ? ;");
+    $sstmt->bindValue(1,$_POST['account']);
+    $sstmt->execute();
+    $count = $sstmt->fetchColumn();
+    $sstmt->closeCursor();
+    if($count > 0) {
     //its there - this must mean someone just put it there
 ?><error>You have attempted to rename the account to one that already exists.  We will reload the page in case someone else created it in parallel with you</error>
 <?php
@@ -47,9 +67,9 @@ if($_POST['original'] != $_POST['account']) {
     }
 
 }
-$db->exec("UPDATE account SET name = ".dbPostSafe($_POST['account']).
-        ", dversion = $version, currency = ".dbPostSafe($_POST['currency']).", domain = ".dbPostSafe($_POST['domain']).
-        " WHERE name = ".dbPostSafe($_POST['original']).";");
+$version++;
+$astmt->execute();
+$astmt->closeCursor();
 
 ?><account name="<?php echo $_POST['account']; ?>" version="<?php echo $version; ?>" ></account> 
 <?php

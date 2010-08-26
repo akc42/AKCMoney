@@ -21,11 +21,16 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+$sstmt = $db->prepare("SELECT version,src,dst FROM xaction WHERE id= ? ;");
+$sstmt->bindValue(1,$_POST['tid']);
 
 
 $db->exec("BEGIN IMMEDIATE");
 
-$row=$db->querySingle("SELECT id, version,src,dst FROM xaction WHERE id=".dbMakeSafe($_POST['tid']).";",true);
+$sstmt->execute();
+$row=$sstmt->fetch(PDO::FETCH_ASSOC);
+$sstmt->closeCursor();
 if (!isset($row['version']) || $row['version'] != $_POST['version'] ) {
 ?><error>Someone else has updated this transaction in parallel with you.  In order to ensure you are working with the latest version we
 are going to update the page</error>
@@ -33,17 +38,24 @@ are going to update the page</error>
     $db->exec("ROLLBACK");
     exit;
 }
-$version = $row['version'] +1;
-
-$sql = "UPDATE xaction SET version = $version, ";
+$version = $row['version'] + 1;
 if($_POST['account'] == $row['src']) {
-    $sql .= "srcclear = ";
+$uxs = $db->prepare("
+    UPDATE xaction SET
+        version = version + 1,
+        srcclear = ?
+    WHERE id = ? ;
+    ");
 } else {
-    $sql .= "dstclear = ";
+$uxs = $db->prepare("
+    UPDATE xaction SET
+        version = version + 1,
+        dstclear = ?
+    WHERE id = ? ;
+    ");
 }
-$sql .= ($_POST['clear'] == 'true')? '1' : '0' ;
-$sql .= ' WHERE id = '.dbPostSafe($_POST['tid']).';';
-$db->exec($sql);
+$uxs->execute(array(($_POST['clear'] == 'true')? 1 : 0,$_POST['tid']));
+$uxs->closeCursor();
 $db->exec("COMMIT");
 ?><xaction tid="<?php echo $_POST['tid']; ?>" clear="<?php echo $_POST['clear']; ?>" version="<?php echo $version ?>" ></xaction>
 

@@ -217,7 +217,7 @@ div.codesel {
 div.codesel select{
     width:265px;
 }
-div.codetype {
+div.codetype,div.expand,div.shrink {
     margin:2px auto;
     padding:0;
     width:20px;
@@ -226,6 +226,13 @@ div.codetype {
     border:none;
     position:relative;
 }
+div.expand {
+    background:transparent url(expand.png) no-repeat 0 0;
+}
+div.shrink {
+    background:transparent url(expand.png) no-repeat 0 -20px;
+}
+
 div.codetype span {
     display:none;
 }

@@ -21,11 +21,19 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
-
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+$astmt = $db->prepare("SELECT name FROM account WHERE name = ? ;");
+$astmt->bindValue(1,$_POST['account']);
+$istmt =  $db->prepare("INSERT INTO account (name, dversion, bversion, currency,domain) VALUES ( ? , 1, 1, ? , ? );");
+$istmt->bindValue(1,$_POST['account']);
+$istmt->bindValue(2,$_POST['currency']);
+$istmt->bindValue(3,$_POST['domain']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$name=$db->querySingle("SELECT name FROM account WHERE name =".dbMakeSafe($_POST['account']));
+$astmt->execute();
+$name = $astmt->fetchColumn();
+$astmt->closeCursor();
 
 if ($name == $_POST['account']) {
     //account with this name already exists so we cannot create one
@@ -35,12 +43,8 @@ in parallel to you.  We will reload the page to ensure that you have consistent 
     $db->exec("ROLLBACK");
     exit;
 }
-
-
-$db->exec("INSERT INTO account (name, dversion, bversion, currency,domain) VALUES (".dbPostSafe($_POST['account']).
-            ", 1, 1, ".dbPostSafe($_POST['currency']).",".dbPostSafe($_POST['domain']).");");
-
-
+$istmt->execute();
+$istmt->closeCursor();
 ?><div class="xaccount">
         <form action="updateaccount.php" method="post" onSubmit="return false;" >
             <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
@@ -53,13 +57,13 @@ $db->exec("INSERT INTO account (name, dversion, bversion, currency,domain) VALUE
             <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
 $result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_POST['currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
-$result->finalize();
+$result->closeCursor();
 ?>
             </select>
             </div>

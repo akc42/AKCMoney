@@ -22,12 +22,21 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+$sstmt = $db->prepare("SELECT bversion FROM account WHERE name = ? ;");
+$sstmt->bindValue(1,$_POST['account']);
+
+$ustmt = $db->prepare("UPDATE account SET bversion = bversion + 1, balance = ? WHERE name = ? ;");
+$balance = round(100*$_POST['balance']);
+$ustmt->bindValue(1,$balance);
+$ustmt->bindValue(2,$_POST['account']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$version = $db->querySingle("SELECT bversion FROM account WHERE name = ".dbMakeSafe($_POST['account'])." ;");
-
+$sstmt->execute();
+$version=$sstmt->fetchColumn();
+$sstmt->closeCursor();
 if ( $version != $_POST['bversion'] ) {
 ?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
 ensure you have the correct version</error>
@@ -37,8 +46,8 @@ ensure you have the correct version</error>
 }
 
 $version++;
-$balance = round(100*$_POST['balance']);
-$db->exec("UPDATE account SET bversion = $version, balance = $balance WHERE name = ".dbMakeSafe($_POST['account']).";");
+$ustmt->execute();
+$ustmt->closeCursor();
 
 ?><balance version="<?php echo $version; ?>"><?php echo fmtAmount($balance) ; ?></balance>
 <?php

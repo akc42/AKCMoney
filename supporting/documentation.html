@@ -704,17 +704,18 @@ TestSpecification
 
 CopyRight</pre>
 </div>
-<div title="MigrationSqlite" creator="AlanChandler" modifier="AlanChandler" created="201006141638" modified="201008050839" changecount="13">
+<div title="MigrationSqlite" creator="AlanChandler" modifier="AlanChandler" created="201006141638" modified="201008111106" changecount="17">
 <pre>Migration from Postgres to ~SQLlite will be a manual process. In order to perform the migration the following steps are required.
 
 * Start ~AKCMoney and create an empty database
 * Take the script postgres_migrate.sh from the supporting directory and :-
 ** edit it to change the database name to the correct one for your old postgres account (see the DATABASE variable at the head of the script
+** optionally change the date of the year end for the accounts in question (under the config table, in a form ~MM-DD)
 ** transfer it to the machine and account that allows access to the database and type {{{./postgres_migrate.sh}}}
 ** this should create a file called money.sql. Transfer it to the host (and a user account) with write access to your latest database.
 ** execute from the command line {{{sqlite3 -init money.sql money.db }}}
 
-NOTE: The migration script will automatically adjust the first few lines of money sql to remove postgres headers and extract the important parameter related to the //&quot;version&quot;// sequence (transaction id allocation will be handled by sqlite itself)
+NOTE: The migration script will automatically adjust the first few lines of money sql to remove postgres headers.  Version sequences are no longer used in the same way in the new database (each version field is its own sequence - there is no need for a common value).
 
 
 </pre>

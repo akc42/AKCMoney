@@ -21,13 +21,21 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+$sstmt = $db->prepare("SELECT version FROM currency WHERE name = ? ;");
+$sstmt->bindValue(1,$_POST['currency']);
+
+$ustmt = $db->prepare("UPDATE currency SET version = version + 1, priority = ?, display = ? WHERE name = ? ;");
+$ustmt->bindValue(1,$_POST['priority']);
+$ustmt->bindValue(2,($_POST['show'] == 'true')?1:0);
+$ustmt->bindValue(3,$_POST['currency']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-
-$version=$db->querySingle('SELECT version FROM currency WHERE name = '.dbPostSafe($_POST['currency']).';');
-
+$sstmt->execute();
+$version = $sstmt->fetchColumn();
+$sstmt->closeCursor();
 if ( $version != $_POST['version'] ) {
 ?><error>It appears that someone else has been editing the configuration in parallel to you.  In order to ensure you have consistent
 information we are going to reload the page</error>
@@ -38,8 +46,8 @@ information we are going to reload the page</error>
 $version++;
 
 
-$db->exec("UPDATE currency SET version = $version, priority = ".dbPostSafe($_POST['priority']).', display = '
-    .(($_POST['show'] == 'true')?'1':'0').' WHERE name = '.dbPostSafe($_POST['currency']).';');
+$ustmt->execute();
+$ustmt->closeCursor();
 
 $db->exec("COMMIT");
 

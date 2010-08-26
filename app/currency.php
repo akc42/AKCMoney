@@ -44,9 +44,11 @@ currency always appears first).  The current rate is also shown, but is adjusted
 }
 
 function menu_items() {
-?>      <li><a href="/money/index.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/accounts.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="/money/currency.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Currency Manager" class="current">Currency Manager</a></li>
+?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
+        <li><a href="/money/reports.php" target="_self" title="Reports">Reports</a></li>
+        <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
+        <li><a href="/money/currency.php" target="_self" title="Currency Manager" class="current">Currency Manager</a></li>
+        <li><a href="/money/config.php" target="_self" title="Config Manager">Config Manager</a></li>
 <?php
 }
 
@@ -77,16 +79,20 @@ window.addEvent('domready', function() {
         <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
         <div class="currency">
             <select id="currencyselector" name="currency" tabindex="1">
-<?php            
-$db->exec("BEGIN");
-$result= $db->query('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+<?php
+
+$pstmt = $db->prepare("SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;");
+$nstmt = $db->prepare("SELECT * FROM currency WHERE display = 0 ORDER BY name ASC;"); 
+            
+$db->beginTransaction();
+$pstmt->execute();
+while ($row = $pstmt->fetch(PDO::FETCH_ASSOC)) {
 ?>                <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
-$result->reset();
+$pstmt->closeCursor();
 ?>
             </select>
         </div>
@@ -101,8 +107,8 @@ $result->reset();
 </div>
 <?php
 
-
-if ($row = $result->fetchArray(SQLITE3_ASSOC)) {  //First row is default currency and is not sortable
+$pstmt->execute();
+if ($row = $pstmt->fetch(PDO::FETCH_ASSOC)) {  //First row is default currency and is not sortable
 ?>
 <div id="defaultcurrency">
     <div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency">
@@ -117,7 +123,7 @@ if ($row = $result->fetchArray(SQLITE3_ASSOC)) {  //First row is default currenc
 
 <?php
     $r=1;
-    while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while($row = $pstmt->fetch(PDO::FETCH_ASSOC)) {
         $r++
 ?>
 
@@ -136,12 +142,12 @@ if ($row = $result->fetchArray(SQLITE3_ASSOC)) {  //First row is default currenc
 ?></div>
 <?php
 }
-$result->finalize();
+$pstmt->closeCursor();
 ?><div class="xcurrency heading"></div>
 <div id="othercurrencies">
 <?php
-$result = $db->query('SELECT * FROM currency WHERE display = 0 ORDER BY name ASC;');
-while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+$nstmt->execute();
+while($row = $nstmt->fetch(PDO::FETCH_ASSOC)) {
 $r++
 ?>
 <div id="<?php echo 'c_'.$row['name']; ?>" class="xcurrency<?php if($r%2 == 0) echo ' even';?>">
@@ -154,8 +160,8 @@ $r++
 </div>
 <?php
 }
-$result->finalize();
-$db->exec("COMMIT");
+$nstmt->closeCursor();
+$db->commit();
 ?></div>
 <input type="hidden" id="maxpriority" value="<?php echo $maxp; ?>" />
 <?php

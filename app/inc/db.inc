@@ -24,6 +24,7 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
 if( !isset($_SESSION['database'])) header('Location: error.php');
 
+/*
 function dbMakeSafe($value) {
 	if (!get_magic_quotes_gpc()) {
 		$value=pg_escape_string($value);
@@ -34,13 +35,14 @@ function dbPostSafe($text) {
   if (((string)$text) == '') return 'NULL';
   return dbMakeSafe(htmlentities($text,ENT_QUOTES,'UTF-8',false));
 }
+*/
 function fmtAmount($value) {
     return substr_replace(sprintf('%03d',$value),'.',-2,0);
 }
 
-$db = new SQLite3($_SESSION['database']);
+$db = new PDO('sqlite:'.$_SESSION['database']);
 
-$db->busyTimeout(25000);  //set 25 second timeout on obtaining a lock
+$db->setAttribute(PDO::ATTR_TIMEOUT,25);  //set 25 second timeout on obtaining a lock
 $db->exec("PRAGMA foreign_keys = ON");
 
 ?>

@@ -17,9 +17,6 @@
 
 */
 
-
-
-
 Amount = new Class({
     Implements: [Events, Class.Occlude],
     property: 'amount',
@@ -139,6 +136,8 @@ var AKCMoney = function () {
             if( !dateEl.hasClass('repeat')) { //we can't clear repeating transactions
                 dateEl.addEvent('click', function(e) {
                     e.stop();
+                    if(this.editMode) return;  //Ignore requests whilst editing transaction
+                    this.editMode = true;  //Stop edit happening whilst this is in flight
                     request.callRequest(
                         'toggleclear.php',
                         {
@@ -164,16 +163,17 @@ var AKCMoney = function () {
                                 clearedBalance.subtract(this.amount);
                                 this.cleared = false;
                             }
-
+                            this.editMode = false;
                         }
                     );
                 }.bind(this));
             }
             var amountEl = this.element.getElement('.aamount');
             if(amountEl.hasClass('clickable')) {
-                this.amountClick = function(e) {
+                amountEl.addEvent('click', function(e) {
                     e.stop();
-                    amountEl.removeEvent('click',this.amountClick);
+                    if(this.editMode) return;  //already editing this transaction
+                    this.editMode = true;  //say WE are editing it.
                     sorting.removeItems(this.element);
                     var input = new Element('input',{'type':'text','name':'amount','class':'amount','value':amountEl.get('text')});
                     var amount = new Amount(input);
@@ -194,25 +194,25 @@ var AKCMoney = function () {
                                 function (holder) {
                                     if(holder.getElement('xaction').get('tid') == this.tid) {
                                         this.setVersion(holder.getElement('xaction').get('version'));
-                                        amountEl.addEvent('click',this.amountClick);
+                                        this.editMode = false;
                                         sorting.addItems(this.element);
                                         recalculate();
                                     }        
                                 }
                             );
                         } else {
-                            amountEl.addEvent('click',this.amountClick);
+                            this.editMode = false;
                             sorting.addItems(this.element);
                         }
                         this.amount.setValue(amount);    
                         input.dispose();    
                     }.bind(this));
                     input.focus();
-                }.bind(this);
-                amountEl.addEvent('click', this.amountClick);
+                }.bind(this));
             };
         },
         edit: function () {
+            this.editMode = true;
             var codediv = this.element.getElement('.codetype')
             var codeimg = codediv.getElement('div').clone();
             this.editForm = $('xactiontemplate').clone().inject(this.element,'bottom');
@@ -237,7 +237,6 @@ var AKCMoney = function () {
             this.cumcopy.setValue(this.cumulative);
     // Create a calender and set the date to now
             this.calendar = new Calendar.Single(xdate);
-            this.editMode = true;
             window.scrollTo(0,this.element.getCoordinates().top - 100);
             this.element.addClass('spinner');
             sorting.removeItems(this.element);
@@ -503,7 +502,7 @@ var AKCMoney = function () {
         setVersion: function(v) {
             this.version = v
             this.element.getElement('input[name=version]').value = v;
-            if(this.editMode) {
+            if(this.editForm) {
                 this.editForm.getElement('input[name=version]').value = v;
             }
         },
@@ -517,7 +516,7 @@ var AKCMoney = function () {
             }
         },
         isCleared:function() {
-            return (this.editMode)?this.editForm.getElement('input[name=cleared]').checked :this.cleared;
+            return (this.editForm && this.editMode)?this.editForm.getElement('input[name=cleared]').checked :this.cleared;
         },
         getXactionDate: function() {
             return this.element.getElement('input[name=xxdate]').value.toInt();

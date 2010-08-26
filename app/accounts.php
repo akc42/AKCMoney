@@ -41,9 +41,11 @@ function head_content() {
 
 function menu_items() {
 
-?>      <li><a href="/money/index.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/accounts.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Account Manager" class="current">Account Manager</a></li>
-        <li><a href="/money/currency.php?key=<?php echo $_SESSION['key']; ?>" target="_self" title="Currency Manager">Currency Manager</a></li>
+?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
+        <li><a href="/money/reports.php" target="_self" title="Reports">Reports</a></li>
+        <li><a href="/money/accounts.php" target="_self" title="Account Manager" class="current">Account Manager</a></li>
+        <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
+        <li><a href="/money/config.php" target="_self" title="Config Manager">Config Manager</a></li>
 <?php
 }
 function content() {
@@ -76,13 +78,15 @@ window.addEvent('domready', function() {
         <div class="accountsel">
             <select name="extnaccount" tabindex="1">
 <?php
-$db->exec("BEGIN");
-$result = $db->query('SELECT name FROM account ORDER BY name ASC;');
-while ($row = $result->fetchArray(SQLITE3_ASSOC) ) {
+$db->beginTransaction();
+$stmt = $db->prepare('SELECT name FROM account ORDER BY name ASC;');
+$stmt->execute();
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC) ) {
 ?>              <option <?php echo ($_SESSION['extn_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
-$result->reset();
+$stmt->closeCursor();
+$stmt->execute();
 
 ?>          </select>
 
@@ -94,11 +98,11 @@ $result->reset();
            <select name="homeaccount" tabindex="2">
 <?php
 
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 ?>            <option <?php echo ($_SESSION['home_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
 <?php
 }
-$result->finalize();
+$stmt->closeCursor();
 $tabIndex = 3;
 ?>        </select>
         </div>
@@ -122,14 +126,14 @@ $tabIndex = 3;
 <?php
 $currencies = Array();            
 $result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 $currencies[$row['name']] = Array($row['rate'],$row['description']);
 ?>              <option value="<?php echo $row['name']; ?>" <?php
                         if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
 }
-$result->finalize();
+$result->closeCursor();
 ?>
             </select>
         </div>
@@ -144,7 +148,7 @@ $result->finalize();
 <?php
 $result = $db->query('SELECT * FROM account ORDER BY lower(name) ASC;');
 $r=0;
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
     $r++
 ?>  <div class="xaccount<?php if($r%2 == 0) echo ' even';?>">
         <form action="updateaccount.php" method="post" onSubmit="return false;">
@@ -173,11 +177,11 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     </div>
 <?php            
 }
-$result->finalize();
+$result->closeCursor();
 ?>
 </div>
 <?php
-$db->exec("COMMIT");
+$db->commit();
 }
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
 ?>

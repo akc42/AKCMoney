@@ -21,12 +21,36 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+$ustmt = $db->prepare("UPDATE config SET version = ?, default_currency = ? ;");
+$ustmt->bindParam(1,$version,PDO::PARAM_INT);
+$ustmt->bindValue(2,$_POST['currency']);
+$currency = $db->quote($_POST['currency']);
+$cstmt = $db->prepare('SELECT rate,priority FROM currency WHERE name = ? ;');
+$cstmt->bindValue(1,$_POST['currency']);
+$astmt = $db->prepare("
+    UPDATE currency SET 
+        version = (version + 1), 
+        rate = CASE WHEN name = ? THEN 1.0 ELSE rate / CAST( ?  AS REAL) END, 
+        priority = 
+            CASE 
+                WHEN name = ? THEN 0
+                WHEN display = 0 THEN NULL 
+                WHEN priority < ? THEN priority + 1 
+                ELSE priority 
+            END ;"
+    );
+$astmt->bindValue(1,$_POST['currency']);
+$astmt->bindParam(2,$oldrate); //There is no PDO::PARAM_REAL
+$astmt->bindValue(3,$_POST['currency']);
+$astmt->bindParam(4,$oldpriority,PDO::PARAM_INT);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$version=$db->querySingle("SELECT version, default_currency FROM config;");
-if ( $version != $_POST['version'] ) {
+$result=$db->query("SELECT version, default_currency FROM config;");
+$row = $result->fetch(PDO::FETCH_ASSOC);
+if ( $row['version'] != $_POST['version'] ) {
 ?><error>Someone else has edited the configuration in parallel with you.  We will reload the page</error>
 <?php
     $_SESSION['default_currency'] = $row['default_currency'];
@@ -34,24 +58,44 @@ if ( $version != $_POST['version'] ) {
     $db->exec("ROLLBACK");
     exit;
 }
-$version++;
+$version = $row['version'] + 1;
 
 
 $_SESSION['default_currency'] = $_POST['currency'];
 $_SESSION['config_version'] = $version;
+$ustmt->execute();
+$ustmt->closeCursor();
 
-$db->exec("UPDATE config SET version = $version, default_currency = ".dbPostSafe($_POST['currency']).';');
-$row = $db->querySingle('SELECT * FROM currency WHERE name = '.dbMakeSafe($_POST['currency']),true);
+//Since we have now changed the default currency we need to recreate the view that shows transactions in that default currency
+$db->exec("DROP VIEW dfxaction;");
+$db->exec("
+CREATE VIEW IF NOT EXISTS dfxaction AS
+    SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,
+        CASE 
+            WHEN t.currency = $currency THEN t.amount
+            WHEN t.srcamount IS NOT NULL AND sa.currency = $currency THEN t.srcamount
+            WHEN t.dstamount IS NOT NULL AND da .currency = $currency THEN t.dstamount
+            ELSE CAST ((CAST (t.amount AS REAL) / currency.rate) AS INTEGER)
+        END AS dfamount
+    FROM
+        xaction AS t
+        LEFT JOIN account AS sa ON t.src = sa.name
+        LEFT JOIN account AS da ON t.dst = da.name
+        LEFT JOIN currency ON 
+            t.currency != $currency AND
+            (t.srcamount IS NULL OR sa.currency != $currency ) AND
+            (t.dstamount IS NULL OR da.currency != $currency ) AND 
+            t.currency = currency.name;
+    ");
 
-$oldrate = $row['rate'];
-$oldpriority = $row['priority'];
+$cstmt->execute(); //get currency details
+$cstmt->bindColumn(1,$oldrate);
+$cstmt->bindColumn(2,$oldpriority);
+$cstmt->fetch(PDO::FETCH_BOUND);
 
 // We now go through all currencies adjusting relative priorities so that new default currency is always first
-$db->exec("UPDATE currency SET version = (version + 1), rate = CASE WHEN name = '".$_SESSION['default_currency']."' THEN 1.0 ELSE rate / "
-        .$oldrate." END, priority = CASE WHEN name = '".$_SESSION['default_currency']."'"
-        .' THEN 0 WHEN display = 0 THEN NULL WHEN priority < '.$oldpriority.' THEN priority + 1 ELSE priority END ;');
-
-
+$astmt->execute();
+$astmt->closeCursor();
 ?><selector>
     <div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
     <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
@@ -62,7 +106,7 @@ $db->exec("UPDATE currency SET version = (version + 1), rate = CASE WHEN name = 
 
 $result = $db->query('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;');
 $currencies = Array();
-while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while($row = $result->fetch(PDO::FETCH_ASSOC)) {
 $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate']);
 ?>                <option value="<?php echo $row['name']; ?>" <?php
                     if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
@@ -74,7 +118,7 @@ $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate
     </div>
 </selector>
 <?php
-$result->finalize();
+$result->closeCursor();
 $db->exec("COMMIT");
 $r=0;
 foreach($currencies as $name => $values)  {

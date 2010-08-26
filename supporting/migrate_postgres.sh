@@ -20,7 +20,7 @@
 # run sqlite3 -init money.sql money.db (where money.db is the name you are using for your new database)
 # 
 
-# Deal with currency - its easier to just delete and reload the whole table rather than just look for updates
+#Set this manually to the name of the database before running the script.
 DATABASE=money
 
 echo "BEGIN EXCLUSIVE;\n" > money.sql
@@ -30,10 +30,9 @@ echo "DELETE FROM account;\n" >> money.sql
 pg_dump -a --column-inserts -t currency $DATABASE | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql
 pg_dump -a --column-inserts -t account  $DATABASE | sed 's/, atype//'  | sed "s/, 'Debit.'//"|sed "s/, 'Credit'//" | sed '/^SE/d' >> money.sql
 
-#FIELD=extn_account
-#echo "INSERT INTO config VALUES ('$FIELD','$(psql -c "select $FIELD from config;" -t money| sed 's/^[ \t]*//;s/[ \t]*$//')');\n" >> money.sql 
-
 pg_dump -a --column-inserts -t config $DATABASE | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql
+echo "UPDATE config SET year_end = '12-31';\n" >>money.sql
+
 pg_dump -a --column-inserts -t transaction $DATABASE | sed 's/transaction/xaction/' | sed 's/true/1/g' | sed 's/false/0/g' | sed '/^SE/d' >> money.sql 
 
 echo "END TRANSACTION;\n" >>money.sql

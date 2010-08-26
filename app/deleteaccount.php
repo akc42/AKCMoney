@@ -21,11 +21,19 @@ error_reporting(E_ALL);
 
 session_start();
 require_once('./inc/db.inc');
+if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
+//Do all the preparation before starting the transaction - that way the transaction is over quicker
+$vstmt = $db->prepare("SELECT dversion FROM account WHERE name = ? ;");
+$dstmt = $db->prepare("DELETE FROM account WHERE name = ? ;");
+$vstmt->bindValue(1,$_POST['account']);
+$dstmt->bindValue(1,$_POST['account']);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$version=$db->querySingle("SELECT dversion FROM account WHERE name =".dbMakeSafe($_POST['account']));
+$vstmt->execute();
+$version = $vstmt->fetchColumn();
+$vstmt->closeCursor();
 if ($version != $_POST['dversion']) {
     //account with this name already exists so we cannot create one
 ?><error>It appears someone else is editing accounts in parallel.  We need to reload the page to ensure you are working with consistent data</error>
@@ -34,7 +42,8 @@ if ($version != $_POST['dversion']) {
     exit;
 }
 
-$db->exec("DELETE FROM account WHERE name = ".dbPostSafe($_POST['account'])." ;");
+$dstmt->execute();
+$dstmt->closeCursor();
 
 $db->exec("COMMIT");
 
