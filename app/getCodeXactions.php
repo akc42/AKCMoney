@@ -36,10 +36,33 @@ $stmt->closeCursor();
 switch ($codetype) {
 case 'C':
 case 'R':
-case 'B':
     $stmt = $db->prepare("
     SELECT
         id,t.date AS date,version, description, rno, repeat, dfamount AS amount,
+        src,srccode, dst, dstcode
+    FROM 
+        dfxaction AS t, account AS a
+    WHERE
+        t.date >= ? AND t.date <= ? AND
+        a.domain = ? AND (
+        (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = ? ) OR
+        (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = ? ))
+    ORDER BY t.date ASC
+        ");
+    $stmt->bindValue(1,$starttime);
+    $stmt->bindValue(2,$endtime);
+    $stmt->bindValue(3,$_SESSION['domain']);
+    $stmt->bindValue(4,$_POST['code']);
+    $stmt->bindValue(5,$_POST['code']);
+    break;
+case 'B':
+    $stmt = $db->prepare("
+    SELECT
+        id,t.date AS date,version, description, rno, repeat, 
+        CASE 
+            WHEN t.src = a.name THEN -dfamount
+            ELSE dfamount 
+        END AS amount,
         src,srccode, dst, dstcode
     FROM 
         dfxaction AS t, account AS a

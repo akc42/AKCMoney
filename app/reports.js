@@ -45,6 +45,17 @@ var AKCMoney = function () {
                 var xactions = holder.getFirst();
                 xactions.inject(this.getParent(),'after');
                 Utils.dateAdjust(xactions,'dateawait','dateconvert');
+                xactions.getChildren().each(function(xaction) {
+                    var tac =xaction.getElement('.taccount');
+                    xaction.getElement('.aamount').addEvents({
+                        'mouseenter':function(e) {
+                            tac.removeClass('hidden');
+                        },
+                        'mouseleave':function(e) {
+                            tac.addClass('hidden');
+                        }
+                    });
+                });
                 this.addEvent('click',codeshrink);
                 this.addClass('shrink');
             }

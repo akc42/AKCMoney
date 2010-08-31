@@ -56,6 +56,7 @@ div#positive span.title, div#currency span.title {
     }
 .xaction, .xaccount {
     padding:2px 0;
+    position:relative;
 }
 .xaction:after, .xaccount:after, .xcurrency:after, .clearacc:after, .startaccount:after, .defaultcurrency:after  {
   content: ".";
@@ -466,4 +467,13 @@ div#topcurrencies>div {
 
 .setrate {
     color:#d00000;
+}
+
+div.taccount {
+    position:absolute;
+    top:-10px;
+    left:10px;
+    background:url(account.png) repeat-x 0 0;
+    border:2px solid #4B637B;
+    padding:5px;
 }

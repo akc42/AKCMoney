@@ -42,10 +42,10 @@ function head_content() {
 function menu_items() {
 
 ?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/reports.php" target="_self" title="Reports">Reports</a></li>
+        <li><a href="/money/reports.php" target="_self" title="Accounting">Accounting</a></li>
         <li><a href="/money/accounts.php" target="_self" title="Account Manager" class="current">Account Manager</a></li>
         <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-        <li><a href="/money/config.php" target="_self" title="Config Manager">Config Manager</a></li>
+        <li><a href="/money/accounting.php" target="_self" title="Accounting Manager">Accounting Manager</a></li>
 <?php
 }
 function content() {

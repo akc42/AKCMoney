@@ -60,10 +60,10 @@ which allocates the transaction into the accounting system for a domain.  Differ
 function menu_items() {
 
 ?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/reports.php" target="_self" title="Reports" class="current">Reports</a></li>
+        <li><a href="/money/reports.php" target="_self" title="Accounting" class="current">Accounting</a></li>
         <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
         <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-        <li><a href="/money/config.php" target="_self" title="Config Manager">Config Manager</a></li>
+        <li><a href="/money/accounting.php" target="_self" title="Accounting Manager">Accounting Manager</a></li>
 
 <?php
 }
@@ -134,6 +134,11 @@ Year:
     $stmt->closeCursor();
 ?>          </select>
         </form>
+		<div class="buttoncontainer accountbuttons">
+		    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
+            <a id="csv" href="generatecsv.php?key=<?php echo $_SESSION['key']; ?>&domain=<?php echo $_SESSION['domain']; ?>&year=<?php echo $_SESSION['year'];?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
+        </div>
+
 <script type="text/javascript">
 
 window.addEvent('domready', function() {
@@ -195,7 +200,7 @@ window.addEvent('domready', function() {
     $stmt->closeCursor();
 /* This query is complex because we are depreciating the amount over 3 years, so the contribution to this years accounts is a proportion of the 
     three years that this accounting period covers.  It could be as much as a 3rd, but might be less if the three year period starts or ends
-    within this accounting period. 283824000 is the number of seconds in 3 years
+    within this accounting period. 94608000 is the number of seconds in 3 years
 */
     $stmt = $db->prepare("
     SELECT
@@ -213,7 +218,7 @@ window.addEvent('domready', function() {
     FROM 
         dfxaction AS t, account AS a, code AS c
     WHERE
-        t.date >= ? - 283824000 AND t.date <= ? AND
+        t.date >= ? - 94608000 AND t.date <= ? AND
         c.type = 'A' AND
         a.domain = ? AND (
         (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
