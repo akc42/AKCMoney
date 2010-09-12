@@ -20,9 +20,8 @@
 error_reporting(E_ALL);
 
 
-session_start();
 require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+if(!$user['isAdmin']) die('insufficient permissions');
 
 $sstmt = $db->prepare("SELECT bversion FROM account WHERE name = ? ;");
 $sstmt->bindValue(1,$_POST['account']);

@@ -42,17 +42,18 @@ CREATE TABLE code (
 
 INSERT INTO code VALUES (1, 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
 INSERT INTO code VALUES (2, 'C', 'Billable Costs'); -- costs incurred which will be invoiced from clients
-INSERT INTO code VALUES (3, 'C', 'Non Billable Mileage @40p per mile'); --Mileage Not Billable from Clients
-INSERT INTO code VALUES (4, 'C', 'Invoiceable Mileage @40p per mile'); --Mileage Costed at 40p but only Billed at 20p
+INSERT INTO code VALUES (3, 'C', 'General Mileage @40p per mile'); --Mileage Not Billable from Clients
+INSERT INTO code VALUES (4, 'C', 'Customer Related Mileage @40p per mile'); --Mileage Costed at 40p but only Billed at 20p
 INSERT INTO code VALUES (5, 'C', 'Salaries'); --Salaries and Related Costs (Tax and NI)
-INSERT INTO code VALUES (6, 'C', 'Advertising'); --Advertising Costs
+INSERT INTO code VALUES (6, 'C', 'Advertising and Marketing Services'); --Advertising Costs
 INSERT INTO code VALUES (7, 'C', 'Office Cost'); --Stationary, Postage etc
 INSERT INTO code VALUES (8,'C','Professional Membership Fees'); -- Fees for British Computer Society and PCG
-INSERT INTO code VALUES (99, 'C', 'General Costs'); -- costs not included elsewhere
-INSERT INTO code VALUES (100, 'R', 'Invoice for Professional Service');
-INSERT INTO code VALUES (101,'R', 'Invoice for Web Design and Hosting'); 
-INSERT INTO code VALUES (200,'A','Computer Equipment'); --Depreciable Computer Equipment
-INSERT INTO code VALUES (300,'B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
+INSERT INTO code VALUES (9, 'C', 'General Costs'); -- costs not included elsewhere
+INSERT INTO code VALUES (10, 'R', 'Invoices for Professional Service');
+INSERT INTO code VALUES (11,'R', 'Invoices for Web Design and Hosting'); 
+INSERT INTO code VALUES (12,'A','Computer Equipment'); --Depreciable Computer Equipment
+INSERT INTO code VALUES (13,'B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
+INSERT INTO code VALUES (14,'B','Loans'); --loans made to the company
 
 -- Define valid Repeat Values for Transactions
 
@@ -256,6 +257,15 @@ INSERT INTO currency VALUES ('USD', 0.63499999, 1, 2, 'United States of America,
 
 -- domain is an area of the accounts that is a whole.  Used primarily so we can do special things to transactions between domains
 
+CREATE TABLE domain (
+    name character varying PRIMARY KEY,
+    description character varying,
+    version bigint DEFAULT 1 NOT NULL
+);
+
+INSERT INTO domain (name, description) VALUES ('personal','Accounts representing the finances of an individual');
+INSERT INTO domain (name, description) VALUES ('business','Accounts representing the finances of a business');
+
 
 -- an account, the fundemental accounting vehicle within the system.      
 CREATE TABLE account (
@@ -265,10 +275,12 @@ CREATE TABLE account (
     currency character(3) REFERENCES currency(name),  -- currency in which to show transactions
     balance bigint DEFAULT 0 NOT NULL, -- opening balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when opening balance was set
-    domain character varying -- domain that account belongs to (free text at the moment)
+    repeat_days integer, 
+    domain character varying REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL -- domain that account belongs to
+
 );
 
-INSERT INTO account (name,currency,balance,domain) VALUES ('Cash', 'GBP', 0, 'personal');
+INSERT INTO account (name,currency,balance, repeat_days,domain) VALUES ('Cash', 'GBP', 0, 90, 'personal');
 
 
 
@@ -299,20 +311,48 @@ CREATE INDEX xaction_idx_src ON xaction (src);
 CREATE INDEX xaction_idx_scode ON xaction(srccode);
 CREATE INDEX xaction_idx_dcode ON xaction(dstcode);
 
+CREATE TABLE user (
+    uid integer primary key,
+    name character varying UNIQUE,
+    version bigint DEFAULT 1 NOT NULL, --version of this record
+    password character varying, -- md5 of password
+    isAdmin boolean NOT NULL DEFAULT 0,  -- if admin has capability of everything
+    domain character varying NOT NULL REFERENCES domain(name) ON UPDATE CASCADE, --domain to use for accounting
+    account character varying NOT NULL REFERENCES account(name) ON UPDATE CASCADE -- account to use when displaying
+);
+
+CREATE INDEX user_idx_name ON user(name);
+
+CREATE TABLE capability (
+    uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,
+    domain character REFERENCES domain(name) ON UPDATE CASCADE ON DELETE CASCADE,
+    readonly boolean NOT NULL DEFAULT 1,
+    primary key (uid,domain)
+);
+
+CREATE INDEX capability_idx_uid ON capability(uid);
+
+CREATE TABLE login_log (
+    lid integer primary key,
+    time bigint DEFAULT (strftime('%s','now')) NOT NULL,
+    ipaddress character varying,
+    username character varying,
+    isSuccess boolean NOT NULL
+);
 
 CREATE TABLE config (
     version integer DEFAULT 1 NOT NULL,
-    db_version integer, -- version of the databae
-    home_account character varying REFERENCES account(name) ON UPDATE CASCADE, -- initial account when accessing from 192.168.x.x
-    extn_account character varying REFERENCES account(name) ON UPDATE CASCADE, -- initial account when accessing from the internet
+    db_version integer, -- version of the database
     repeat_days integer, -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
     default_currency character(3) REFERENCES currency(name) ON UPDATE CASCADE, 
     demo boolean DEFAULT 0 NOT NULL, -- if true(1) this is a demo account and a warning is printed on each page
     year_end character varying, --last day of accounting year in MMDD form (this allows numeric comparisons to work)
-    default_domain character varying --default domain to select for reporting
+    creation_date DEFAULT (strftime('%s','now')) NOT NULL -- record when the database is installed
 );
 
-INSERT INTO config(db_version,home_account,extn_account,repeat_days,default_currency,year_end) VALUES (1,'Cash','Cash', 90, 'GBP','1231','Business');
+INSERT INTO config(db_version,repeat_days,default_currency,year_end) 
+            VALUES (1, 90, 'GBP','1231');
+
 CREATE VIEW dfxaction AS
     SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,
         CASE 

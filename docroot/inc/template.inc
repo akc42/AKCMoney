@@ -19,11 +19,11 @@
 */
 
 /*This template file shows the prefered way of providing a site template in which to fit
-the application.  This file should be placed in the document root of the site where each page of the application (and other applications also)
-will call it to display the site surround, and expect it to call it back via "head_content()", "menu_items()" and "content()" functions.
+the application.  This file should be placed in the 'inc' subdirectory of thedocument root of the site where each page
+of the application (and other applications also) will call it to display the site surround, and expect it to call it
+back via "head_content()", "menu_items()" and "content()" functions.
 
-Full instructions are given in the documentation.html file contained in the "supporting" directory of the overall source package.  This is a 
-tiddly wiki and is a full standalone web site inside a single file.  
+Full instructions are given in the documentation.html file contained in the "supporting" directory of the overall source package.  This is a  tiddly wiki and is a full standalone web site inside a single file.  
 
 This inclusion of the copyright file is the prefered way of providing attribution as required by the licence (obviously adjusting the
 relative path to locate the the file in the delivered application).  If this template covers several applications, then each one should be included with a separate div as shown. 
@@ -47,8 +47,13 @@ date_default_timezone_set  ('Europe/London');
 head_content();
 ?></head>
 <body>
+<!-- these two spans help the menu load faster-->
+<span class="preload1"></span>
+<span class="preload2"></span>
+
     <div id="header"></div>
-    <ul id="menu">
+    <ul class="menu">
+        <li><a href="/"><span>Home</span></a></li>
 <?php
 menu_items();
 ?>    </ul>

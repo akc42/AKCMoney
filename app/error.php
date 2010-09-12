@@ -29,18 +29,13 @@ function head_content() {
 }
 
 function menu_items() {
-
-?>      <li><a href="/money/index.php" target="_self" title="Account" class="current">Account</a></li>
-        <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-
-<?php
 }
 
 function content() {
     global $db;
 ?><h1>ERROR</h1>
 <p class="error">Application encounted unrecoverable error please restart</p>
+<p class="error">Error was &#8220;<?php echo $_GET['err']; ?>&#8221;</p>
 <?php
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 

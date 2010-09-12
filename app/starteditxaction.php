@@ -19,8 +19,8 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
+if(!$user['isAdmin']) die('insufficient permissions');
 
 $stmt = $db->prepare("
         SELECT xaction.*,  ct.rate AS trate, srcacc.currency AS srccurrency, cs.rate AS srate, dstacc.currency AS dstcurrency,cd.rate AS drate 

@@ -17,7 +17,7 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-session_start();
+
 require_once('./inc/db.inc');
 
 function head_content() {
@@ -43,24 +43,14 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 <?php
 }
 
-function menu_items() {
-
-?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/reports.php" target="_self" title="Accounting">Accounting</a></li>
-        <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-        <li><a href="/money/accounting.php" target="_self" title="Accounting Manager" class="current">Accounting Manager</a></li>
-
-<?php
-}
 
 function content() {
-    global $db;
+    global $db,$user;
 
     $db->beginTransaction();
 ?><h1>Configuration Manager</h1>
 <?php 
-    if ($_SESSION['demo']) {
+    if ($user['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
 <?php
     } 
@@ -68,8 +58,6 @@ function content() {
 ?><script type="text/javascript">
 
 window.addEvent('domready', function() {
-// Set some useful values
-    Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
 });
 </script>
 
@@ -77,6 +65,6 @@ window.addEvent('domready', function() {
 <?php
     $db->commit();
 } 
-require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
+require($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
 ?>
 

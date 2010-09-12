@@ -1,5 +1,5 @@
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -35,38 +35,51 @@ body {font-family: Arial Helvetica, sans-serif;font-size: 10pt;line-height: 12pt
    }
 #footer a,#footer a:visited {color:white;}
 
-ul#menu{ 
-	width: 728px;
-	height: 43px;
-	background: #FFF url("menu-bg.gif") top left repeat-x; 
-	font-family: "Lucida Grande", Verdana, sans-serif; 
-	font-weight: bold; 
-	list-style-type: none; 
-	margin: 0; 
-	padding: 0; 
-	}
-ul#menu li {
-	display: block; 
-	float: left; 
-	margin: 0 0 0 5px; 
-	}
-ul#menu li a { 
-	height: 43px; 
-	color: #777; 
-	text-decoration: none; 
-	display: block; 
-	float: left; 
-	line-height: 200%; 
-	padding: 8px 15px 0; 
-	}
-ul#menu li a:hover { 
-	color: #333; 
-	}
-ul#menu li a.current{ 
-	color: #FFF; 
-	background: #FFF url("current-bg.gif") top left repeat-x; 
-	padding: 5px 15px 0; 
-	}
+/* ================================================================ 
+This copyright notice must be kept untouched in the stylesheet at 
+all times.
+
+The original version of this stylesheet and the associated (x)html
+is available at http://www.cssplay.co.uk/menu/pro_drop3.html
+Copyright (c) 2005-2007 Stu Nicholls. All rights reserved.
+This stylesheet and the associated (x)html may be modified in any 
+way to fit your requirements.
+=================================================================== */
+/* AKC - this menu has been modified extensively.  It also appears that the url
+ in the copyright notice directly above this comment is no longer available */
+
+.preload1 {background: url(blank_over.gif);}
+.preload2 {background: url(blank_overa.gif);}
+
+ul.menu {padding:0; margin-top:5px; list-style:none; height:36px; background:#fff; position:relative; z-index:500; font-family:arial, verdana, sans-serif;}
+ul.menu>li {display:block; float:left;}
+ul.menu>li>a {display:block; float:left; height:36px; line-height:27px; color:#ccc; text-decoration:none; font-size:11px; font-weight:bold; padding:0 0 0 12px; cursor:pointer;background: url(blank.gif);}
+ul.menu>li>a span {float:left; display:block; padding:0 24px 0 12px; height:36px;background:url(blank.gif) right top;}
+ul.menu li>a span.down {float:left; display:block; padding:0 24px 0 12px; height:36px; background:url(blanka.gif) no-repeat right top;}
+ul.menu li>a:hover {color:#fff; background: url(blank_over.gif) no-repeat;}
+ul.menu li>a:hover span {background:url(blank_over.gif) no-repeat right top;}
+ul.menu li>a:hover span.down {background:url(blank_overa.gif) no-repeat right top;}
+
+ul.menu>li:hover> a {color:#fff; background: url(blank_over.gif) no-repeat;}
+ul.menu>li:hover > a span {background:url(blank_over.gif) no-repeat right top;}
+ul.menu>li:hover > a span.down {background:url(blank_overa.gif) no-repeat right top;}
+
+
+/* Style the list OR link hover. Depends on which browser is used */
+
+ul.menu a:hover {visibility:visible; position:relative; z-index:200;}
+ul.menu li:hover {position:relative; z-index:200;}
+
+/* keep the 'next' level invisible by placing it off screen. */
+ul.menu ul {position:absolute; left:0; top:36px; background: #f4f4f4; padding:6px; padding-right:20px;border:1px solid #3a93d2; white-space:nowrap; list-style:none; display:none; max-height:12em; overflow-y:auto;overflow-x:hidden;}
+
+ul.menu :hover ul {display:block; z-index:300;}
+ul.menu :hover ul li {display:block; font-weight:normal; position:relative;}
+ul.menu :hover ul li a {font-size:11px; color:#000; text-decoration:none;}
+ul.menu :hover ul li.selected { background-color:#FFFD7C;}
+ul.menu :hover ul li a:hover {background:#3a93d2; color:#fff;}
+/* END OF Copyright (c) 2005-2007 Stu Nicholl */
+
 #main {
     width:728px;
     }

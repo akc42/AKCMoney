@@ -17,51 +17,32 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-define('DB_DIR','/home/alan/dev/money/db/');
-session_start();
-if(isset($_GET['db'])) $_SESSION['database'] = DB_DIR.$_GET['db'].'.db';
-//Install if we haven't already
-if(isset($_SESSION['database']) && !file_exists($_SESSION['database'])) {
-    $db = new PDO('sqlite:'.$_SESSION['database']);
-    $db->exec(file_get_contents('./inc/database.sql'));
-    unset($db);
-}
 
 require_once('./inc/db.inc');
-
-if(!isset($_SESSION['key'])) {
-    $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    $key='';
-    for ($i=0; $i<10; $i++) $key .= $charset[(mt_rand(0,(strlen($charset)-1)))];
-    $_SESSION['key'] = $key;
+if(isset($_GET['account'])) {
+	$account = $_GET['account'];
+} else {
+	$account = $user['account'];
 }
-if(!isset($_SESSION['account']) || isset($_REQUEST['refresh'])) {
-    //First time through, or if a refresh requested
-    $result = $db->query('SELECT * FROM config;');
-    $row = $result->fetch(PDO::FETCH_ASSOC);
-/*
-       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
-    if($row['db_version'] < 2) { //update to version 2
-        $result->closeCursor();
-        $db->exec(file_get_contents('./inc/update1.sql'));
-        $result = $db->query('SELECT * FROM config;');
-        $row = $result->fetch(PDO::FETCH_ASSOC);
-    }
-*/ 
+$stmt = $db->prepare('SELECT a.name, bversion, dversion,balance,date, repeat_days,domain, a.currency, c.description AS cdesc, c.rate 
+                        FROM account AS a JOIN currency AS c ON a.currency = c.name 
+                        WHERE a.name = ? ;');
+$stmt->bindValue(1,$account);
 
-    // if we are at home (IP ADDRESS = 192.168.0.*) then use home_account, else use extn_account as default
-    $at = (preg_match('/192\.168\.0\..*/',$_SERVER['REMOTE_ADDR']))?'home':'extn';
-    $_SESSION['account'] = $row[$at.'_account'];
-    $_SESSION['demo'] = ($row['demo'] != 0);
-    $_SESSION['repeat_interval'] = 86400*$row['repeat_days'];  // 86400 = seconds in day
-    $_SESSION['default_currency'] = $row['default_currency'];
-    $_SESSION['extn_account'] = $row['extn_account'];
-    $_SESSION['home_account'] = $row['home_account'];
-    $_SESSION['config_version'] = $row['version'];
-    $_SESSION['year_end'] = $row['year_end'];
-    $result->closeCursor();
+$db->beginTransaction();
+
+$stmt->execute();
+
+if($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+	
+	if($account != $user['account']) {
+	//If changing account (successfully) then we need to update our user
+	    $user['account'] = $account;
+	    updateUser();
+	}
 }
-if(isset($_REQUEST['account'])) $_SESSION['account'] = $_REQUEST['account'];
+$stmt->closeCursor();    
+
 
 function head_content() {
 
@@ -88,63 +69,38 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 <?php
 }
 
-function menu_items() {
-
-?>      <li><a href="/money/index.php" target="_self" title="Account" class="current">Account</a></li>
-        <li><a href="/money/reports.php" target="_self" title="Accounting">Accounting</a></li>
-        <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-        <li><a href="/money/accounting.php" target="_self" title="Accounting Manager">Accounting Manager</a></li>
-
-<?php
-}
 
 function content() {
-    global $db;
-    $account = $_SESSION['account'];
-    $repeattime = time() + $_SESSION['repeat_interval'];
-    $db->beginTransaction();
-?><h1>Account Data</h1>
+    global $db,$user,$account,$row;
+
+?><h1><?php echo $account; ?></h1>
 <?php 
-    if ($_SESSION['demo']) {
+    if ($user['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
 <?php
     } 
-?>      <form id="accountsel" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-            <input type="hidden" name="tid" value="0" />
-Account Name:		
-            <select id="account" name="account" tabindex="300">
-<?php
-    $result = $db->query('SELECT name FROM account ORDER BY name ASC;');
-    while($row = $result->fetch(PDO::FETCH_ASSOC)) {
-?>            <option <?php echo ($account == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
-<?php
-    }
-    $result->closeCursor();
-
-?>        </select>
-        </form>	
+?>
 		<div id="accountinfo">
 			<div id="positive">
 <?php
-    $stmt = $db->prepare('SELECT a.name, bversion, dversion,balance,date, domain, a.currency, c.description AS cdesc, c.rate 
-                            FROM account AS a JOIN currency AS c ON a.currency = c.name 
-                            WHERE a.name = ? ;');
-    $stmt->bindValue(1,$account);
-    $stmt->execute();
-
-    if(!($row = $stmt->fetch(PDO::FETCH_ASSOC))) {
+	if(!$row) {
 ?><h1>Problem with Account</h1>
 <p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
 working in parallel with you has deleted it.  You can try to restart the software by
-clicking <a href="<?php echo $_SERVER['PHP_SELF']; ?>?refresh=yes"><strong>here</strong></a>, but if that still fails then you should report the fault to
+selecting another account from the menu above, but if that still fails then you should report the fault to
 an adminstrator, informing them that you had a problem with account name <strong><?php echo $account; ?></strong> not being in the database</p>
 <?php
         $db->rollBack();
         return;
     }
+    
+    // if account is new, update user cookie to reflect it
+    if($account != $user['account']) {
+    	$user['account'] = $account;
+    	updateUser();
+    }
+    $repeattime = time() + $row['repeat_days']*84600;
     $currency = $row['currency'];
-    $_SESSION['currency'] = $currency;
     $balance = $row['balance'];
     $bdate = $row['date'];
     $cdesc = $row['cdesc'];
@@ -156,7 +112,6 @@ an adminstrator, informing them that you had a problem with account name <strong
     if(!is_null($row['domain'])) {
 ?>              <span class="title">Domain:</span> <?php echo $row['domain'];
     }
-    $stmt->closeCursor();    
 ?>			</div> 
 			<div id="currency">
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
@@ -164,8 +119,9 @@ an adminstrator, informing them that you had a problem with account name <strong
 			</div>
 
 		</div>
-		<div class="buttoncontainer accountbuttons">
-		    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
+<?php
+	if($user['isAdmin']){
+?>		<div class="buttoncontainer accountbuttons">
 		    <input type="hidden" name="account" value="<?php echo $account;?>" />
 		    <input type="hidden" name="issrc" value="true" />
 		    <input type="hidden" name="currency" value="<?php echo $currency; ?>" />
@@ -173,36 +129,19 @@ an adminstrator, informing them that you had a problem with account name <strong
             <a id="new" class="button" tabindex="310"><span><img src="add.png"/>New Transaction</span></a>
             <a id="rebalance" class="button" tabindex="320"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
         </div>
-
-<script type="text/javascript">
+<?php
+	}
+?><script type="text/javascript">
 var thisAccount;
 
 window.addEvent('domready', function() {
-// Set some useful values
-    Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
-    Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
 //Turn all dates to the correct local time
     Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
-//It is easier to use Javascript than PHP to create a copy of the account selection list and place it in the transaction editing template
-    var accountList = $('account').clone();
-    accountList.set('tabindex',"70");
-    var currentSelected = accountList.getElement('option[selected]'); //remove this account
-    currentSelected.destroy();
-    var blankOption = new Element('option'); // and add a "selected" blank entry at top
-    blankOption.set('selected','selected');
-    blankOption.set('value','');
-    blankOption.set('text','-- Select (Optional) Other Account --');
-    blankOption.inject(accountList,'top');
-// Insert this new list into the new transaction template
-    accountList.inject($('xactiontemplate').getElement('.accountsel'));
-// Now provide for jumping to new account when the select list changes
-    $('account').addEvent('change', function(e) {
-        e.stop();
-        $('accountsel').submit();
-    });
-    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php if(isset($_POST['tid'])) {echo $_POST['tid'];} else {echo '0';} ?>);
-});
+<?php if($user['isAdmin']) {
+?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php if(isset($_POST['tid'])) {echo $_POST['tid'];} else {echo '0';} ?>);
+<?php }
+?>});
 </script>
 
 <h2>Transaction List</h2>
@@ -228,7 +167,6 @@ window.addEvent('domready', function() {
     <div id="clrbalance" class="amount">0.00</div>
 </div>
 <div id="balance" class="xaction balance row">
-    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
     <input type="hidden" name="clearing" value="false" />
     <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
     <div class="date"><input type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
@@ -311,8 +249,9 @@ $r = 0;
         LEFT JOIN code AS dc ON dc.id = xaction.dstcode 
         LEFT JOIN account AS srcacc ON xaction.src = srcacc.name 
         LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
-        WHERE xaction.currency = currency.name AND (src = :account OR dst = :account) ORDER BY date ASC;');
-    $stmt->bindValue(':account',$account);
+        WHERE xaction.currency = currency.name AND (src = ? OR dst = ?) ORDER BY date ASC;');
+    $stmt->bindValue(1,$account);
+    $stmt->bindValue(2,$account);
     $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $r++;
@@ -411,8 +350,9 @@ $r = 0;
 <?php
     }
 ?></div>
-<div id="xactiontemplate" class="hidden xactionform"
-    <input type="hidden" name="key" value="<?php echo $_SESSION['key']; ?>" />
+<?php
+	if($user['isAdmin']) {
+?><div id="xactiontemplate" class="hidden xactionform"
     <input type="hidden" name="tid" value="0"/>
     <input type="hidden" name="version" value="0" />
     <input type="hidden" name="accounttype" value="src"/>
@@ -427,15 +367,14 @@ $r = 0;
         <div class="amount">
             <select name="currency" title="<?php echo $cdesc;?>" tabindex="30" >
 <?php
-    $result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
-    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-        if(!isset($_SESSION['dc_description'])  && $row['name'] == $_SESSION['default_currency']) $_SESSION['dc_description'] = $row['description'];
+		$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
+		while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['name']; ?>" <?php
-                        if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
-                            echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
+            if($row['name'] == $currency) echo 'selected="selected"';?> rate="<?php
+                echo $row['rate']; ?>" title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
 <?php    
-    }
-    $result->closeCursor();
+	    }
+	    $result->closeCursor();
 ?>          </select>
         </div>
     </div>
@@ -447,26 +386,26 @@ $r = 0;
         <div class="repeatsel">
             <select name="repeat" tabindex="60" >
 <?php
-    $result = $db->query('SELECT * FROM repeat;');
-    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+		$result = $db->query('SELECT * FROM repeat;');
+		while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['rkey']; ?>" <?php
-                        if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
-                          echo $row['description']; ?></option>
+            if($row['rkey'] == 0) echo 'selected="selected"';?>><?php
+              echo $row['description']; ?></option>
 <?php    
-    }
-    $result->closeCursor();
+		}
+		$result->closeCursor();
 ?>          </select>
         </div>
         <div class="codesel">
             <select name="code" tabindex="63">
                 <option value="0" type="" selected="selected">-- Select (Optional) Account Code --</option>
 <?php
-    $result = $db->query('SELECT * FROM code ORDER BY id ASC;');
-    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+		$result = $db->query('SELECT * FROM code ORDER BY id ASC;');
+		while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['id']; ?>" codetype="<?php echo $row['type']; ?>"><?php echo $row['description']; ?></option>
 <?php
-    }
-    $result->closeCursor();
+		}
+		$result->closeCursor();
 ?>            </select>
         </div>
         <div class="codetype"></div>
@@ -476,7 +415,21 @@ $r = 0;
     </div>
     <div class="xaction brow">
         <div class="sellabel">Dst :</div>
-        <div class="accountsel"></div>
+        <div class="accountsel">
+            <select id="account" name="account">
+            	<option value="" selected="selected">-- Select (Optional) Other Account --</option>
+<?php
+		$result = $db->prepare('SELECT name FROM account WHERE name != ? ORDER BY name ASC;');
+		$result->bindValue(1,$account);
+		$result->execute();
+		while($row = $result->fetch(PDO::FETCH_ASSOC)) {
+?>            <option value="<?php echo $row['name']; ?>" ><?php echo $row['name']; ?></option>
+<?php
+		}
+		$result->closeCursor();
+
+?>        </select>
+        </div>
         <div class="buttoncontainer switchaccounts">
             <a class="button switchsrcdst" title="switch source and destination accounts" ><span><img src="switch.png"/>Switch (S&lt;-&gt;D)</span></a>
         </div>
@@ -496,8 +449,9 @@ $r = 0;
 </div>
 
 <?php
-    $db->commit();
+	}    
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
+$db->commit();
 ?>
 

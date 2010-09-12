@@ -19,9 +19,8 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+if(!$user['isAdmin']) die('insufficient permissions');
 
 $astmt = $db->prepare("SELECT bversion, balance, currency FROM account WHERE name = ? ;");
 $astmt->bindValue(1,$_POST['account']);

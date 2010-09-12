@@ -19,9 +19,9 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+if(!$user['isAdmin']) die('insufficient permissions');
+
 $istmt = $db->prepare("INSERT INTO xaction (src,currency) VALUES (? , ? );");
 $istmt->bindValue(1,$_POST['account']);
 $istmt->bindValue(2,$_POST['currency']);

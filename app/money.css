@@ -32,22 +32,20 @@ div.xactionform {
     background-color:#FFFD7C;
     overflow:hidden;
 }
-div#accountinfo{
-    width:400px;
-    float:right;
-}
 
-div#positive, div#currency, .startaccount, .defaultcurrency {
+div#positive, div#currency, .startaccount, .defaultcurrency, .loginpreamble {
 	background-color:#E8F2FE;
 	margin:5px;
 	padding:5px;
 }
 div#positive {
+	float:left;
 	width:300px;
 	font-style:oblique;
 }
 
 div#currency {
+	float:right;
 	width:300px;
     }
 div#positive span.title, div#currency span.title {
@@ -477,3 +475,26 @@ div.taccount {
     border:2px solid #4B637B;
     padding:5px;
 }
+
+.login_error {
+    font-weight:bold;
+    background-color:#FFE0FF;
+    color:red;
+    text-align:center;
+    padding:10px;
+    border:1px solid red;
+    margin:10px auto;
+
+}
+
+.logininput {
+    padding:20px 5px;
+    margin:10px;
+    border:1px solid blue;
+    background-color:#FFFD7C;
+}
+
+.loginsubmit {
+    padding:20px;
+}
+
