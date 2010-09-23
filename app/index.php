@@ -24,10 +24,13 @@ if(isset($_GET['account'])) {
 } else {
 	$account = $user['account'];
 }
-$stmt = $db->prepare('SELECT a.name, bversion, dversion,balance,date, repeat_days,domain, a.currency, c.description AS cdesc, c.rate 
-                        FROM account AS a JOIN currency AS c ON a.currency = c.name 
-                        WHERE a.name = ? ;');
+$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, repeat_days,a.domain AS domain, a.currency, c.description AS cdesc, c.rate 
+                        FROM account AS a JOIN currency AS c ON a.currency = c.name,
+                        user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
+                        WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)
+                        ORDER BY a.name COLLATE NOCASE");
 $stmt->bindValue(1,$account);
+$stmt->bindValue(2,$user['uid']);
 
 $db->beginTransaction();
 

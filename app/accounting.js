@@ -19,6 +19,9 @@
 
 var AKCMoney = function () {
     var request = new Utils.Queue();
+    var myDomain;
+    var myStart;
+    var myEnd;
     function codeshrink(e) {
         e.stop();
         this.removeClass('shrink');
@@ -37,7 +40,10 @@ var AKCMoney = function () {
         request.callRequest(
             'getCodeXactions.php',
             {
-                'code':this.getElement('input').value
+            	'domain':myDomain,
+                'code':this.getElement('input').value,
+                'start':myStart,
+                'end':myEnd
             },
             this,
             function(holder) {
@@ -62,12 +68,11 @@ var AKCMoney = function () {
         );
     };
     return {
-        Reports: function () {
+        Reports: function (domain,start,end) {
+        	myDomain = domain;
+        	myStart = start;
+        	myEnd = end;
 // Now provide for jumping to new account when the select list changes
-            $('domainsel').addEvent('change', function(e) {
-                e.stop();
-                $('selections').submit();
-            });
             $('yearsel').addEvent('change',function(e) {
                 e.stop();
                 $('selections').submit();

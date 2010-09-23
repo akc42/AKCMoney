@@ -19,10 +19,7 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
-$starttime = mktime(0,0,0,substr($_SESSION['year_end'],0,2),substr($_SESSION['year_end'],2)+1,$_SESSION['year']-1);
-$endtime = mktime(23,59,59,substr($_SESSION['year_end'],0,2),substr($_SESSION['year_end'],2),$_SESSION['year']);
 $stmt = $db->prepare("SELECT type FROM code WHERE id = ? ;");
 $stmt->bindValue(1,$_POST['code']);
 
@@ -49,9 +46,9 @@ case 'R':
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = ? ))
     ORDER BY t.date ASC
         ");
-    $stmt->bindValue(1,$starttime);
-    $stmt->bindValue(2,$endtime);
-    $stmt->bindValue(3,$_SESSION['domain']);
+    $stmt->bindValue(1,$_POST['start']);
+    $stmt->bindValue(2,$_POST['end']);
+    $stmt->bindValue(3,$_POST['domain']);
     $stmt->bindValue(4,$_POST['code']);
     $stmt->bindValue(5,$_POST['code']);
     break;
@@ -73,9 +70,9 @@ case 'B':
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = ? ))
     ORDER BY t.date ASC
         ");
-    $stmt->bindValue(1,$starttime);
-    $stmt->bindValue(2,$endtime);
-    $stmt->bindValue(3,$_SESSION['domain']);
+    $stmt->bindValue(1,$_POST['start']);
+    $stmt->bindValue(2,$_POST['end']);
+    $stmt->bindValue(3,$_POST['domain']);
     $stmt->bindValue(4,$_POST['code']);
     $stmt->bindValue(5,$_POST['code']);
     break;
@@ -100,14 +97,14 @@ case 'A':
     ORDER BY t.date ASC
         ");
 
-    $stmt->bindValue(1,$starttime);
-    $stmt->bindValue(2,$endtime);
-    $stmt->bindValue(3,$starttime);
-    $stmt->bindValue(4,$endtime);
-    $stmt->bindValue(5,$starttime);
-    $stmt->bindValue(6,$starttime);
-    $stmt->bindValue(7,$endtime);
-    $stmt->bindValue(8,$_SESSION['domain']);
+    $stmt->bindValue(1,$_POST['start']);
+    $stmt->bindValue(2,$_POST['end']);
+    $stmt->bindValue(3,$_POST['start']);
+    $stmt->bindValue(4,$_POST['end']);
+    $stmt->bindValue(5,$_POST['start']);
+    $stmt->bindValue(6,$_POST['start']);
+    $stmt->bindValue(7,$_POST['end']);
+    $stmt->bindValue(8,$_POST['domain']);
     $stmt->bindValue(9,$_POST['code']);
     $stmt->bindValue(10,$_POST['code']);
     break;
