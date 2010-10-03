@@ -273,7 +273,6 @@ CREATE TABLE account (
     currency character(3) REFERENCES currency(name),  -- currency in which to show transactions
     balance bigint DEFAULT 0 NOT NULL, -- opening balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when opening balance was set
-    repeat_days integer, 
     domain character varying DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL -- domain that account belongs to
 
 );
