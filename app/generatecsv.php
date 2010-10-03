@@ -197,6 +197,64 @@ $profit = 0;
 
 $db->beginTransaction();
 
+/*
+    Deal with repeating entries, by copying any that are below the repeat threshold to their
+    new repeat position, and removing the repeat flag from the current entry.
+    
+    
+    IMPORTANT NOTE - We MUST rollback at the end of all of this, so these updates to the database don't remain.
+*/
+    $repeats_to_do = true;
+    $stmt = $db->prepare('SELECT * FROM xaction WHERE repeat <> 0 AND date <= ? ;');
+    $stmt->bindValue(1,$endtime);
+    $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
+    $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
+                     repeat, currency, amount, description)
+                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?);');
+    while ($repeats_to_do) {
+        $repeats_to_do = false; //lets be optimistic and plan to be done
+        $stmt->execute();
+        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $upd->bindValue(1,$row['id']);
+            $upd->execute();
+            $upd->closeCursor();
+            switch ($row['repeat']) {
+                case 1:
+                    $row['date'] += 604800 ;  //add on a week
+                    break;
+                case 2:
+                    $row['date'] += 1209600 ; //add two weeks
+                    break;
+                case 3:
+                    $row['date'] += date("t",$row['date']) * 86400 ; // a month (finds days in month and multiplies by seconds in a day)
+                    break;
+                case 4:
+                    $row['date'] += date("t",mktime(0,0,0,date("m",$row['date'])+1,1,date("y",$row['date'])))*86400; //days in next month * seconds/day
+                    break;
+                case 5: 
+                    $info = getdate($row['date']);
+                    $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mon']+3,$info['mday'],$info['year']); //Quarterly
+                    break;
+                case 6:
+                    $info = getdate($row['date']);
+                    $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mon'],$info['mday'],$info['year']+1); //yearly
+                    break;
+               default:
+                    $db->rollBack();
+                    die('invalid repeat period in database, transaction id = '.$row['id']);
+            }
+            if ($row['date'] < $endtime) $repeats_to_do = true; //still have to do some more after this, since this didn't finish the job
+            $ins->execute(array($row['date'],$row['src'],$row['dst'],$row['srcamount'],$row['dstamount'],$row['srccode'],$row['dstcode'],
+                                $row['rno'],$row['repeat'],$row['currency'],$row['amount'],$row['description']));
+            $ins->closeCursor();
+        }
+        $stmt->closeCursor();
+    }
+	
+
+
+
+
 $codetype="C";
 $acrstmt->execute();
 
@@ -304,6 +362,6 @@ unset($tbstmt);
 
 out_csv(array(null,null,null,null,null,null,null,0,null,"Overall Profit",fmtAmount($profit)));
 
-$db->commit();
+$db->rollBack();
 ?>
 

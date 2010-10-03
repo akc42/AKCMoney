@@ -19,24 +19,33 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+
 $sstmt = $db->prepare("SELECT dversion FROM account WHERE name = ? ;");
 $sstmt->bindValue(1,$_POST['original']);
+if($_POST['domain'] != '') {
+	$dstmt = $db->prepare("SELECT count(*) FROM domain WHERE name = ? ;");
+	$dstmt->bindValue(1,$_POST['domain']);
+}
 
 $astmt = $db->prepare("
     UPDATE account SET
         name = ? ,
         dversion = dversion + 1,
         currency = ? ,
-        domain = ?
+        domain = ?,
+        repeat_days = ?
     WHERE name = ? ;
 ");
 $astmt->bindValue(1,$_POST['account']);
 $astmt->bindValue(2,$_POST['currency']);
-$astmt->bindValue(3,$_POST['domain']);
-$astmt->bindValue(4,$_POST['original']);
+if($_POST['domain'] != '') {
+	$astmt->bindValue(3,$_POST['domain']);
+} else {
+	$astmt->bindValue(3,null,PDO::PARAM_NULL);
+}
+$astmt->bindValue(4,round($_POST['repeat']),PDO::PARAM_INT);
+$astmt->bindValue(5,$_POST['original']);
 
 $db->exec("BEGIN IMMEDIATE");
 
@@ -49,6 +58,17 @@ if ( $version != $_POST['dversion']) {
 <?php
     $db->exec("ROLLBACK");
     exit;
+}
+
+if($_POST['domain'] != '') {
+	$dstmt->execute();
+	if($dstmt->fetchColumn() != 1) {
+	?><error>It appears someone else has removed or edited the domain in parallel.  We need to reload the page to ensure you are working with consistent data</error>
+	<?php
+		$db->exec("ROLLBACK");
+		exit;
+	}
+	$dstmt->closeCursor();
 }
 
 if($_POST['original'] != $_POST['account']) {

@@ -24,17 +24,17 @@ require_once('./inc/db.inc');
 
 
 //Do all the preparation before starting the transaction - that way the transaction is over quicker
-$vstmt = $db->prepare("SELECT dversion FROM account WHERE name = ? ;");
-$dstmt = $db->prepare("DELETE FROM account WHERE name = ? ;");
-$vstmt->bindValue(1,$_POST['account']);
-$dstmt->bindValue(1,$_POST['account']);
+$vstmt = $db->prepare("SELECT version FROM user WHERE uid = ? ;");
+$dstmt = $db->prepare("DELETE FROM user WHERE uid = ? ;");
+$vstmt->bindValue(1,$_POST['uid']);
+$dstmt->bindValue(1,$_POST['uid']);
 
 $db->exec("BEGIN IMMEDIATE");
 
 $vstmt->execute();
 $version = $vstmt->fetchColumn();
 $vstmt->closeCursor();
-if ($version != $_POST['dversion']) {
+if ($version != $_POST['version']) {
 ?><error>It appears someone else is editing this account in parallel.  We cannot delete it in this case and need to reload the page to ensure you are working with consistent data</error>
 <?php
     $db->exec("ROLLBACK");

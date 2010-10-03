@@ -19,7 +19,6 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
 
 function head_content() {
@@ -43,20 +42,11 @@ currency always appears first).  The current rate is also shown, but is adjusted
 <?php
 }
 
-function menu_items() {
-?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/reports.php" target="_self" title="Accounting">Accounting</a></li>
-        <li><a href="/money/accounts.php" target="_self" title="Account Manager">Account Manager</a></li>
-        <li><a href="/money/currency.php" target="_self" title="Currency Manager" class="current">Currency Manager</a></li>
-        <li><a href="/money/accounting.php" target="_self" title="Accounting Manager">Accounting Manager</a></li>
-<?php
-}
-
 function content () {
-    global $db;
+    global $db,$user;
 ?><h1>Currency Manager</h1>
 <?php 
-if ($_SESSION['demo']) {
+if ($user['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
 <?php
 } 
@@ -65,20 +55,12 @@ if ($_SESSION['demo']) {
 
 window.addEvent('domready', function() {
 // Set some useful values
-    Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
-    Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
-    Utils.dcDescription = "<?php echo $_SESSION['dc_description']; ?>";
     AKCMoney.Currency();
 });
 </script>
 
 <div class="topinfo">
     <div id="updefcurrency" class="defaultcurrency">
-        <div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
-        <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
-        <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-        <div class="currency">
-            <select id="currencyselector" name="currency" tabindex="1">
 <?php
 
 $pstmt = $db->prepare("SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;");
@@ -86,11 +68,20 @@ $nstmt = $db->prepare("SELECT * FROM currency WHERE display = 0 ORDER BY name AS
             
 $db->beginTransaction();
 $pstmt->execute();
+$r=0;
 while ($row = $pstmt->fetch(PDO::FETCH_ASSOC)) {
+	if($r==0) {
+?>      <div id=dc_description>Default Currency:<?php echo $row['description']; ?></div>
+        <div class="currency">
+            <select id="currencyselector" name="currency" tabindex="1">
+
+<?php
+	}
 ?>                <option value="<?php echo $row['name']; ?>" <?php
-                        if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
+                        if($r == 0) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
-<?php    
+<?php
+	$r++;    
 }
 $pstmt->closeCursor();
 ?>

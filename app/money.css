@@ -33,7 +33,7 @@ div.xactionform {
     overflow:hidden;
 }
 
-div#positive, div#currency, .startaccount, .defaultcurrency, .loginpreamble {
+div#positive, div#currency, .startaccount, .defaultcurrency, .loginpreamble, .userpreamble {
 	background-color:#E8F2FE;
 	margin:5px;
 	padding:5px;
@@ -56,7 +56,8 @@ div#positive span.title, div#currency span.title {
     padding:2px 0;
     position:relative;
 }
-.xaction:after, .xaccount:after, .xcurrency:after, .clearacc:after, .startaccount:after, .defaultcurrency:after  {
+.xaction:after, .xaccount:after, .xcurrency:after, .xdomain:after,.xuser:after, .clearacc:after, .startaccount:after, .defaultcurrency:after,
+.userinput:after  {
   content: ".";
   display: block;
   height: 0;
@@ -77,7 +78,7 @@ div.irow {
     vertical-align:middle;
     
 }
-.balance, .newaccount {
+.balance, .newaccount, .newdomain, .newuser {
     background-color:#e4e4e4;
 }
 	
@@ -122,10 +123,15 @@ div.date {
 }
 
 .heading, div.irow div.date,div.row div.ref,div.row div.description, div.row div.amount, div.sellabel, div.irow div.crate,
-div.clearacc, div.acclabel, div.xaccount .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
+div.clearacc, div.acclabel, div.xaccount div.xdomain .account, div.xaccount .type, div.xaccount .currency, div.xaccount div.button,
 div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate, div#dc_description, div.domain,
+div.xuser div.user, div.xuser div.passwd, div.xuser div.account, div.xuser div.domain, div.xuser div.admin, div.xuser div.button,
 div.codesel  {
     min-height:24px;
+}
+
+div.xuser div.domains {
+	min-height:48px;
 }
 
 
@@ -381,14 +387,35 @@ div.topinfo{
 }
 
 div.xaccount .account, div.xaccount div.domain, div.xaccount .currency, div.xaccount div.button,
+div.xdomain .domain, div.xdomain .description, div.xdomain div.button,
+div.xuser .user, div.xuser .passwd, div.xuser .account, div.xuser .domain, div.xuser .admin, div.xuser div.button,
 div.xcurrency div.description, div.xcurrency .currency, div.xcurrency .show, div.xcurrency .rate {
     float:left;
     border:solid white 1px;
     padding:0 3px;
 }
 
+div.xuser div.account, div.xuser div.admin {
+	clear:left;
+}
+
+div.xuser div.domains {
+    float:right;
+    border:solid white 1px;
+    padding:0 3px;
+}
+
+
 div.xaccount {
     width:52em;
+}
+div.xdomain{
+    width:56em;
+}
+
+div.xuser {
+	width:570px;
+	clear:both;
 }
 
 div.xaccount .account {
@@ -396,6 +423,12 @@ div.xaccount .account {
 }
 div.xaccount .account input {
     width:22.9em;
+}
+div.xdomain .domain {
+    width:15em;
+}
+ div.xdomain .domain input {
+    width:14.9em;
 }
 
 div.xaccount .domain {
@@ -421,8 +454,44 @@ div.xaccount div.button {
     width:14em;
 }
 */
-div.xaccount div.button div.buttoncontainer {
+div.xaccount div.button div.buttoncontainer,div.domain div.button div.buttoncontainer, div.xuser div.button div.buttoncontainer {
     padding:0 5px;
+}
+
+div.xdomain div.description {
+	width:27em;
+}
+
+div.xdomain div.description input {
+	width:26.8em;
+}
+
+div.xuser div.user, div.xuser div.passwd {
+	width:212px;
+}
+
+div.xuser div.user input, div.xuser div.passwd input {
+	width:210px;
+}
+
+div.xuser div.account {
+	width:302px;
+}
+
+div.xuser div.domain {
+	width:122px;
+}
+
+div.xuser div.domains {
+	width:122px;
+}
+
+div.xuser div.admin {
+	width:100px;
+}
+
+div.xuser div.button {
+	width:200px;
 }
 
 div.xcurrency {
@@ -476,7 +545,7 @@ div.taccount {
     padding:5px;
 }
 
-.login_error {
+.login_error, .user_error {
     font-weight:bold;
     background-color:#FFE0FF;
     color:red;
@@ -487,14 +556,18 @@ div.taccount {
 
 }
 
-.logininput {
+.logininput, .userinput {
     padding:20px 5px;
     margin:10px;
     border:1px solid blue;
     background-color:#FFFD7C;
 }
 
-.loginsubmit {
+.loginsubmit , .usersubmit{
     padding:20px;
+}
+
+.userinput div {
+	padding:5px;
 }
 

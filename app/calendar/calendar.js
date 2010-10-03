@@ -56,7 +56,7 @@ Calendar = function() {
 				days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 				// days of the week starting at sunday
 				draggable: true,
-				end: new Date(Date.UTC(2999, 11, 31)),
+				end: new Date(Date.UTC(2999, 11, 31,23,59,59,999)),
 				// null maans current time
 				format: 'd-M-y',
 				months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
@@ -259,7 +259,7 @@ Calendar = function() {
 				this.year = d.getFullYear(); // 19xx - 20xx				
 			},
 			setVal: function() {
-				var d = new Date(this.year,this.month,this.date)
+				var d = new Date(this.year,this.month,this.date,12,0,0,0);
 				if (d < this.getStart()) {
 					d=this.getStart();
 				} else {

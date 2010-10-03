@@ -22,30 +22,35 @@ require_once('./inc/db.inc');
 if(isset($_GET['account'])) {
 	$account = $_GET['account'];
 } else {
-	$account = $user['account'];
+	if(isset($user['account'])) {
+		$account = $user['account'];
+	}
 }
 $stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, repeat_days,a.domain AS domain, a.currency, c.description AS cdesc, c.rate 
                         FROM account AS a JOIN currency AS c ON a.currency = c.name,
                         user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
-                        WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)
-                        ORDER BY a.name COLLATE NOCASE");
-$stmt->bindValue(1,$account);
-$stmt->bindValue(2,$user['uid']);
+                        WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)");
 
 $db->beginTransaction();
+if(isset($account)) {
+	$stmt->bindValue(1,$account);
+	$stmt->bindValue(2,$user['uid']);
 
-$stmt->execute();
+	$stmt->execute();
 
-if($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+	if($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 	
-	if($account != $user['account']) {
-	//If changing account (successfully) then we need to update our user
-	    $user['account'] = $account;
-	    updateUser();
+		if($account != $user['account']) {
+		//If changing account (successfully) then we need to update our user
+			$user['account'] = $account;
+			updateUser();
+		}
 	}
+	$stmt->closeCursor();    
+} else {
+	$row = false;
+	$account = "No Account Defined";
 }
-$stmt->closeCursor();    
-
 
 function head_content() {
 
@@ -75,6 +80,16 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 
 function content() {
     global $db,$user,$account,$row;
+	if(!$row) {
+?><h1>Problem with Account</h1>
+<p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
+working in parallel with you has deleted it.  You can try to restart the software by
+selecting another account from the menu above, but if that still fails then you should report the fault to
+an adminstrator, informing them that you had a problem with account name <strong><?php echo $account; ?></strong> not being in the database</p>
+<?php
+        $db->rollBack();
+        return;
+    }
 
 ?><h1><?php echo $account; ?></h1>
 <?php 
@@ -86,22 +101,7 @@ function content() {
 		<div id="accountinfo">
 			<div id="positive">
 <?php
-	if(!$row) {
-?><h1>Problem with Account</h1>
-<p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
-working in parallel with you has deleted it.  You can try to restart the software by
-selecting another account from the menu above, but if that still fails then you should report the fault to
-an adminstrator, informing them that you had a problem with account name <strong><?php echo $account; ?></strong> not being in the database</p>
-<?php
-        $db->rollBack();
-        return;
-    }
     
-    // if account is new, update user cookie to reflect it
-    if($account != $user['account']) {
-    	$user['account'] = $account;
-    	updateUser();
-    }
     $repeattime = time() + $row['repeat_days']*84600;
     $currency = $row['currency'];
     $balance = $row['balance'];
@@ -422,7 +422,7 @@ $r = 0;
             <select id="account" name="account">
             	<option value="" selected="selected">-- Select (Optional) Other Account --</option>
 <?php
-		$result = $db->prepare('SELECT name FROM account WHERE name != ? ORDER BY name ASC;');
+		$result = $db->prepare('SELECT name FROM account WHERE name != ? ORDER BY name COLLATE NOCASE;');
 		$result->bindValue(1,$account);
 		$result->execute();
 		while($row = $result->fetch(PDO::FETCH_ASSOC)) {
@@ -452,9 +452,10 @@ $r = 0;
 </div>
 
 <?php
-	}    
+	} 
+	$db->commit();   
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
-$db->commit();
+
 ?>
 

@@ -17,13 +17,7 @@
 
 */
 var AKCMoney = function () {
-    var request = new Utils.Queue('accounts.php');
-    var changestart = function (that) {
-        var form = that.getParent('form');
-        request.callRequest('updatedefaccs.php',form,that.form.version,function(holder) {
-            this.value = holder.getElement('configuration').get('version');
-        });
-    };
+    var request = new Utils.Queue();
     var updateAccount = function(xaccount){
         var form = xaccount.getElement('form');
         request.callRequest('updateaccount.php',form,form, function(holder) {
@@ -51,11 +45,6 @@ var AKCMoney = function () {
                         var newName = this.value;
                         updateAccount(xaccount);
                         moveAccount(xaccount);
-                        //We need to change default account selectors with the new name
-                        selectionRemove(sextn,originalName);
-                        selectionInsert(sextn,newName);
-                        selectionRemove(shome,originalName);
-                        selectionInsert(shome,newName);
                     } else {
                         alert("Account name is not unique, please alter until it is");
                         resetFocus.delay(10,this);
@@ -69,24 +58,18 @@ var AKCMoney = function () {
         });
         form.domain.addEvent('change', function() {
             updateAccount(xaccount);
+            moveAccount(xaccount);
         });
         form.currency.addEvent('change', function() {
             updateAccount(xaccount);
         });
         xaccount.getElement('a.button').addEvent('click', function(e) {
             e.stop();
-            if (form.original.value == shome.value || form.original.value == sextn.value) {
-                alert("You cannot delete one of the default starting accounts.  Change the default starting account first");
-            } else {
-                if(confirm('Are you sure you wish to delete this ('+form.original.value+') account?')) {
-                    request.callRequest('deleteaccount.php',form,xaccount,function(holder) {
-                        //need to remove the option for this account from the starting values
-                        selectionRemove(shome,form.original.value);
-                        selectionRemove(sextn,form.original.value);
-                        xaccount.destroy();
-                        redoOddEven();
-                    });
-                }
+            if(confirm('Are you sure you wish to delete this ('+form.original.value+') account?')) {
+                request.callRequest('deleteaccount.php',form,xaccount,function(holder) {
+                    xaccount.destroy();
+                    redoOddEven();
+                });
             }
         }).addEvent('keydown', function(e) {
             if(e.key == "enter"){
@@ -95,19 +78,33 @@ var AKCMoney = function () {
         });
     };
     var redoOddEven = function() {
-        $('accounts').getChildren().each(function(account,i) {
+    	var tabCount = 5; //skips over new
+    	$('accounts').getChildren().each(function(account,i) {
             if(i%2!=0) {
                 account.addClass('even');
             } else {
                 account.removeClass('even');
             }
+			var form = account.getElement('form');
+			form.account.set('tabindex',tabCount++);
+			form.domain.set('tabindex',tabCount++);
+			form.currency.set('tabindex',tabCount++);
+			account.getElement('a').set('tabindex',tabCount++);
         });
     };
     var moveAccount = function(xaccount) {
         var accountName = xaccount.getElement('form').account.value.toLowerCase();
+        var domainName = xaccount.getElement('form').domain.value.toLowerCase();
         if ($('accounts').getChildren().every(function(account) {
             if(account == xaccount) return true;//skip ourselves
-            if(accountName < account.getElement('form').account.value.toLowerCase()) {
+            var accountForm = account.getElement('form');
+            var thisDomain = accountForm.domain.value.toLowerCase();
+            if(domainName > thisDomain) return true;  //Not interested if domain is beyond this
+            if(domainName < thisDomain) {
+            	xaccount.inject(account,'before'); //Goes here if domain is less
+            	return false;
+            }
+            if(accountName < accountForm.account.value.toLowerCase()) { //Domain is same - so now look at account name
                 xaccount.inject(account,'before');
                 return false;
             }
@@ -120,36 +117,8 @@ var AKCMoney = function () {
     var resetFocus = function() {
         this.focus();
     };
-    var shome ; //selector for default home account
-    var sextn ; //selector for default extn account
-    var selectionInsert = function(selector,optionValue) {
-        var newOption = new Element('option',{'text':optionValue});
-        var lower = optionValue.toLowerCase();
-        if(selector.getChildren().every(function(option) {
-            if(option.value.toLowerCase() > lower) {
-                newOption.inject(option,'before');
-                return false;
-            }
-            return true;
-        })) {
-             newOption.inject(shome,'bottom');                                
-        };
-    };
-    var selectionRemove = function(selector,optionValue) {
-        selector.getChildren().every(function(option) {
-            if(option.value == optionValue) {
-                option.dispose();
-                return false;
-            }
-            return true;
-        });
-    };
     return {
         Account: function () {
-            shome = $('startaccounts').homeaccount;
-            sextn = $('startaccounts').extnaccount;
-            shome.addEvent('change',function(){changestart(this);});
-            sextn.addEvent('change',function(){changestart(this);});
             $('addaccount').addEvent('click', function(e) {
                 e.stop();
                 var accountName = $('newaccount').account.value;
@@ -161,15 +130,10 @@ var AKCMoney = function () {
                         request.callRequest('newaccount.php',$('newaccount'),$('newaccount'), function(holder) {
                             this.account.value = ''; //blank the new account name
                             this.currency.selectedIndex = 0; // and selections to default
-                            this.domain.value = '';
+                            this.domain.selectedIndex = 0;
                             var xaccount = holder.getElement('.xaccount');
                             moveAccount(xaccount);
                             addAccountEvents(xaccount);
-                            //Add account into default account selectors
-
-                            selectionInsert(shome,accountName);
-
-                            selectionInsert(sextn,accountName);
                         });
                     } else {
                         alert("Account name is not unique, please alter until it is");

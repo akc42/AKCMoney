@@ -29,7 +29,7 @@ $db = new PDO('sqlite:'.DB_DIR.$_POST['db'].'.db');
 $getuser=$db->prepare("SELECT uid,version,password,isAdmin,domain,account FROM user WHERE name= ?");
 $getuser->bindValue(1,strtolower($_POST['user']));
 $purgelog = $db->prepare("DELETE FROM login_log WHERE time < ? ");
-$getcap = $db->prepare("SELECT domain,readonly FROM capability WHERE uid = ?");
+$getcap = $db->prepare("SELECT domain FROM capability WHERE uid = ?");
 $writelog = $db->prepare("INSERT INTO login_log (ipaddress,username,issuccess) VALUES(?,?,?)");
 
 $writelog->bindValue(1,$_SERVER['REMOTE_ADDR']);
@@ -63,21 +63,16 @@ $checklog->closeCursor();
 $getuser->execute(); //See if we can find the user
 if( $user= $getuser->fetch(PDO::FETCH_ASSOC)) {
     if($user['password'] == $_POST['pass']) {
+        $getuser->closeCursor();
         unset($user['password']);
         //successfully matched username and password
         if($user['isAdmin'] == 1) {
             $user['isAdmin'] = true;
         } else {
             $user['isAdmin'] = false;
-            $getcap->bindValue(1,$user['uid']);
-            $getcap->execute();
-            $user['capabilities'] = Array();
-            while($row = $getcap->fetch(PDO::FETCH_ASSOC)) {
-                $user['capabilities'][] = $row;
-            }
-            $getcap->closeCursor();
         }
-        $getuser->closeCursor();
+        if(is_null($user['domain'])) unset($user['domain']);
+        if(is_null($user['account'])) unset($user['account']);
 
 		$writelog->bindValue(3,1,PDO::PARAM_INT); //Say that this log entry was a success
 		$writelog->execute();
@@ -96,7 +91,7 @@ if( $user= $getuser->fetch(PDO::FETCH_ASSOC)) {
 	//now make the cookie
 		$user['db'] = $_POST['db'];
         $user['timestamp'] = time();
-        $user['key'] = sha1(PRIVATE_KEY.$user['timestamp'].'1');
+        $user['key'] = sha1(PRIVATE_KEY.$user['timestamp'].$user['uid']);
         $user['temp'] = ($_POST['rem'] != 'true');
         if($user['temp']) {
             setcookie('akcmoney',base64_encode(serialize($user)),0); //Expire when browser closes
@@ -114,8 +109,8 @@ $writelog->execute();
 $writelog->closeCursor();
 
 //Find out how many failures against this ip address we had since a last success
-$checklog = $db->prepare("SELECT count(*) FROM login_log WHERE issuccess = 0 AND ipaddress = ? AND timestamp > ifnull((
-SELECT max(timestamp) FROM login_log WHERE ipaddress= ? AND issuccess = 1),0)");
+$checklog = $db->prepare("SELECT count(*) FROM login_log WHERE issuccess = 0 AND ipaddress = ? AND time > coalesce((
+SELECT max(time) FROM login_log WHERE ipaddress= ? AND issuccess = 1),0)");
 
 $checklog->bindValue(1,$_SERVER['REMOTE_ADDR']);
 $checklog->bindValue(2,$_SERVER['REMOTE_ADDR']);

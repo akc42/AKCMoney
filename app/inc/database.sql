@@ -246,13 +246,13 @@ INSERT INTO currency VALUES ('SVC', 1, 0, NULL, 'El Salvador, Colones', 1);
 INSERT INTO currency VALUES ('SYP', 1, 0, NULL, 'Syria, Pounds', 1);
 INSERT INTO currency VALUES ('SZL', 1, 0, NULL, 'Swaziland, Emmoneygeni', 1);
 INSERT INTO currency VALUES ('CZK', 1, 0, NULL, 'Czech Republic, Koruny', 1);
-INSERT INTO currency VALUES ('GBP', 1, 1, 0, 'United Kingdom, Pounds',1);
+INSERT INTO currency VALUES ('GBP', 1, 1, 0, 'United Kingdom, Pounds',1); --this (displayable at priority 0) defines it to be the default currency
 INSERT INTO currency VALUES ('SEK', 1, 0, NULL, 'Sweden, Kronor', 1);
 INSERT INTO currency VALUES ('AUD', 1, 0, NULL, 'Australia, Dollars', 1);
 INSERT INTO currency VALUES ('DKK', 1, 0, NULL, 'Denmark, Kroner', 1);
 INSERT INTO currency VALUES ('NOK', 1, 0, NULL, 'Norway, Krone', 1);
-INSERT INTO currency VALUES ('EUR', 0.93041664, 1, 1, 'Euro Member Countries,Euro', 1);
-INSERT INTO currency VALUES ('USD', 0.63499999, 1, 2, 'United States of America, Dollars', 1);
+INSERT INTO currency VALUES ('EUR', 0.85, 1, 1, 'Euro Member Countries,Euro', 1);
+INSERT INTO currency VALUES ('USD', 0.636, 1, 2, 'United States of America, Dollars', 1);
 
 
 -- domain is an area of the accounts that is a whole.  Used primarily so we can do special things to transactions between domains
@@ -263,8 +263,6 @@ CREATE TABLE domain (
     version bigint DEFAULT 1 NOT NULL
 );
 
-INSERT INTO domain (name, description) VALUES ('personal','Accounts representing the finances of an individual');
-INSERT INTO domain (name, description) VALUES ('business','Accounts representing the finances of a business');
 
 
 -- an account, the fundemental accounting vehicle within the system.      
@@ -276,11 +274,11 @@ CREATE TABLE account (
     balance bigint DEFAULT 0 NOT NULL, -- opening balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when opening balance was set
     repeat_days integer, 
-    domain character varying REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL -- domain that account belongs to
+    domain character varying DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL -- domain that account belongs to
 
 );
 
-INSERT INTO account (name,currency,balance, repeat_days,domain) VALUES ('Cash', 'GBP', 0, 90, 'personal');
+INSERT INTO account (name,currency,balance, repeat_days) VALUES ('Cash', 'GBP', 0, 90);
 
 
 
@@ -317,8 +315,8 @@ CREATE TABLE user (
     version bigint DEFAULT 1 NOT NULL, --version of this record
     password character varying, -- md5 of password
     isAdmin boolean NOT NULL DEFAULT 0,  -- if admin has capability of everything
-    domain character varying NOT NULL REFERENCES domain(name) ON UPDATE CASCADE, --domain to use for accounting
-    account character varying NOT NULL REFERENCES account(name) ON UPDATE CASCADE -- account to use when displaying
+    domain character varying  REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL, --default domain to use for accounting
+    account character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL-- initial account to use when displaying
 );
 
 CREATE INDEX user_idx_name ON user(name);
@@ -326,7 +324,6 @@ CREATE INDEX user_idx_name ON user(name);
 CREATE TABLE capability (
     uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,
     domain character REFERENCES domain(name) ON UPDATE CASCADE ON DELETE CASCADE,
-    readonly boolean NOT NULL DEFAULT 1,
     primary key (uid,domain)
 );
 
@@ -344,14 +341,13 @@ CREATE TABLE config (
     version integer DEFAULT 1 NOT NULL,
     db_version integer, -- version of the database
     repeat_days integer, -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
-    default_currency character(3) REFERENCES currency(name) ON UPDATE CASCADE, 
     demo boolean DEFAULT 0 NOT NULL, -- if true(1) this is a demo account and a warning is printed on each page
     year_end character varying, --last day of accounting year in MMDD form (this allows numeric comparisons to work)
     creation_date DEFAULT (strftime('%s','now')) NOT NULL -- record when the database is installed
 );
 
-INSERT INTO config(db_version,repeat_days,default_currency,year_end) 
-            VALUES (1, 90, 'GBP','1231');
+INSERT INTO config(db_version,repeat_days,year_end) 
+            VALUES (1, 90,'1231');
 
 CREATE VIEW dfxaction AS
     SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,

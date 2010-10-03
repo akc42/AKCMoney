@@ -34,9 +34,6 @@ Utils = function () {
 	        	}
 		    });
         },
-        sessionKey:'Key',
-        defaultCurrency:'GBP',
-        dcDescription:'United Kingdom, Pounds',
         amountMatch:/^\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/,
         /* The function below was based on code from 
     The JavaScript Source :: http://javascript.internet.com

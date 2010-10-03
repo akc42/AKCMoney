@@ -24,30 +24,36 @@ require_once('./inc/db.inc');
 if(isset($_GET['domain'])) {
 	$domain = $_GET['domain'];
 } else {
-	$domain = $user['domain'];
+	if(isset($user['domain'])) {
+		$domain = $user['domain'];
+	} 
 }
-
 $stmt = $db->prepare("
         SELECT d.name AS name FROM domain AS d, user AS u LEFT JOIN capability AS c ON c.uid = u.uid
-        WHERE d.name = ? AND u.uid= ? AND ( c.domain = d.name OR u.isAdmin = 1) ORDER BY d.name COLLATE NOCASE ;
+        WHERE d.name = ? AND u.uid= ? AND ( c.domain = d.name OR u.isAdmin = 1);
 	");
-$stmt->bindValue(1,$domain);
-$stmt->bindValue(2,$user['uid']);
-
 $db->beginTransaction();
+if(isset($domain)) {
 
-$stmt->execute();
+	$stmt->bindValue(1,$domain);
+	$stmt->bindValue(2,$user['uid']);
 
-if($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+
+	$stmt->execute();
+
+	if($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 	
-	if($domain != $user['domain']) {
-	//If changing domain (successfully) then we need to update our user
-	    $user['domain'] = $domain;
-	    updateUser();
+		if(!isset($user['domain']) || $domain != $user['domain']) {
+		//If changing domain (successfully) then we need to update our user
+			$user['domain'] = $domain;
+			updateUser();
+		}
 	}
+	$stmt->closeCursor();    
+} else {
+	$row = false;
+	$domain = "No Domain Defined";
 }
-$stmt->closeCursor();    
-
 
 function head_content() {
 
@@ -73,7 +79,17 @@ which allocates the transaction into the accounting system for a domain.  Differ
 
 
 function content() {
-	global $db,$user,$domain;
+	global $db,$user,$domain,$row;
+	if(!$row) {
+?><h1>Problem with Domain</h1>
+<p>It appears that the accounting domain that is being requested is no longer in the database.  This is probably because someone
+working in parallel with you has either changed its name, or removed your permissions to access it.  You can try to restart the software by
+selecting another "Domain Accounting" entry from the menu above, but if that still fails then you should report the fault to
+an adminstrator, informing them that you had a problem with domain name <strong><?php echo $domain; ?></strong> not being in the database</p>
+<?php
+        $db->rollBack();
+        return;
+    }
 	if(isset($_POST['year'])) {
 		$year = round($_POST['year']);
 	} else {
@@ -88,8 +104,63 @@ function content() {
 
 	$starttime = mktime(0,0,0,substr($yearend,0,2),substr($yearend,2)+1,$year-1);
 	$endtime = mktime(23,59,59,substr($yearend,0,2),substr($yearend,2),$year);
-
+	
+/*
+    Deal with repeating entries, by copying any that are below the repeat threshold to their
+    new repeat position, and removing the repeat flag from the current entry.
+    
+    
+    IMPORTANT NOTE - We MUST rollback at the end of all of this, so these updates to the database don't remain.
+*/
+    $repeats_to_do = true;
+    $stmt = $db->prepare('SELECT * FROM xaction WHERE repeat <> 0 AND date <= ? ;');
+    $stmt->bindValue(1,$endtime);
+    $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
+    $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
+                     repeat, currency, amount, description)
+                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?);');
+    while ($repeats_to_do) {
+        $repeats_to_do = false; //lets be optimistic and plan to be done
+        $stmt->execute();
+        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $upd->bindValue(1,$row['id']);
+            $upd->execute();
+            $upd->closeCursor();
+            switch ($row['repeat']) {
+                case 1:
+                    $row['date'] += 604800 ;  //add on a week
+                    break;
+                case 2:
+                    $row['date'] += 1209600 ; //add two weeks
+                    break;
+                case 3:
+                    $row['date'] += date("t",$row['date']) * 86400 ; // a month (finds days in month and multiplies by seconds in a day)
+                    break;
+                case 4:
+                    $row['date'] += date("t",mktime(0,0,0,date("m",$row['date'])+1,1,date("y",$row['date'])))*86400; //days in next month * seconds/day
+                    break;
+                case 5: 
+                    $info = getdate($row['date']);
+                    $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mon']+3,$info['mday'],$info['year']); //Quarterly
+                    break;
+                case 6:
+                    $info = getdate($row['date']);
+                    $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mon'],$info['mday'],$info['year']+1); //yearly
+                    break;
+               default:
+                    $db->rollBack();
+                    die('invalid repeat period in database, transaction id = '.$row['id']);
+            }
+            if ($row['date'] < $endtime) $repeats_to_do = true; //still have to do some more after this, since this didn't finish the job
+            $ins->execute(array($row['date'],$row['src'],$row['dst'],$row['srcamount'],$row['dstamount'],$row['srccode'],$row['dstcode'],
+                                $row['rno'],$row['repeat'],$row['currency'],$row['amount'],$row['description']));
+            $ins->closeCursor();
+        }
+        $stmt->closeCursor();
+    }
+	
 ?><h1>Accounting Reports</h1>
+<h3>Domain: <?php echo $domain;?></h3>
 <?php 
     if ($user['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
@@ -323,7 +394,7 @@ window.addEvent('domready', function() {
     <div class="amount"><?php echo fmtAmount($profit); ?></div>
 </div>
 <?php
-    $db->commit();
+    $db->rollBack(); //It is VITALLY important that we rollBack, because we added a whole new set of xactions into the database and they must not remain
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
 ?>

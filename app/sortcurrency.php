@@ -19,9 +19,8 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+
 $sstmt = $db->prepare("SELECT version FROM currency WHERE name = ? ;");
 $sstmt->bindValue(1,$_POST['currency']);
 
@@ -68,8 +67,8 @@ $result = $db->query('SELECT * FROM currency WHERE display = 1 AND priority > 0 
 $r=0;
 $options = Array();
 while($row = $result->fetch(PDO::FETCH_ASSOC)) {
-    $r++;
     $options[$row['name']] = $row['description'];
+    if($r > 0) {
 ?><div class="xcurrency<?php if($r%2 != 0) echo ' even';?>">
     <input type="hidden" name="version" value="<?php echo  $row['version']; ?>" />
     <input type="hidden" name="priority" value="<?php echo $r ?>" />
@@ -79,17 +78,20 @@ while($row = $result->fetch(PDO::FETCH_ASSOC)) {
     <div class="rate"><?php echo $row['rate']; ?></div>
 </div>
 <?php
+	}
+    $r++;
 }
 $result->closeCursor();
+
 $db->exec("COMMIT");
 ?></currencies>
 <selectoptions><select>
-<option value="<?php echo $_SESSION['default_currency']; ?>" title="<?php echo $_SESSION['dc_description']; ?>" selected="selected"><?php
-    echo $_SESSION['default_currency']; ?></option>
-<?php            
+<?php
+$r=0;            
 foreach($options as $name => $description) {
-?><option value="<?php echo $name; ?>" title="<?php echo $description; ?>"><?php echo $name; ?></option>
-<?php    
+?><option value="<?php echo $name; ?>" title="<?php echo $description; if($r == 0) echo ' selected="selected"'; ?>"><?php echo $name; ?></option>
+<?php
+$r++;    
 }
 ?></select></selectoptions>
 

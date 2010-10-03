@@ -102,24 +102,32 @@ function updateUser() {
 /* Display the menu items specific to this user */
 function menu_items() {
     global $db,$user;
+    if(!isset($user)) return;  //if no user, that is because we have logged off and there is no cookie either
 
-?><li><a href="#"><span class="down">Account Transactions</span></a>
+?><li><a href="index.php"><span class="down">Account Transactions</span></a>
     <ul>
 <?php
     $menuselect = $db->prepare("
-        SELECT a.name FROM account AS a, user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
-        WHERE u.uid= ? AND (u.isAdmin = 1 OR c.domain = a.domain) ORDER BY a.name COLLATE NOCASE;
+        SELECT a.name, a.domain FROM account AS a, 
+        user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
+        WHERE u.uid= ? AND (u.isAdmin = 1 OR c.domain = a.domain)
+        ORDER BY CASE WHEN a.domain = ? THEN NULL ELSE coalesce(a.domain,'ZZZZZ') END COLLATE NOCASE ,a.name COLLATE NOCASE;
     ");
     $menuselect->bindValue(1,$user['uid'],PDO::PARAM_INT);
+    if(isset($user['domain']) && !is_null($user['domain'])) {
+	    $menuselect->bindValue(2,$user['domain']);
+	} else {
+		$menuselect->bindValue(2,null,PDO::PARAM_NULL);
+	}
     $menuselect->execute();
-    $menuitems = $menuselect->fetchAll(PDO::FETCH_COLUMN);
-    foreach($menuitems as $menuitem) {
-?>      <li><a href="index.php?account=<?php echo urlencode($menuitem); ?>"><?php echo $menuitem; ?></a></li><?php
+    while ($menuitem = $menuselect->fetch(PDO::FETCH_ASSOC)) {
+?>      <li><a href="index.php?account=<?php echo urlencode($menuitem['name']); ?>"><?php echo $menuitem['name'];
+				if(!is_null($menuitem['domain'])) echo " (".$menuitem['domain'].")"; ?></a></li><?php
     }
     $menuselect->closeCursor();
 ?>  </ul>
 </li>
-<li><a href="#"><span class="down">Domain Accounting</span></a>
+<li><a href="accounting.php"><span class="down">Domain Accounting</span></a>
     <ul>
 <?php
     $menuselect = $db->prepare("

@@ -17,7 +17,7 @@
 
 */
 var AKCMoney = function () {
-    var request = new Utils.Queue('currency.php');
+    var request = new Utils.Queue();
     var sorting;
     var defcurrency = function() {
         $('currencyselector').addEvent('change', function(e) {
@@ -27,7 +27,6 @@ var AKCMoney = function () {
             request.callRequest(
                 'updatedefcur.php',
                 {
-                    'key':Utils.sessionKey,
                     'version':container.getElement('input[name=version]').value,
                     'currency': $('currencyselector').value
                 },
@@ -35,8 +34,6 @@ var AKCMoney = function () {
                 function (holder) {
                     container.removeClass('spinner');
                     container.set('html',holder.getElement('selector').get('html'));
-                    Utils.defaultCurrency = $('currencyselector').value;
-                    Utils.dcDescription = $('dc_description').get('text')
                     $('defaultcurrency').empty();
                     $('defaultcurrency').set('html',holder.getElement('defaultcurrency').get('html'));
                     var currencies = holder.getElement('currencies');
@@ -62,7 +59,6 @@ var AKCMoney = function () {
                 if (newpriority != oldpriority) {
                     request.callRequest(
                         'sortcurrency.php',{
-                            'key':Utils.sessionKey,
                             'currency':currency.getElement('.currency').get('text'),
                             'oldpriority':oldpriority,
                             'newpriority':newpriority,
@@ -96,7 +92,6 @@ var AKCMoney = function () {
             request.callRequest(
                 'updateshowcur.php',
                 {
-                    'key':Utils.sessionKey,
                     'version':currency.getElement('input[name=version]').value,
                     'currency':currency.getElement('.currency').get('text'),
                     'priority':$('maxpriority').value.toInt(),

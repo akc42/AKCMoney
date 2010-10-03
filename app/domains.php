@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -19,14 +19,14 @@
 */
 error_reporting(E_ALL);
 
-session_start();
+
 require_once('./inc/db.inc');
 
 function head_content() {
 
 ?>
-	<title>AKC Money Account Manager</title>
-<META NAME="Description" CONTENT="AKC Money is an application to Manage Money.  This is the Account Management Page where Accounts may be set up or deleted"/>	
+	<title>AKC Money Domain Manager</title>
+<META NAME="Description" CONTENT="AKC Money is an application to Manage Money.  This is the Domain Management Page where Domains may be set up or deleted"/>	
     <link rel="icon" type="image/png" href="favicon.png" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<!--[if lt IE 7]>
@@ -35,25 +35,17 @@ function head_content() {
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
 	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
 	<script type="text/javascript" src="utils.js" ></script>
-	<script type="text/javascript" src="account.js" ></script>
+	<script type="text/javascript" src="domains.js" ></script>
 <?php
 }
 
-function menu_items() {
-
-?>      <li><a href="/money/index.php" target="_self" title="Account">Account</a></li>
-        <li><a href="/money/reports.php" target="_self" title="Accounting">Accounting</a></li>
-        <li><a href="/money/accounts.php" target="_self" title="Account Manager" class="current">Account Manager</a></li>
-        <li><a href="/money/currency.php" target="_self" title="Currency Manager">Currency Manager</a></li>
-        <li><a href="/money/accounting.php" target="_self" title="Accounting Manager">Accounting Manager</a></li>
-<?php
-}
 function content() {
-    global $db;
-?><h1>Account Manager</h1>
+    global $db,$user;
+    $tabIndex = 1;
+?><h1>Domain Manager</h1>
 <?php
 
-if ($_SESSION['demo']) {
+if ($user['demo']) {
 ?>    <h2>Beware - Demo - Do not use real data, as others may have access to it.</h2>
 <?php
 }
@@ -62,116 +54,44 @@ if ($_SESSION['demo']) {
 <script type="text/javascript">
 
 window.addEvent('domready', function() {
-// Set some useful values
-    Utils.sessionKey = "<?php echo $_SESSION['key']; ?>";
-    Utils.defaultCurrency = "<?php echo $_SESSION['default_currency'];?>";
-    Utils.dcDescription = "<?php echo $_SESSION['dc_description']; ?>";
-    AKCMoney.Account();
+    AKCMoney.Domain();
 });
 </script>
-<div class="topinfo">
-    <form id="startaccounts" action="updefaccount.php" method="post" />
-    <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
-    <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-    <div class="startaccount">
-        <div class="acclabel">External Start Account</div>
-        <div class="accountsel">
-            <select name="extnaccount" tabindex="1">
-<?php
-$db->beginTransaction();
-$stmt = $db->prepare('SELECT name FROM account ORDER BY name ASC;');
-$stmt->execute();
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC) ) {
-?>              <option <?php echo ($_SESSION['extn_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
-<?php
-}
-$stmt->closeCursor();
-$stmt->execute();
-
-?>          </select>
-
-        </div>
-    </div>
-    <div class="startaccount">
-        <div class="acclabel">Home Start Account</div>
-        <div class="accountsel">
-           <select name="homeaccount" tabindex="2">
-<?php
-
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-?>            <option <?php echo ($_SESSION['home_account'] == $row['name'])?'selected = "selected"':'' ; ?> ><?php echo $row['name']; ?></option>
-<?php
-}
-$stmt->closeCursor();
-$tabIndex = 3;
-?>        </select>
-        </div>
-    </div>
-    </form>
-</div>
-<h2>Account List</h2>
-<div class="xaccount heading">
-    <div class="account">Name</div>
-    <div class="domain">Domain</div>
-    <div class="currency">Currency</div>
+<h2>Domain List</h2>
+<div class="xdomain heading">
+    <div class="domain">Name</div>
+    <div class="description">Description</div>
     <div class="button">&nbsp;</div>
 </div>
-<div class="xaccount newaccount">
-    <form id="newaccount" action="newaccount.php" method="post" onSubmit="return false;">
-        <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-        <div class="account"><input type="text" name="account" value="" tabindex="<?php echo $tabIndex++; ?>"/></div>
+<div class="xdomain newdomain">
+    <form id="newdomain" action="newdomain.php" method="post" onSubmit="return false;">
         <div class="domain"><input type="text" name="domain" value="" tabindex="<?php echo $tabIndex++; ?>"/></div>
-        <div class="currency">
-            <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>" tabindex="<?php echo $tabIndex++; ?>">
-<?php
-$currencies = Array();            
-$result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
-while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-$currencies[$row['name']] = Array($row['rate'],$row['description']);
-?>              <option value="<?php echo $row['name']; ?>" <?php
-                        if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
-                            title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
-<?php    
-}
-$result->closeCursor();
-?>
-            </select>
-        </div>
+		<div class="description"><input type="text" name="description" value="" tabindex="<?php	 echo $tabIndex++; ?>"/></div>
     </form>
     <div class="button">
         <div class="buttoncontainer">
-            <a id="addaccount" class="button"><span><img src="add.png" tabindex="<?php echo $tabIndex++; ?>"/>Add Account</span></a>
+            <a id="adddomain" class="button" tabindex="<?php echo $tabIndex++; ?>"><span><img src="add.png"/>Add Domain</span></a>
         </div>
     </div>
 </div>
-<div id="accounts">
+<div id="domains">
 <?php
-$result = $db->query('SELECT * FROM account ORDER BY lower(name) ASC;');
+$db->beginTransaction();
+$result = $db->query('SELECT * FROM domain ORDER BY name COLLATE NOCASE ASC;');
 $r=0;
 while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
     $r++
-?>  <div class="xaccount<?php if($r%2 == 0) echo ' even';?>">
-        <form action="updateaccount.php" method="post" onSubmit="return false;">
-            <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
-            <input type="hidden" name="dversion" value="<?php echo $row['dversion'];?>"/>
+?>  <div class="xdomain<?php if($r%2 == 0) echo ' even';?>">
+        <form action="updatedomain.php" method="post" onSubmit="return false;">
+            <input type="hidden" name="version" value="<?php echo $row['version'];?>"/>
             <input type="hidden" name="original" value="<?php echo $row['name']; ?>" />
-            <div class="account"><input type="text" name="account" value="<?php echo $row['name']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
-            <div class="domain"><input type="text" name="domain" value="<?php echo $row['domain']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
-            <div class="currency">
-                <select name="currency" title="<?php echo $currencies[$row['currency']][1]; ?>" tabindex="<?php echo $tabIndex++; ?>">
-<?php
-    foreach($currencies as $currency => $values) {
-?>                <option value="<?php echo $currency; ?>" title="<?php
-                         echo $values[1]; ?>" rate="<?php echo $values[0]; ?>" <?php if ($currency == $row['currency']) echo 'selected="selected"';?> 
-                       ><?php echo $currency; ?></option>
-<?php
-    }
-?>              </select>
-            </div>
+            <div class="domain"><input type="text" name="domain" value="<?php echo $row['name']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
+            <div class="description"><input type="text" name="description" value="<?php echo $row['description']; ?>" tabindex="<?php
+            					 echo $tabIndex++; ?>"/></div>
         </form>
         <div class="button">
             <div class="buttoncontainer">
-                <a class="button" tabindex="<?php echo $tabIndex++; ?>"><span><img src="delete.png"/>Delete Account</span></a>
+                <a class="button" tabindex="<?php echo $tabIndex++; ?>"><span><img src="delete.png"/>Delete Domain</span></a>
             </div>
         </div>
     </div>

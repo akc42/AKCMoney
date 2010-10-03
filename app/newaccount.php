@@ -19,15 +19,18 @@
 */
 error_reporting(E_ALL);
 
-session_start();
 require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
+
 $astmt = $db->prepare("SELECT name FROM account WHERE name = ? ;");
 $astmt->bindValue(1,$_POST['account']);
 $istmt =  $db->prepare("INSERT INTO account (name, dversion, bversion, currency,domain) VALUES ( ? , 1, 1, ? , ? );");
 $istmt->bindValue(1,$_POST['account']);
 $istmt->bindValue(2,$_POST['currency']);
-$istmt->bindValue(3,$_POST['domain']);
+if($_POST['domain'] != '') {
+	$istmt->bindValue(3,$_POST['domain']);
+} else {
+	$istmt->bindValue(3,null,PDO::PARAM_NULL);
+}
 
 $db->exec("BEGIN IMMEDIATE");
 
@@ -47,21 +50,41 @@ $istmt->execute();
 $istmt->closeCursor();
 ?><div class="xaccount">
         <form action="updateaccount.php" method="post" onSubmit="return false;" >
-            <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
             <input type="hidden" name="dversion" value="1"/>
             <input type="hidden" name="original" value="<?php echo $_POST['account']; ?>" />
             <input type="hidden" name="origdom" value="<?php echo $_POST['domain']; ?>" />
             <div class="account"><input type="text" name="account" value="<?php echo $_POST['account']; ?>"/></div>
-            <div class="domain"><input type="text" name="domain" value="<?php echo $_POST['domain']; ?>"/></div>
+            <div class="domain">
+	        	<select name="domain" value="" tabindex="<?php echo $tabIndex++; ?>">
+	        		<option value="" title="NULL" <?php if($_POST['domain'] == '') echo 'selected="selected"';?>></option>
+<?php
+$result = $db->query('SELECT name, description FROM domain ORDER BY name COLLATE NOCASE;');
+$r=0;
+while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+?>					<option value="<?php echo $row['name']; ?>" <?php
+                        if($row['name'] == $_POST['domain']) echo 'selected="selected"';?> 
+                            title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
+<?php
+	$r++;    
+}
+$result->closeCursor();
+
+?>				</select>
+			</div>
             <div class="currency">
-            <select name="currency" title="<?php echo $_SESSION['dc_description']; ?>">
 <?php
 $result = $db->query('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC;');
+$r=0;
 while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-?>              <option value="<?php echo $row['name']; ?>" <?php
-                        if($row['name'] == $_POST['currency']) echo 'selected="selected"';?> 
+	if($r == 0) {
+?>	            <select name="currency" title="<?php echo $row['description']; ?>">
+<?php
+	}
+?>              	<option value="<?php echo $row['name']; ?>" <?php
+                        if($r == 0) echo 'selected="selected"';?> 
                             title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
-<?php    
+<?php
+	$r++;    
 }
 $result->closeCursor();
 ?>

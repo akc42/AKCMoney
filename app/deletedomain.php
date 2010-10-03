@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009,2010 Alan Chandler
+ 	Copyright (c) 2010 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -24,18 +24,18 @@ require_once('./inc/db.inc');
 
 
 //Do all the preparation before starting the transaction - that way the transaction is over quicker
-$vstmt = $db->prepare("SELECT dversion FROM account WHERE name = ? ;");
-$dstmt = $db->prepare("DELETE FROM account WHERE name = ? ;");
-$vstmt->bindValue(1,$_POST['account']);
-$dstmt->bindValue(1,$_POST['account']);
+$vstmt = $db->prepare("SELECT version FROM domain WHERE name = ? ;");
+$dstmt = $db->prepare("DELETE FROM domain WHERE name = ? ;");
+$vstmt->bindValue(1,$_POST['domain']);
+$dstmt->bindValue(1,$_POST['domain']);
 
 $db->exec("BEGIN IMMEDIATE");
 
 $vstmt->execute();
 $version = $vstmt->fetchColumn();
 $vstmt->closeCursor();
-if ($version != $_POST['dversion']) {
-?><error>It appears someone else is editing this account in parallel.  We cannot delete it in this case and need to reload the page to ensure you are working with consistent data</error>
+if ($version != $_POST['version']) {
+?><error>It appears someone else is editing this domain in parallel.  We cannot delete the domain in this case and need to reload the page to ensure you are working with consistent data</error>
 <?php
     $db->exec("ROLLBACK");
     exit;

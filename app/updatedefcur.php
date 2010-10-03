@@ -19,13 +19,10 @@
 */
 error_reporting(E_ALL);
 
-session_start();
-require_once('./inc/db.inc');
-if($_SESSION['key'] != $_POST['key']) die('Protection Key Not Correct');
 
-$ustmt = $db->prepare("UPDATE config SET version = ?, default_currency = ? ;");
-$ustmt->bindParam(1,$version,PDO::PARAM_INT);
-$ustmt->bindValue(2,$_POST['currency']);
+require_once('./inc/db.inc');
+
+
 $currency = $db->quote($_POST['currency']);
 $cstmt = $db->prepare('SELECT rate,priority FROM currency WHERE name = ? ;');
 $cstmt->bindValue(1,$_POST['currency']);
@@ -48,23 +45,6 @@ $astmt->bindParam(4,$oldpriority,PDO::PARAM_INT);
 
 $db->exec("BEGIN IMMEDIATE");
 
-$result=$db->query("SELECT version, default_currency FROM config;");
-$row = $result->fetch(PDO::FETCH_ASSOC);
-if ( $row['version'] != $_POST['version'] ) {
-?><error>Someone else has edited the configuration in parallel with you.  We will reload the page</error>
-<?php
-    $_SESSION['default_currency'] = $row['default_currency'];
-    $_SESSION['config_version'] = $row['version'];
-    $db->exec("ROLLBACK");
-    exit;
-}
-$version = $row['version'] + 1;
-
-
-$_SESSION['default_currency'] = $_POST['currency'];
-$_SESSION['config_version'] = $version;
-$ustmt->execute();
-$ustmt->closeCursor();
 
 //Since we have now changed the default currency we need to recreate the view that shows transactions in that default currency
 $db->exec("DROP VIEW dfxaction;");
@@ -97,21 +77,20 @@ $cstmt->fetch(PDO::FETCH_BOUND);
 $astmt->execute();
 $astmt->closeCursor();
 ?><selector>
-    <div id=dc_description><?php echo $_SESSION['dc_description']; ?></div>
-    <input type="hidden" name="version" value="<?php echo $_SESSION['config_version']; ?>" />
-    <input type="hidden" name="key" value="<?php echo $_SESSION['key'];?>" />
     <div class="currency">
         <select id="currencyselector" name="currency">
 <?php            
 
 $result = $db->query('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC;');
 $currencies = Array();
+$r=0;
 while($row = $result->fetch(PDO::FETCH_ASSOC)) {
 $currencies[$row['name']] = Array($row['version'],$row['description'],$row['rate']);
 ?>                <option value="<?php echo $row['name']; ?>" <?php
-                    if($row['name'] == $_SESSION['default_currency']) echo 'selected="selected"';?> 
+                    if($r == 0) echo 'selected="selected"';?> 
                         title="<?php echo $row['description']; ?>"><?php echo $row['name']; ?></option>
-<?php    
+<?php
+$r++;    
 }
 ?>
         </select>
