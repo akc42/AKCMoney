@@ -19,6 +19,7 @@
 */
 
 require_once('./inc/db.inc');
+
 if(isset($_GET['account'])) {
 	$account = $_GET['account'];
 } else {
