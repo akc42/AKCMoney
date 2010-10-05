@@ -75,7 +75,8 @@ function head_content() {
                 user:myform.username.value,
                 pass:hex_md5(myform.pwd1.value),
                 rem:myform.rememberme.checked,
-                timestamp:myform.timestamp.value
+                timestamp:myform.timestamp.value,
+                demo:myform.demo.checked
             });
             }
         });
