@@ -21,7 +21,7 @@ define('DB_DIR','/var/www/money/db/'); //coordinate with install.php and login.p
 define('PRIVATE_KEY','AKCmPrivateKey');  /*Need to coordinate this value with doLogin.php and db.inc */
 
 if(!(isset($_POST['db']) && isset($_POST['user']) && isset($_POST['pass']) && isset($_POST['rem']) && 
-        isset($_POST['timestamp']) )) die('Invalid Parameters');
+        isset($_POST['timestamp']) && isset($_POST['demo']))) die('Invalid Parameters');
 
 $db = new PDO('sqlite:'.DB_DIR.$_POST['db'].'.db');
 
@@ -45,7 +45,7 @@ $stmt->bindValue(2,$_POST['pass']);
 $stmt->execute();
 $stmt->closeCursor();
 
-if(isset($_POST['demo'])) {
+if($_POST['demo'] == 'true') {
 	$db->exec("UPDATE config SET demo = 1");
 }
 $db->exec("COMMIT");
@@ -58,7 +58,7 @@ $user = array(
     'timestamp' => $timestamp,
     'key' => sha1(PRIVATE_KEY.$timestamp.'1'),
     'account' => 'Cash',
-    'demo' => isset($_POST['demo']),
+    'demo' => ($_POST['demo'] == 'true'),
     'temp' => ($_POST['rem'] != 'true')
 );
 if($user['temp']) {
