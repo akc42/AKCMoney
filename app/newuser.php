@@ -37,7 +37,7 @@ if($_POST['account'] != '') {
 } else {
 	$istmt->bindValue(5,null,PDO::PARAM_NULL);
 }
-if($_POST['admin'] != 'yes')) {
+if($_POST['admin'] != 'yes') {
 	$cstmt = $db->prepare("INSERT INTO capability (uid,domain) VALUES (?,?);");
 } 
 
