@@ -21,7 +21,7 @@ define('DB_DIR','/home/alan/dev/money/db/'); //coordinate with install.php and l
 define('PRIVATE_KEY','AKCmPrivateKey');  /*Need to coordinate this value with doLogin.php and db.inc */
 
 if(!(isset($_POST['db']) && isset($_POST['user']) && isset($_POST['pass']) && isset($_POST['rem']) && 
-        isset($_POST['timestamp']) && isset($_POST['domain']) && isset($_POST['account']))) die('Invalid Parameters')
+        isset($_POST['timestamp']) )) die('Invalid Parameters');
 
 $db = new PDO('sqlite:'.DB_DIR.$_POST['db'].'.db');
 
@@ -39,23 +39,26 @@ if(abs($stmt->fetchColumn() - $_POST['timestamp']) > 15) {
     $db->exec("ROLLBACK");
     die('Response too slow');
 } 
-$stmt = $db->prepare("INSERT INTO user (uid,name,version,password,isAdmin,domain,account) VALUES (1,?,1,?,1,?,?);");
+$stmt = $db->prepare("INSERT INTO user (uid,name,version,password,isAdmin,account) VALUES (1,?,1,?,1,'Cash');");
 $stmt->bindValue(1,$_POST['user']);
-$smtt->bindValue(2,$_POST['pass']);
-$stmt->bindValue(3,$_POST['domain']);
-$stmt->bindValue(4,$_POST['account']);
+$stmt->bindValue(2,$_POST['pass']);
 $stmt->execute();
 $stmt->closeCursor();
+
+if(isset($_POST['demo'])) {
+	$db->exec("UPDATE config SET demo = 1");
+}
 $db->exec("COMMIT");
 $timestamp = time();
 $user = array(
+	'db' => $_POST['db'],
     'uid' => 1,
     'version' => 1,
     'isAdmin' => true,
     'timestamp' => $timestamp,
     'key' => sha1(PRIVATE_KEY.$timestamp.'1'),
-    'domain' => $_POST['domain'],
-    'account' => $_POST['account'],
+    'account' => 'Cash',
+    'demo' => isset($_POST['demo']),
     'temp' => ($_POST['rem'] != 'true')
 );
 if($user['temp']) {

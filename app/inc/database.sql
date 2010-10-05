@@ -277,7 +277,7 @@ CREATE TABLE account (
 
 );
 
-INSERT INTO account (name,currency,balance, repeat_days) VALUES ('Cash', 'GBP', 0, 90);
+INSERT INTO account (name,currency,balance) VALUES ('Cash', 'GBP', 0);
 
 
 

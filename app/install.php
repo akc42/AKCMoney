@@ -36,8 +36,6 @@ $result->closeCursor();
 
 $db->exec(file_get_contents('./inc/database.sql')); //setup the database (this is within its own transaction)
 
-$db->beginTransaction();   //having set up the database, and put it into WAL mode, we open up a new transaction do the rest
-
 function head_content() {
 
 ?><title>AKC Login Page</title>
@@ -77,9 +75,7 @@ function head_content() {
                 user:myform.username.value,
                 pass:hex_md5(myform.pwd1.value),
                 rem:myform.rememberme.checked,
-                timestamp:myform.timestamp.value,
-                domain:myform.domain.value,
-                account:myform.account.value
+                timestamp:myform.timestamp.value
             });
             }
         });
@@ -92,7 +88,7 @@ function menu_items() {
 }
 
 function content() {
-    global $db;
+
 ?>
     <h1>Install</h1>
     <div class="loginpreamble">
@@ -107,50 +103,28 @@ function content() {
 	    <div id="loginerror" class="login_error hidden">Username or password is blank or passwords do not match, please try again</div>
 	    <div class="logininput">
 	        <div>
-		        <label for="username"><b>Username: </b></label>
-		        <input class="field" type="text" name="username" id="username" value="" size="23" />
+		        <label for="username"><b>Username: </b>
+		        <input class="field" type="text" name="username" id="username" value="" size="23" tabindex="10"/></label>
 		    </div>
 		    <div>
 		        <label for="pwd1"><b>Password:</b>
-		        <input class="field" type="password" name="pwd1" id="pwd1" size="23" /></label>
+		        <input class="field" type="password" name="pwd1" id="pwd1" size="23" tabindex="20" /></label>
 		        <label for="pwd2"><b>Confirm:</b>
-		        <input class="field" type="password" name="pwd2" id="pwd2" size="23" /></label>
+		        <input class="field" type="password" name="pwd2" id="pwd2" size="23" tabindex="21" /></label>
 		    </div>
-		    <div class="defaultselection">
-		        <label for="domain">Default Accounting Domain:
-		        <select id="domain" name="domain">
-<?php
-    $result = $db->query("SELECT name FROM domain ;");
-    while($domain = $result->fetchColumn()) {
-?>                  <option><?php echo $domain; ?></option>
-<?php
-    }
-    $result->closeCursor();
-?>		        </select></label>
-		        <label for="account">Initial Account for Display:
-		        <select id="account" name="account">
-<?php
-    $result = $db->query("SELECT name FROM account ;");
-    while($account = $result->fetchColumn()) {
-?>                  <option><?php echo $account; ?></option>
-<?php
-    }
-    $result->closeCursor();
-?>		        </select></label>
-            </div>
 		</div>
         <div class="buttoncontainer loginsubmit">
-            <a id="submit" class="button"><span><img src="login.png"/>Log In</span></a>
+            <a id="submit" class="button" tabindex="30"><span><img src="login.png"/>Log In</span></a>
         </div>
 	    <div>
-        	<label for="rememberme"><input name="rememberme" id="rememberme" class="rememberme" type="checkbox" checked="checked" value="forever" /> Remember me</label>
-        	<label for="demo"><input name="demo" id="demo" type="checkbox"/>Demo</label>
+        	<label for="rememberme"><input name="rememberme" id="rememberme" class="rememberme" type="checkbox" checked="checked" value="forever"  tabindex="50"/> Remember me</label>
+        	<label for="demo"><input name="demo" id="demo" type="checkbox" tabindex="60"/>Demo</label>
         </div>
 	</form>
 
 <?php
 } 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc'); 
-$db->commit();
+
 ?>
 
