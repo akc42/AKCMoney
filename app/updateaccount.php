@@ -33,8 +33,7 @@ $astmt = $db->prepare("
         name = ? ,
         dversion = dversion + 1,
         currency = ? ,
-        domain = ?,
-        repeat_days = ?
+        domain = ?
     WHERE name = ? ;
 ");
 $astmt->bindValue(1,$_POST['account']);
@@ -44,8 +43,7 @@ if($_POST['domain'] != '') {
 } else {
 	$astmt->bindValue(3,null,PDO::PARAM_NULL);
 }
-$astmt->bindValue(4,round($_POST['repeat']),PDO::PARAM_INT);
-$astmt->bindValue(5,$_POST['original']);
+$astmt->bindValue(4,$_POST['original']);
 
 $db->exec("BEGIN IMMEDIATE");
 
