@@ -36,8 +36,8 @@ currency always appears first).  The current rate is also shown, but is adjusted
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
 	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
 	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
-	<script type="text/javascript" src="utils.js" ></script>
-	<script type="text/javascript" src="currency.js" ></script>
+	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
+	<script type="text/javascript" src="currency-yc-<?php include('inc/version.inc');?>.js" ></script>
 
 <?php
 }

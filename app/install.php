@@ -17,7 +17,7 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-define('DB_DIR','/home/alan/dev/money/db/'); //coordinate with db.inc, doLogin.php and login.php
+define('DB_DIR','/var/www/money/db/'); //coordinate with db.inc, doLogin.php and login.php
 
 if(!(isset($_GET['db']) && isset($_GET['url']))) die('Invalid Parameters'); 
 

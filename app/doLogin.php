@@ -17,7 +17,7 @@
     along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-define('DB_DIR','/home/alan/dev/money/db/'); //coordinate with install.php and login.php
+define('DB_DIR','/var/www/money/db/'); //coordinate with install.php and login.php
 define('PRIVATE_KEY','AKCmPrivateKey');  /*Need to coordinate this value with doLogin.php and db.inc */
 
 if(!(isset($_POST['db']) && isset($_POST['user']) && isset($_POST['pass']) && isset($_POST['rem']))) die('Invalid Parameters');

@@ -34,8 +34,8 @@ function head_content() {
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
 	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="utils.js" ></script>
-	<script type="text/javascript" src="domains.js" ></script>
+	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
+	<script type="text/javascript" src="domains-yc-<?php include('inc/version.inc');?>.js" ></script>
 <?php
 }
 
