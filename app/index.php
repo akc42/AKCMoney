@@ -26,7 +26,7 @@ if(isset($_GET['account'])) {
 		$account = $user['account'];
 	}
 }
-$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, repeat_days,a.domain AS domain, a.currency, c.description AS cdesc, c.rate 
+$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, a.currency, c.description AS cdesc, c.rate 
                         FROM account AS a JOIN currency AS c ON a.currency = c.name,
                         user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
                         WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)");
@@ -102,7 +102,11 @@ an adminstrator, informing them that you had a problem with account name <strong
 			<div id="positive">
 <?php
     
-    $repeattime = time() + $row['repeat_days']*84600;
+    $result = $db->query("SELECT repeat_days FROM config");
+    $repeatdays = $result->fetchColumn();
+    $result->closeCursor();
+    
+    $repeattime = time() + $repeatdays*84600;
     $currency = $row['currency'];
     $balance = $row['balance'];
     $bdate = $row['date'];
