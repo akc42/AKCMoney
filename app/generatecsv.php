@@ -34,8 +34,20 @@ function out_csv($row) {
 require_once('./inc/db.inc');
 header("Content-Type: text/csv");
 header('Content-Dispositon: attachment; filename="accounts.csv"');
-$starttime = mktime(0,0,0,substr($_SESSION['year_end'],0,2),substr($_SESSION['year_end'],2)+1,$_SESSION['year']-1);
-$endtime = mktime(23,59,59,substr($_SESSION['year_end'],0,2),substr($_SESSION['year_end'],2),$_SESSION['year']);
+	if(isset($GET['year'])) {
+		$year = round($_GET['year']);
+	} else {
+		$year = round(date("Y"));
+	}
+	
+	$result = $db->query("SELECT year_end FROM config LIMIT 1");
+	$yearend = $result->fetchColumn();
+	$result->closeCursor();
+
+	/* start and end times of the financial year */
+
+	$starttime = mktime(0,0,0,substr($yearend,0,2),substr($yearend,2)+1,$year-1);
+	$endtime = mktime(23,59,59,substr($yearend,0,2),substr($yearend,2),$year);
 
 //Standard Cost and Revenue Codes
 $acrstmt = $db->prepare("
@@ -57,7 +69,7 @@ ORDER BY c.id ASC
 $acrstmt->bindValue(1,$starttime);
 $acrstmt->bindValue(2,$endtime);
 $acrstmt->bindParam(3,$codetype);
-$acrstmt->bindValue(4,$_SESSION['domain']);
+$acrstmt->bindValue(4,$_GET['domain']);
 
 $tcrstmt = $db->prepare("
 SELECT
@@ -74,7 +86,7 @@ ORDER BY t.date ASC
     ");
 $tcrstmt->bindValue(1,$starttime);
 $tcrstmt->bindValue(2,$endtime);
-$tcrstmt->bindValue(3,$_SESSION['domain']);
+$tcrstmt->bindValue(3,$_GET['domain']);
 $tcrstmt->bindParam(4,$codeid,PDO::PARAM_INT);
 $tcrstmt->bindParam(5,$codeid,PDO::PARAM_INT);
 
@@ -109,7 +121,7 @@ $aastmt->bindValue(4,$endtime);
 $aastmt->bindValue(5,$starttime);
 $aastmt->bindValue(6,$starttime);
 $aastmt->bindValue(7,$endtime);
-$aastmt->bindValue(8,$_SESSION['domain']);
+$aastmt->bindValue(8,$_GET['domain']);
 
 $tastmt = $db->prepare("
 SELECT
@@ -138,7 +150,7 @@ $tastmt->bindValue(4,$endtime);
 $tastmt->bindValue(5,$starttime);
 $tastmt->bindValue(6,$starttime);
 $tastmt->bindValue(7,$endtime);
-$tastmt->bindValue(8,$_SESSION['domain']);
+$tastmt->bindValue(8,$_GET['domain']);
 $tastmt->bindParam(9,$codeid,PDO::PARAM_INT);
 $tastmt->bindParam(10,$codeid,PDO::PARAM_INT);
 
@@ -165,7 +177,7 @@ $abstmt = $db->prepare("
 ");
 $abstmt->bindValue(1,$starttime);
 $abstmt->bindValue(2,$endtime);
-$abstmt->bindValue(3,$_SESSION['domain']);
+$abstmt->bindValue(3,$_GET['domain']);
         
 $tbstmt = $db->prepare("
     SELECT
@@ -188,7 +200,7 @@ $tbstmt = $db->prepare("
 
 $tbstmt->bindValue(1,$starttime);
 $tbstmt->bindValue(2,$endtime);
-$tbstmt->bindValue(3,$_SESSION['domain']);
+$tbstmt->bindValue(3,$_GET['domain']);
 $tbstmt->bindParam(4,$codeid,PDO::PARAM_INT);
 $tbstmt->bindParam(5,$codeid,PDO::PARAM_INT);
 

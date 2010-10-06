@@ -17,7 +17,7 @@
 
 */
 var AKCMoney = function () {
-    var request = new Utils.Queue();
+    var request = new Utils.Queue('currency.php');
     var sorting;
     var defcurrency = function() {
         $('currencyselector').addEvent('change', function(e) {

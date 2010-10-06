@@ -113,7 +113,7 @@ var AKCMoney = function () {
     var minMaxBalance;
     var clearedBalance;
     var sorting;
-    var request = new Utils.Queue();
+    var request = new Utils.Queue('index.php');
 // Key class for transaction
     var Transaction = new Class({
         Implements: [Class.Occlude],

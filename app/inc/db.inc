@@ -44,11 +44,17 @@ if(!isset($_GET['db'])) {
     $result->closeCursor();
     $result = $db->query("SELECT demo,db_version FROM config LIMIT 1;");
     $row = $result->fetch(PDO::FETCH_ASSOC);
-/*
-       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
     if($row['db_version'] < 2) { //update to version 2
         $result->closeCursor();
         $db->exec(file_get_contents('./inc/update1.sql'));
+        $result = $db->query('SELECT * FROM config;');
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+    }
+/*
+       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
+    if($row['db_version'] < 3) { //update to version 3
+        $result->closeCursor();
+        $db->exec(file_get_contents('./inc/update2.sql'));
         $result = $db->query('SELECT * FROM config;');
         $row = $result->fetch(PDO::FETCH_ASSOC);
     }
@@ -152,6 +158,7 @@ function menu_items() {
         <li><a href="accounts.php">Account Manager</a></li>
         <li><a href="currency.php">Currency Manager</a></li>
         <li><a href="domains.php">Domain Manager</a></li>
+        <li><a href="codes.php">Accounting Codes Manager</a></li>
         <li><a href="users.php">User Manager</a></li>
     </ul>
 </li>

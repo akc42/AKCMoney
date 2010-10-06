@@ -117,9 +117,8 @@ an adminstrator, informing them that you had a problem with account name <strong
     $minbalance = $balance;
     $maxbalance = $balance;
     $crate = $row['rate'];
-    if(!is_null($row['domain'])) {
-?>              <span class="title">Domain:</span> <?php echo $row['domain'];
-    }
+    $domain = (is_null($row['domain']))?'':$row['domain'];
+?>              <span class="title">Domain:</span> <?php echo $domain;
 ?>			</div> 
 			<div id="currency">
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
@@ -408,9 +407,10 @@ $r = 0;
             <select name="code" tabindex="63">
                 <option value="0" type="" selected="selected">-- Select (Optional) Account Code --</option>
 <?php
-		$result = $db->query('SELECT * FROM code ORDER BY id ASC;');
+		$result = $db->query('SELECT * FROM code ORDER BY type DESC, description COLLATE NOCASE ASC;');
 		while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-?>              <option value="<?php echo $row['id']; ?>" codetype="<?php echo $row['type']; ?>"><?php echo $row['description']; ?></option>
+?>              <option value="<?php echo $row['id']; ?>" codetype="<?php echo $row['type']; ?>" class="code_<?php
+					 echo $row['type']; ?>"><?php echo $row['description']; ?></option>
 <?php
 		}
 		$result->closeCursor();
@@ -427,11 +427,23 @@ $r = 0;
             <select id="account" name="account">
             	<option value="" selected="selected">-- Select (Optional) Other Account --</option>
 <?php
-		$result = $db->prepare('SELECT name FROM account WHERE name != ? ORDER BY name COLLATE NOCASE;');
+		$result = $db->prepare("
+		    SELECT a.name, a.domain FROM account AS a, 
+		    user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
+		    WHERE a.name != ? AND u.uid= ? AND (u.isAdmin = 1 OR c.domain = a.domain)
+		    ORDER BY CASE WHEN a.domain = ? THEN NULL ELSE coalesce(a.domain,'ZZZZZ') END COLLATE NOCASE ,a.name COLLATE NOCASE;
+		");
 		$result->bindValue(1,$account);
+		$result->bindValue(2,$user['uid'],PDO::PARAM_INT);
+		if($domain != '') {
+			$result->bindValue(3,$domain);
+		} else {
+			$result->bindValue(3,null,PDO::PARAM_NULL);
+		}
 		$result->execute();
 		while($row = $result->fetch(PDO::FETCH_ASSOC)) {
-?>            <option value="<?php echo $row['name']; ?>" ><?php echo $row['name']; ?></option>
+?>            <option value="<?php echo $row['name']; ?>" ><?php echo $row['name'];
+				if(!is_null($row['domain'])) echo " (".$row['domain'].")"; ?></option>
 <?php
 		}
 		$result->closeCursor();

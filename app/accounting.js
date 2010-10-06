@@ -18,7 +18,7 @@
 */
 
 var AKCMoney = function () {
-    var request = new Utils.Queue();
+    var request = new Utils.Queue('accounting.php');
     var myDomain;
     var myStart;
     var myEnd;

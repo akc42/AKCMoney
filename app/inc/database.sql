@@ -35,25 +35,26 @@ INSERT INTO codeType VALUES ('B','Balancing Account');  --Holds personal costs t
 
 CREATE TABLE code (
     id integer PRIMARY KEY,
+    version bigint DEFAULT 1 NOT NULL,
     type char(1) NOT NULL REFERENCES codeType(type),          
     description character varying
 );
 
 
-INSERT INTO code VALUES (1, 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
-INSERT INTO code VALUES (2, 'C', 'Billable Costs'); -- costs incurred which will be invoiced from clients
-INSERT INTO code VALUES (3, 'C', 'General Mileage @40p per mile'); --Mileage Not Billable from Clients
-INSERT INTO code VALUES (4, 'C', 'Customer Related Mileage @40p per mile'); --Mileage Costed at 40p but only Billed at 20p
-INSERT INTO code VALUES (5, 'C', 'Salaries'); --Salaries and Related Costs (Tax and NI)
-INSERT INTO code VALUES (6, 'C', 'Advertising and Marketing Services'); --Advertising Costs
-INSERT INTO code VALUES (7, 'C', 'Office Cost'); --Stationary, Postage etc
-INSERT INTO code VALUES (8,'C','Professional Membership Fees'); -- Fees for British Computer Society and PCG
-INSERT INTO code VALUES (9, 'C', 'General Costs'); -- costs not included elsewhere
-INSERT INTO code VALUES (10, 'R', 'Invoices for Professional Service');
-INSERT INTO code VALUES (11,'R', 'Invoices for Web Design and Hosting'); 
-INSERT INTO code VALUES (12,'A','Computer Equipment'); --Depreciable Computer Equipment
-INSERT INTO code VALUES (13,'B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
-INSERT INTO code VALUES (14,'B','Loans'); --loans made to the company
+INSERT INTO code (type,description) VALUES ( 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
+INSERT INTO code (type,description) VALUES ( 'C', 'Billable Costs'); -- costs incurred which will be invoiced from clients
+INSERT INTO code (type,description) VALUES ( 'C', 'General Mileage @40p per mile'); --Mileage Not Billable from Clients
+INSERT INTO code (type,description) VALUES ( 'C', 'Customer Related Mileage @40p per mile'); --Mileage Costed at 40p but only Billed at 20p
+INSERT INTO code (type,description) VALUES ( 'C', 'Salaries'); --Salaries and Related Costs (Tax and NI)
+INSERT INTO code (type,description) VALUES ( 'C', 'Advertising and Marketing Services'); --Advertising Costs
+INSERT INTO code (type,description) VALUES ( 'C', 'Office Cost'); --Stationary, Postage etc
+INSERT INTO code (type,description) VALUES ('C','Professional Membership Fees'); -- Fees for British Computer Society and PCG
+INSERT INTO code (type,description) VALUES ( 'C', 'General Costs'); -- costs not included elsewhere
+INSERT INTO code (type,description) VALUES ( 'R', 'Invoices for Professional Service');
+INSERT INTO code (type,description) VALUES ('R', 'Invoices for Web Design and Hosting'); 
+INSERT INTO code (type,description) VALUES ('A','Computer Equipment'); --Depreciable Computer Equipment
+INSERT INTO code (type,description) VALUES ('B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
+INSERT INTO code (type,description) VALUES ('B','Loans'); --loans made to the company
 
 -- Define valid Repeat Values for Transactions
 
@@ -346,7 +347,7 @@ CREATE TABLE config (
 );
 
 INSERT INTO config(db_version,repeat_days,year_end) 
-            VALUES (1, 90,'1231');
+            VALUES (2, 90,'1231');
 
 CREATE VIEW dfxaction AS
     SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,

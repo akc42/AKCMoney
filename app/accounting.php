@@ -223,7 +223,7 @@ window.addEvent('domready', function() {
 
 <h2>Account Code List</h2>
 <div class="xaction heading">
-    <div class="ref">Type</div>
+    <div class="coderef">Type</div>
     <div class="description">Account Code</div>
     <div class="amount">Totals</div>
     <div class="amount">Profit</div>
@@ -260,7 +260,7 @@ window.addEvent('domready', function() {
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];
 ?><div class="xaction balance">
-    <div class="ref"><?php echo $row['type']; ?></div>
+    <div class="coderef code_<?php echo $row['type'];?>"><?php echo $row['type']; ?></div>
     <div class="description"><?php echo $row['description']; ?></div>
     <div class="amount"><?php echo fmtAmount($row['tamount']); ?></div>
     <div class="amount"><?php echo fmtAmount($profit); ?></div>
@@ -304,7 +304,7 @@ window.addEvent('domready', function() {
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];
 ?><div class="xaction balance">
-    <div class="ref"><?php echo $row['type']; ?></div>
+    <div class="coderef code_<?php echo $row['type'];?>"><?php echo $row['type']; ?></div>
     <div class="description"><?php echo $row['description']; ?></div>
     <div class="amount"><?php echo fmtAmount($row['tamount']); ?></div>
     <div class="amount"><?php echo fmtAmount($profit); ?></div>
@@ -338,7 +338,7 @@ window.addEvent('domready', function() {
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit += $row['tamount'];
 ?><div class="xaction balance">
-    <div class="ref"><?php echo $row['type']; ?></div>
+    <div class="coderef code_<?php echo $row['type'];?>"><?php echo $row['type']; ?></div>
     <div class="description"><?php echo $row['description']; ?></div>
     <div class="amount"><?php echo fmtAmount($row['tamount']); ?></div>
     <div class="amount"><?php echo fmtAmount($profit); ?></div>
@@ -375,7 +375,7 @@ window.addEvent('domready', function() {
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];
 ?><div class="xaction balance">
-    <div class="ref"><?php echo $row['type']; ?></div>
+    <div class="coderef code_<?php echo $row['type'];?>"><?php echo $row['type']; ?></div>
     <div class="description"><?php echo $row['description']; ?></div>
     <div class="amount"><?php echo fmtAmount($row['tamount']); ?></div>
     <div class="amount"><?php echo fmtAmount($profit); ?></div>
@@ -388,7 +388,7 @@ window.addEvent('domready', function() {
     $stmt->closeCursor();
 
 ?><div class="xaction balance">
-    <div class="ref"></div>
+    <div class="coderef"></div>
     <div class="description">Profit</div>
     <div class="amount">&nbsp;</div>
     <div class="amount"><?php echo fmtAmount($profit); ?></div>

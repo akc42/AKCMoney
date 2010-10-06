@@ -17,7 +17,7 @@
 
 */
 var AKCMoney = function () {
-    var request = new Utils.Queue();
+    var request = new Utils.Queue('users.php');
     var updateUser = function(xuser){
         var form = xuser.getElement('form');
         var params = form.clone();
