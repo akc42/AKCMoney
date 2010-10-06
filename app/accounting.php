@@ -254,7 +254,7 @@ window.addEvent('domready', function() {
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
     GROUP BY
         c.id
-    ORDER BY c.id ASC
+    ORDER BY description COLLATE NOCASE ASC
         ");
     $stmt->execute(array($starttime,$endtime,$domain));
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -298,7 +298,7 @@ window.addEvent('domready', function() {
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
     GROUP BY
         c.id
-    ORDER BY c.id ASC
+    ORDER BY description COLLATE NOCASE ASC
         ");
     $stmt->execute(array($starttime,$endtime,$starttime,$endtime,$starttime,$starttime,$endtime,$domain));
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -332,7 +332,7 @@ window.addEvent('domready', function() {
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
     GROUP BY
         c.id
-    ORDER BY c.id ASC
+    ORDER BY description COLLATE NOCASE ASC
         ");
     $stmt->execute(array($starttime,$endtime,$domain));
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -369,7 +369,7 @@ window.addEvent('domready', function() {
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
     GROUP BY
         c.id
-    ORDER BY c.id ASC
+    ORDER BY description COLLATE NOCASE ASC
         ");
     $stmt->execute(array($starttime,$endtime,$domain));
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

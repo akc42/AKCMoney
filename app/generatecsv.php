@@ -64,7 +64,7 @@ WHERE
     (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
 GROUP BY
     c.id
-ORDER BY c.id ASC
+ORDER BY cdesc COLLATE NOCASE ASC
     ");
 $acrstmt->bindValue(1,$starttime);
 $acrstmt->bindValue(2,$endtime);
@@ -112,7 +112,7 @@ WHERE
     (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
 GROUP BY
     c.id
-ORDER BY c.id ASC
+ORDER BY cdesc COLLATE NOCASE ASC
     ");
 $aastmt->bindValue(1,$starttime);
 $aastmt->bindValue(2,$endtime);
@@ -173,7 +173,7 @@ $abstmt = $db->prepare("
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
     GROUP BY
         c.id
-    ORDER BY c.id ASC
+    ORDER BY cdesc COLLATE NOCASE ASC
 ");
 $abstmt->bindValue(1,$starttime);
 $abstmt->bindValue(2,$endtime);
