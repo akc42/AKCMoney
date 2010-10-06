@@ -17,7 +17,7 @@
 
 */
 var AKCMoney = function () {
-    var request = new Utils.Queue();
+    var request = new Utils.Queue('accounts.php');
     var updateAccount = function(xaccount){
         var form = xaccount.getElement('form');
         request.callRequest('updateaccount.php',form,form, function(holder) {

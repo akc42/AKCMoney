@@ -358,7 +358,7 @@ if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we
 $codetype = '';
 $codedesc = '';
 if($_POST['code'] != 0) {
-    $cstmt = $db->prepare("SELECT * FROM code WHERE id = ? ;");
+    $cstmt = $db->prepare("SELECT type,description FROM code WHERE id = ? ;");
     $cstmt->bindValue(1,$_POST['code']);
     $cstmt->execute();
     $cstmt->bindColumn(1,$codetype);

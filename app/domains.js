@@ -17,7 +17,7 @@
 
 */
 var AKCMoney = function () {
-    var request = new Utils.Queue();
+    var request = new Utils.Queue('domains.php');
     var updateDomain = function(xdomain){
         var form = xdomain.getElement('form');
         request.callRequest('updatedomain.php',form,form, function(holder) {

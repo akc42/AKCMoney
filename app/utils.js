@@ -46,7 +46,8 @@ Utils = function () {
             }    
         },
         Queue: new Class({
-            initialize: function() {
+            initialize: function(myURL) {
+            	this.pageURL = myURL;
                 this.queue = new Chain();
                 this.running = false;
                 this.requests = new Hash();
@@ -66,7 +67,7 @@ Utils = function () {
                             var holder = new Element('div').set('html',html);
                             if (holder.getElement('error')) {
                                 alert(holder.getElement('error').get('text'));
-//TODO-remove when finished testing  window.location = that.pageURL;
+								window.location = that.pageURL;
                             } else {
                                 that.reCall(holder);
                                 that.running = false;
