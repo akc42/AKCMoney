@@ -73,7 +73,7 @@ which allocates the transaction into the accounting system for a domain.  Differ
 	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
 	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
 	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
-	<script type="text/javascript" src="accounting-yc-<?php include('inc/version.inc');?>js"></script>
+	<script type="text/javascript" src="accounting-yc-<?php include('inc/version.inc');?>.js"></script>
 <?php
 }
 
