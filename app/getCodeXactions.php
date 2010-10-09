@@ -140,7 +140,7 @@ case 'B':
 case 'A':
     $stmt = $db->prepare("
     SELECT
-        t.id AS id,t.date AS date,version, t.description AS description, rno, repeat, 
+        t.id AS id,t.date AS date,t.version AS version, t.description AS description, rno, repeat, 
         CASE 
             WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
             WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
@@ -157,7 +157,6 @@ case 'A':
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode =  ? AND t.dstcode = c.id))
     ORDER BY t.date ASC
         ");
-
     $stmt->bindValue(1,$_POST['start']);
     $stmt->bindValue(2,$_POST['end']);
     $stmt->bindValue(3,$_POST['start']);
