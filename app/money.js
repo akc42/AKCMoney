@@ -235,8 +235,6 @@ var AKCMoney = function () {
             xdate.value = this.element.getElement('input[name=xxdate]').value;
             this.cumcopy = new Amount(this.editForm.getElement('.cumcopy'));
             this.cumcopy.setValue(this.cumulative);
-    // Create a calender and set the date to now
-            this.calendar = new Calendar.Single(xdate);
             window.scrollTo(0,this.element.getCoordinates().top - 100);
             this.element.addClass('spinner');
             sorting.removeItems(this.element);
@@ -252,6 +250,8 @@ var AKCMoney = function () {
                 function(holder) {
                     this.element.removeClass('spinner');
                     this.editForm.removeClass('hidden');
+			// Create a calender and set the date to now
+				    this.calendar = new Calendar.Single(xdate);
                     var rno = this.editForm.getElement('input[name=rno]');
                     rno.value = this.element.getElement('.ref').get('text');
                     var desc = this.editForm.getElement('input[name=desc]');
@@ -373,6 +373,8 @@ var AKCMoney = function () {
                     this.editForm.getElement('.revertxaction').addEvent('click',function(e) {
                         this.amount.setValue(originalAmount);
                         this.element.getElement('.wrapper').removeClass('hidden');
+                    	this.calendar.picker.destroy();
+                    	delete this.calendar;
                         this.editForm.destroy();
                         sorting.addItems(this.element);
                         this.editMode = false;
@@ -382,6 +384,8 @@ var AKCMoney = function () {
                         if(confirm('Are you sure you wish to delete this transaction?')) {
                             request.callRequest('deletexaction.php',{'key':Utils.sessionKey,'tid':this.tid,'version':this.version},this,
                                 function(holder) {
+                                	this.calendar.picker.destroy();
+                                	delete this.calendar;
                                     this.element.destroy();
                                     recalculate();
                                 }
@@ -396,8 +400,10 @@ var AKCMoney = function () {
                             this.editForm.getElement('input[name=move]').value=1; //indicates to update transaction to deal with this specially
                             $('accountsel').getElement('input[name=tid]').value=this.tid; //tells next call to index.php to go straight into edit of this
                             request.callRequest('updatexaction.php',this.editForm,this,function(holder) {
-                                Utils.selectValueSet($('accountsel'),'account',account.options[account.selectedIndex].value);
-                                $('accountsel').submit();                            
+                            	this.calendar.picker.destroy();
+                            	delete this.calendar;
+                        		var q = new Hash({'account':account.options[account.selectedIndex].value,'tid':this.tid});
+                            	window.location('index.php?'+q.toQueryString());
                             });
                         }
                     }.bind(this));         
@@ -489,6 +495,8 @@ var AKCMoney = function () {
                                 codediv.getElement('.codedesc').set('text',xaction.getElement('code').get('text'));
                                 this.element.getElement('.wrapper').removeClass('hidden');
                                 this.amount.setValue(holder.getElement('amount').get('text'));
+                                this.calendar.picker.destroy();
+                                delete this.calendar;
                                 this.editForm.destroy();
                                 sorting.addItems(this.element);
                                 this.editMode = false;
