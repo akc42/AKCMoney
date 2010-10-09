@@ -66,8 +66,8 @@ GROUP BY
     c.id
 ORDER BY cdesc COLLATE NOCASE ASC
     ");
-$acrstmt->bindValue(1,$starttime);
-$acrstmt->bindValue(2,$endtime);
+$acrstmt->bindValue(1,$starttime,PDO::PARAM_INT);
+$acrstmt->bindValue(2,$endtime,PDO::PARAM_INT);
 $acrstmt->bindParam(3,$codetype);
 $acrstmt->bindValue(4,$_GET['domain']);
 
@@ -84,8 +84,8 @@ WHERE
     (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = ? ))
 ORDER BY t.date ASC
     ");
-$tcrstmt->bindValue(1,$starttime);
-$tcrstmt->bindValue(2,$endtime);
+$tcrstmt->bindValue(1,$starttime,PDO::PARAM_INT);
+$tcrstmt->bindValue(2,$endtime,PDO::PARAM_INT);
 $tcrstmt->bindValue(3,$_GET['domain']);
 $tcrstmt->bindParam(4,$codeid,PDO::PARAM_INT);
 $tcrstmt->bindParam(5,$codeid,PDO::PARAM_INT);
@@ -114,13 +114,13 @@ GROUP BY
     c.id
 ORDER BY cdesc COLLATE NOCASE ASC
     ");
-$aastmt->bindValue(1,$starttime);
-$aastmt->bindValue(2,$endtime);
-$aastmt->bindValue(3,$starttime);
-$aastmt->bindValue(4,$endtime);
-$aastmt->bindValue(5,$starttime);
-$aastmt->bindValue(6,$starttime);
-$aastmt->bindValue(7,$endtime);
+$aastmt->bindValue(1,$starttime,PDO::PARAM_INT);
+$aastmt->bindValue(2,$endtime,PDO::PARAM_INT);
+$aastmt->bindValue(3,$starttime,PDO::PARAM_INT);
+$aastmt->bindValue(4,$endtime,PDO::PARAM_INT);
+$aastmt->bindValue(5,$starttime,PDO::PARAM_INT);
+$aastmt->bindValue(6,$starttime,PDO::PARAM_INT);
+$aastmt->bindValue(7,$endtime,PDO::PARAM_INT);
 $aastmt->bindValue(8,$_GET['domain']);
 
 $tastmt = $db->prepare("
@@ -143,13 +143,13 @@ WHERE
 ORDER BY t.date ASC
     ");
 
-$tastmt->bindValue(1,$starttime);
-$tastmt->bindValue(2,$endtime);
-$tastmt->bindValue(3,$starttime);
-$tastmt->bindValue(4,$endtime);
-$tastmt->bindValue(5,$starttime);
-$tastmt->bindValue(6,$starttime);
-$tastmt->bindValue(7,$endtime);
+$tastmt->bindValue(1,$starttime,PDO::PARAM_INT);
+$tastmt->bindValue(2,$endtime,PDO::PARAM_INT);
+$tastmt->bindValue(3,$starttime,PDO::PARAM_INT);
+$tastmt->bindValue(4,$endtime,PDO::PARAM_INT);
+$tastmt->bindValue(5,$starttime,PDO::PARAM_INT);
+$tastmt->bindValue(6,$starttime,PDO::PARAM_INT);
+$tastmt->bindValue(7,$endtime,PDO::PARAM_INT);
 $tastmt->bindValue(8,$_GET['domain']);
 $tastmt->bindParam(9,$codeid,PDO::PARAM_INT);
 $tastmt->bindParam(10,$codeid,PDO::PARAM_INT);
@@ -175,8 +175,8 @@ $abstmt = $db->prepare("
         c.id
     ORDER BY cdesc COLLATE NOCASE ASC
 ");
-$abstmt->bindValue(1,$starttime);
-$abstmt->bindValue(2,$endtime);
+$abstmt->bindValue(1,$starttime,PDO::PARAM_INT);
+$abstmt->bindValue(2,$endtime,PDO::PARAM_INT);
 $abstmt->bindValue(3,$_GET['domain']);
         
 $tbstmt = $db->prepare("
@@ -198,8 +198,8 @@ $tbstmt = $db->prepare("
 ");
 
 
-$tbstmt->bindValue(1,$starttime);
-$tbstmt->bindValue(2,$endtime);
+$tbstmt->bindValue(1,$starttime,PDO::PARAM_INT);
+$tbstmt->bindValue(2,$endtime,PDO::PARAM_INT);
 $tbstmt->bindValue(3,$_GET['domain']);
 $tbstmt->bindParam(4,$codeid,PDO::PARAM_INT);
 $tbstmt->bindParam(5,$codeid,PDO::PARAM_INT);
@@ -218,7 +218,7 @@ $db->beginTransaction();
 */
     $repeats_to_do = true;
     $stmt = $db->prepare('SELECT * FROM xaction WHERE repeat <> 0 AND date <= ? ;');
-    $stmt->bindValue(1,$endtime);
+    $stmt->bindValue(1,$endtime,PDO::PARAM_INT);
     $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
     $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
                      repeat, currency, amount, description)
