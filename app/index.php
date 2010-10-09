@@ -360,10 +360,12 @@ $r = 0;
 <?php
 	if($user['isAdmin']) {
 ?><div id="xactiontemplate" class="hidden xactionform"
-    <input type="hidden" name="tid" value="0"/>
+	<div class="movequery">
+	    <input type="hidden" name="tid" value="0"/>
+	    <input type="hidden" name="accountname" value="<?php echo $account;?>" />
+	</div>
     <input type="hidden" name="version" value="0" />
     <input type="hidden" name="accounttype" value="src"/>
-    <input type="hidden" name="accountname" value="<?php echo $account;?>" />
     <input type="hidden" name="acchange" value="0" />
     <input type="hidden" name="move" value="0" />
     <div class="xaction irow">
