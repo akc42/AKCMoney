@@ -36,7 +36,7 @@ $db->beginTransaction();
 if(isset($domain)) {
 
 	$stmt->bindValue(1,$domain);
-	$stmt->bindValue(2,$user['uid']);
+	$stmt->bindValue(2,$user['uid'],PDO::PARAM_INT);
 
 
 	$stmt->execute();
@@ -114,7 +114,7 @@ an adminstrator, informing them that you had a problem with domain name <strong>
 */
     $repeats_to_do = true;
     $stmt = $db->prepare('SELECT * FROM xaction WHERE repeat <> 0 AND date <= ? ;');
-    $stmt->bindValue(1,$endtime);
+    $stmt->bindValue(1,$endtime,PDO::PARAM_INT);
     $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
     $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
                      repeat, currency, amount, description)
@@ -201,7 +201,11 @@ Year:
         (src IS NOT NULL AND src = account.name AND srccode IS NOT NULL AND srccode = code.id) OR
         (dst IS NOT NULL AND dst = account.name AND dstcode IS NOT NULL AND dstcode = code.id))
     ");
-    $stmt->execute(array($yearend,$yearend,$yearend,$domain));
+    $stmt->bindValue(1,$yearend,PDO::PARAM_INT);
+    $stmt->bindValue(2,$yearend,PDO::PARAM_INT);
+    $stmt->bindValue(3,$yearend,PDO::PARAM_INT);
+    $stmt->bindValue(4,$domain);
+    $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC); 
     for( $yr = $row['firstyear'] ; $yr <= $row['lastyear'] ; $yr++) {
 ?>              <option <?php if ($year == $yr) echo 'selected="selected"';?>><?php echo $yr; ?></option>
@@ -256,7 +260,10 @@ window.addEvent('domready', function() {
         c.id
     ORDER BY description COLLATE NOCASE ASC
         ");
-    $stmt->execute(array($starttime,$endtime,$domain));
+    $stmt->bindValue(1,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(2,$endtime,PDO::PARAM_INT);
+    $stmt->bindValue(3,$domain);
+    $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];
 ?><div class="xaction balance">
@@ -300,7 +307,15 @@ window.addEvent('domready', function() {
         c.id
     ORDER BY description COLLATE NOCASE ASC
         ");
-    $stmt->execute(array($starttime,$endtime,$starttime,$endtime,$starttime,$starttime,$endtime,$domain));
+    $stmt->bindValue(1,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(2,$endtime,PDO::PARAM_INT);
+    $stmt->bindValue(3,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(4,$endtime,PDO::PARAM_INT);
+    $stmt->bindValue(5,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(6,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(7,$endtime,PDO::PARAM_INT);
+    $stmt->bindValue(8,$domain);
+    $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];
 ?><div class="xaction balance">
@@ -334,7 +349,10 @@ window.addEvent('domready', function() {
         c.id
     ORDER BY description COLLATE NOCASE ASC
         ");
-    $stmt->execute(array($starttime,$endtime,$domain));
+    $stmt->bindValue(1,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(2,$endtime,PDO::PARAM_INT);
+    $stmt->bindValue(3,$domain);
+    $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit += $row['tamount'];
 ?><div class="xaction balance">
@@ -371,7 +389,10 @@ window.addEvent('domready', function() {
         c.id
     ORDER BY description COLLATE NOCASE ASC
         ");
-    $stmt->execute(array($starttime,$endtime,$domain));
+    $stmt->bindValue(1,$starttime,PDO::PARAM_INT);
+    $stmt->bindValue(2,$endtime,PDO::PARAM_INT);
+    $stmt->bindValue(3,$domain);
+    $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];
 ?><div class="xaction balance">

@@ -35,7 +35,7 @@ $stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, a.
 $db->beginTransaction();
 if(isset($account)) {
 	$stmt->bindValue(1,$account);
-	$stmt->bindValue(2,$user['uid']);
+	$stmt->bindValue(2,$user['uid'],PDO::PARAM_INT);
 
 	$stmt->execute();
 
@@ -196,7 +196,7 @@ window.addEvent('domready', function() {
     $stmt = $db->prepare('SELECT * FROM xaction WHERE (src = ? OR dst = ? ) AND repeat <> 0 AND date < ? ;');
     $stmt->bindValue(1,$account);
     $stmt->bindValue(2,$account);
-    $stmt->bindValue(3,$repeattime);
+    $stmt->bindValue(3,$repeattime,PDO::PARAM_INT);
     $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
     $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
                      repeat, currency, amount, description)
@@ -205,7 +205,7 @@ window.addEvent('domready', function() {
         $repeats_to_do = false; //lets be optimistic and plan to be done
         $stmt->execute();
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $upd->bindValue(1,$row['id']);
+            $upd->bindValue(1,$row['id'],PDO::PARAM_INT);
             $upd->execute();
             $upd->closeCursor();
             switch ($row['repeat']) {

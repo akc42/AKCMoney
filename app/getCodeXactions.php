@@ -21,7 +21,7 @@ error_reporting(E_ALL);
 
 require_once('./inc/db.inc');
 $stmt = $db->prepare("SELECT type FROM code WHERE id = ? ;");
-$stmt->bindValue(1,$_POST['code']);
+$stmt->bindValue(1,$_POST['code'],PDO::PARAM_INT);
 
 
 $db->beginTransaction();
@@ -40,9 +40,9 @@ $stmt->closeCursor();
 */
     $repeats_to_do = true;
     $stmt = $db->prepare('SELECT * FROM xaction WHERE (srccode = ? OR dstcode = ?) AND repeat <> 0 AND date <= ? ;');
-    $stmt->bindValue(1,$_POST['code']);
-    $stmt->bindValue(2,$_POST['code']);
-    $stmt->bindValue(3,$_POST['end']);
+    $stmt->bindValue(1,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(2,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['end'],PDO::PARAM_INT);
     $upd = $db->prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
     $ins = $db->prepare('INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
                      repeat, currency, amount, description)
@@ -107,11 +107,11 @@ case 'R':
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = ? ))
     ORDER BY t.date ASC
         ");
-    $stmt->bindValue(1,$_POST['start']);
-    $stmt->bindValue(2,$_POST['end']);
-    $stmt->bindValue(3,$_POST['domain']);
-    $stmt->bindValue(4,$_POST['code']);
-    $stmt->bindValue(5,$_POST['code']);
+    $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
+    $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['domain'],PDO::PARAM_INT);
+    $stmt->bindValue(4,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(5,$_POST['code'],PDO::PARAM_INT);
     break;
 case 'B':
     $stmt = $db->prepare("
@@ -131,11 +131,11 @@ case 'B':
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = ? ))
     ORDER BY t.date ASC
         ");
-    $stmt->bindValue(1,$_POST['start']);
-    $stmt->bindValue(2,$_POST['end']);
-    $stmt->bindValue(3,$_POST['domain']);
-    $stmt->bindValue(4,$_POST['code']);
-    $stmt->bindValue(5,$_POST['code']);
+    $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
+    $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['domain'],PDO::PARAM_INT);
+    $stmt->bindValue(4,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(5,$_POST['code'],PDO::PARAM_INT);
     break;
 case 'A':
     $stmt = $db->prepare("
@@ -157,16 +157,16 @@ case 'A':
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode =  ? AND t.dstcode = c.id))
     ORDER BY t.date ASC
         ");
-    $stmt->bindValue(1,$_POST['start']);
-    $stmt->bindValue(2,$_POST['end']);
-    $stmt->bindValue(3,$_POST['start']);
-    $stmt->bindValue(4,$_POST['end']);
-    $stmt->bindValue(5,$_POST['start']);
-    $stmt->bindValue(6,$_POST['start']);
-    $stmt->bindValue(7,$_POST['end']);
+    $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
+    $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['start'],PDO::PARAM_INT);
+    $stmt->bindValue(4,$_POST['end'],PDO::PARAM_INT);
+    $stmt->bindValue(5,$_POST['start'],PDO::PARAM_INT);
+    $stmt->bindValue(6,$_POST['start'],PDO::PARAM_INT);
+    $stmt->bindValue(7,$_POST['end'],PDO::PARAM_INT);
     $stmt->bindValue(8,$_POST['domain']);
-    $stmt->bindValue(9,$_POST['code']);
-    $stmt->bindValue(10,$_POST['code']);
+    $stmt->bindValue(9,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(10,$_POST['code'],PDO::PARAM_INT);
     break;
 default:
 ?><error>Invalid Account Code Type.  Please Report This Error to an Administrator</error>
