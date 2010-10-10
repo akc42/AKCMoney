@@ -66,6 +66,6 @@ if($user['temp']) {
 } else {
     setcookie('akcmoney',base64_encode(serialize($user)),$user['timestamp']+2600000); //Just over 30 days
 }
-echo '{status:true}';
+echo '{"status":true}';
 ?>
 
