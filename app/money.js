@@ -376,6 +376,7 @@ var AKCMoney = function () {
                     	this.calendar.picker.destroy();
                     	delete this.calendar;
                         this.editForm.destroy();
+                        delete this.editForm;
                         sorting.addItems(this.element);
                         this.editMode = false;
                         recalculate();
@@ -498,6 +499,7 @@ var AKCMoney = function () {
                                 this.calendar.picker.destroy();
                                 delete this.calendar;
                                 this.editForm.destroy();
+                                delete this.editForm;
                                 sorting.addItems(this.element);
                                 this.editMode = false;
                             }
