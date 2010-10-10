@@ -54,7 +54,7 @@ if($checklog->fetchColumn() > 6) {//too many failures and we will just exit
 	$writelog->bindValue(3,0,PDO::PARAM_INT); //Say that this log entry was a failure
 	$writelog->execute();
 	$writelog->closeCursor();
-	echo '{status:false,retry:false}';
+	echo '{"status":false,"retry":false}';
 	$db->exec("COMMIT");
 	exit;
 }
@@ -98,7 +98,7 @@ if( $user= $getuser->fetch(PDO::FETCH_ASSOC)) {
         } else {
             setcookie('akcmoney',base64_encode(serialize($user)),$user['timestamp']+2600000); //Just over 30 days
         }
-        echo '{status:true}';
+        echo '{"status":true}';
 	exit;
     }
 }
@@ -116,9 +116,9 @@ $checklog->bindValue(1,$_SERVER['REMOTE_ADDR']);
 $checklog->bindValue(2,$_SERVER['REMOTE_ADDR']);
 $checklog->execute();
 if($checklog->fetchColumn() > 3) {
-	echo '{status:false,retry:false}'; //say retry not allowed
+	echo '{"status":false,"retry":false}'; //say retry not allowed
 } else {
-	echo '{status:false,retry:true}'; //say can retry if you want
+	echo '{"status":false,"retry":true}'; //say can retry if you want
 }
 $checklog->closeCursor();
 $db->exec("COMMIT");
