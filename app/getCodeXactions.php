@@ -109,7 +109,7 @@ case 'R':
         ");
     $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
     $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(3,$_POST['domain'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['domain']);
     $stmt->bindValue(4,$_POST['code'],PDO::PARAM_INT);
     $stmt->bindValue(5,$_POST['code'],PDO::PARAM_INT);
     break;
@@ -133,7 +133,7 @@ case 'B':
         ");
     $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
     $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(3,$_POST['domain'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['domain']);
     $stmt->bindValue(4,$_POST['code'],PDO::PARAM_INT);
     $stmt->bindValue(5,$_POST['code'],PDO::PARAM_INT);
     break;
