@@ -354,7 +354,7 @@ CREATE VIEW dfxaction AS
         CASE 
             WHEN t.currency = 'GBP' THEN t.amount
             WHEN t.srcamount IS NOT NULL AND sa.currency = 'GBP' THEN t.srcamount
-            WHEN t.dstamount IS NOT NULL AND da .currency = 'GBP' THEN t.dstamount
+            WHEN t.dstamount IS NOT NULL AND da.currency = 'GBP' THEN t.dstamount
             ELSE CAST ((CAST (t.amount AS REAL) / currency.rate) AS INTEGER)
         END AS dfamount
     FROM

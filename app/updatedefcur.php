@@ -54,7 +54,7 @@ CREATE VIEW IF NOT EXISTS dfxaction AS
         CASE 
             WHEN t.currency = $currency THEN t.amount
             WHEN t.srcamount IS NOT NULL AND sa.currency = $currency THEN t.srcamount
-            WHEN t.dstamount IS NOT NULL AND da .currency = $currency THEN t.dstamount
+            WHEN t.dstamount IS NOT NULL AND da.currency = $currency THEN t.dstamount
             ELSE CAST ((CAST (t.amount AS REAL) / currency.rate) AS INTEGER)
         END AS dfamount
     FROM
