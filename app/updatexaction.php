@@ -66,13 +66,13 @@ $ustmt = $db->prepare("
         repeat = ?
     WHERE id = ?
 ");
-$ustmt->bindValue(1,$_POST['xdate']);
-$ustmt->bindValue(2,$amount);
+$ustmt->bindValue(1,$_POST['xdate'],PDO::PARAM_INT);
+$ustmt->bindValue(2,$amount,PDO::PARAM_INT);
 $ustmt->bindValue(3,$_POST['currency']);
 $ustmt->bindValue(4,$_POST['rno']);
 $ustmt->bindValue(5,$_POST['desc']);
 
-$ustmt->bindValue(15,$_POST['tid']);
+$ustmt->bindValue(15,$_POST['tid'],PDO::PARAM_INT);
 
 $cstmt = $db->prepare("SELECT rate FROM currency WHERE name = ? ;");
 $cstmt->bindValue(1,$_POST['currency']);
@@ -93,35 +93,37 @@ data we will reload the page</error>
 $version = $row['version'] + 1;
 
 if($accounttype == "src") {
-    $ustmt->bindValue(9,($_POST['code'] != '0')?$_POST['code']:NULL);
+    $ustmt->bindValue(9,($_POST['code'] != '0')?$_POST['code']:NULL,($_POST['code'] != '0')?PDO::PARAM_INT:PDO::PARAM_NULL);
     if($_POST['accountname'] == $row['src']) {
     //account name is the same as before so we can rely on $row data for src information
         $acurrency = $row['srccurrency'];
+        $arate = $row['srate'];
     } else {
         //We have mostlikely switched accounts (it HAS to be one or the other)
         $acurrency = $row['dstcurrency'];
+        $arate = $row['drate'];        
     }
     if($_POST['currency'] == $acurrency) {
-        $ustmt->bindValue(7,NULL);
+        $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
         $aamount = $amount;
     } else {
         $aamount = round(100*$_POST['aamount']);
-        $ustmt->bindValue(7,$aamount);
+        $ustmt->bindValue(7,$aamount,PDO::PARAM_INT);
     }
     $aamount = -$aamount;  //we negate it here so that when used at end, it delivers a negative account value if its source
     if($_POST['repeat'] == "0") {
-        $ustmt->bindValue(8,$cleared);
-        $ustmt->bindValue(14,0);
+        $ustmt->bindValue(8,$cleared,PDO::PARAM_INT);
+        $ustmt->bindValue(14,0,PDO::PARAM_INT);
     } else {
-        $ustmt->bindValue(8,0);
-        $ustmt->bindValue(14,$_POST['repeat']);
+        $ustmt->bindValue(8,0,PDO::PARAM_INT);
+        $ustmt->bindValue(14,$_POST['repeat'],PDO::PARAM_INT);
     }
     if($_POST['move'] == '1' && is_null($row['dst']) && $_POST['account'] != '') {
         $ustmt->bindValue(6,$_POST['account']);
-        $ustmt->bindValue(10,NULL);
-        $ustmt->bindValue(11,NULL);
-        $ustmt->bindValue(12,0);
-        $ustmt->bindValue(13,NULL);
+        $ustmt->bindValue(10,NULL,PDO::PARAM_NULL);
+        $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
+        $ustmt->bindValue(12,0,PDO::PARAM_INT);
+        $ustmt->bindValue(13,NULL,PDO::PARAM_NULL);
     } else {
         $ustmt->bindValue(6,$_POST['accountname']);
         if($_POST['account'] != '') {
@@ -129,47 +131,47 @@ if($accounttype == "src") {
             $ustmt->bindValue(10,$_POST['account']);
             if(isset($row['dst']) && $_POST['account'] == $row['dst']) {
             //We have not changed it
-                $arate = $row['drate'];
+                $brate = $row['drate'];
                 if($_POST['currency'] == $row['dstcurrency']) {
-                    $ustmt->bindValue(11,NULL);
+                    $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['srccurrency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['srate']),PDO::PARAM_INT);
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
                     $cstmt->execute();
                     $rate = $cstmt->fetchColumn();
                     $cstmt->closeCursor();
-                    $ustmt->bindValue(11,round($amount*$arate/$rate));
+                    $ustmt->bindValue(11,round($amount*$brate/$rate),PDO::PARAM_INT);
                 }
-                $ustmt->bindValue(12,$row['dstclear']);
+                $ustmt->bindValue(12,$row['dstclear'],PDO::PARAM_INT);
                 if ($row['srcdom'] == $row['dstdom']) {
-                    $ustmt->bindValue(13,NULL);
+                    $ustmt->bindValue(13,NULL,PDO::PARAM_NULL);
                 } else {
-                    $ustmt->bindValue(13,$row['dstcode']);
+                    $ustmt->bindValue(13,$row['dstcode'],PDO::PARAM_INT);
                 }
             } elseif (isset($row['src']) && $_POST['account'] == $row['src']) {
             // Must have swapped source and destination
-                $arate = $row['srate'];
+                $brate = $row['srate'];
                 if($_POST['currency'] == $row['srccurrency']) {
-                    $ustmt->bindValue(11,NULL);
+                    $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['drate']),PDO::PARAM_INT);
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
                     $cstmt->execute();
                     $rate = $cstmt->fetchColumn();
                     $cstmt->closeCursor();
-                    $ustmt->bindValue(11,round($amount*$arate/$rate));
+                    $ustmt->bindValue(11,round($amount*$brate/$rate));
                 }
-                $ustmt->bindValue(12,$row['srcclear']);
+                $ustmt->bindValue(12,$row['srcclear'],PDO::PARAM_INT);
                 if ($row['srcdom'] == $row['dstdom']) {
-                    $ustmt->bindValue(13,NULL);
+                    $ustmt->bindValue(13,NULL,PDO::PARAM_NULL);
                 } else {
-                    $ustmt->bindValue(13,$row['dstcode']);
+                    $ustmt->bindValue(13,$row['dstcode'],PDO::PARAM_INT);
                 }
             } else {
                 $rstmt = $db->prepare("
@@ -182,110 +184,112 @@ if($accounttype == "src") {
                 $rstmt->bindValue(1,$_POST['account']);
                 $rstmt->execute();
                 $rstmt->bindColumn(1,$bcurrency);
-                $rstmt->bindColumn(2,$arate);
+                $rstmt->bindColumn(2,$brate);
                 $rstmt->fetch(PDO::FETCH_BOUND);
                 if ($_POST['currency'] == $bcurrency) {
-                    $ustmt->bindValue(11,NULL);
+                    $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
                 } elseif($_POST['currency'] == $row['srccurrency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['srate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $ustmt->bindValue(11,round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(11,round($amount*$brate/$row['drate']),PDO::PARAM_INT);
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
                     $cstmt->execute();
                     $rate = $cstmt->fetchColumn();
                     $cstmt->closeCursor();
-                    $ustmt->bindValue(11,round($amount*$arate/$rate));
+                    $ustmt->bindValue(11,round($amount*$brate/$rate),PDO::PARAM_INT);
                 }
-                $ustmt->bindValue(12,0);
-                $ustmt->bindValue(13,NULL);
+                $ustmt->bindValue(12,0,PDO::PARAM_INT);
+                $ustmt->bindValue(13,NULL,PDO::PARAM_NULL);
             } 
         } else {
-            $ustmt->bindValue(10,NULL);
-            $ustmt->bindValue(11,NULL);
-            $ustmt->bindValue(12,0);
-            $ustmt->bindValue(13,NULL);
+            $ustmt->bindValue(10,NULL,PDO::PARAM_NULL);
+            $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
+            $ustmt->bindValue(12,0,PDO::PARAM_INT);
+            $ustmt->bindValue(13,NULL,PDO::PARAM_NULL);
         }
     }
     
 } else {
-    $ustmt->bindValue(13,($_POST['code'] != '0')?$_POST['code']:NULL);
+    $ustmt->bindValue(13,($_POST['code'] != '0')?$_POST['code']:NULL,($_POST['code'] != '0')?PDO::PARAM_INT:PDO::PARAM_NULL);
     if($_POST['accountname'] == $row['dst']) {
     //account name is the same as before so we can rely on $row data for src information
         $acurrency = $row['dstcurrency'];
+        $arate = $row['drate'];
     } else {
         //We have mostlikely switched accounts
         $acurrency = $row['srccurrency'];
+        $arate = $row['srate'];
     }
     if($_POST['currency'] == $acurrency) {
-        $ustmt->bindValue(11,NULL);
+        $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
         $aamount = $amount;
     } else {
         $aamount = round(100*$_POST['aamount']);
-        $ustmt->bindValue(11,$aamount);
+        $ustmt->bindValue(11,$aamount,PDO::PARAM_INT);
     }
     if($_POST['repeat'] == "0") {
-        $ustmt->bindValue(12,$cleared);
-        $ustmt->bindValue(14,0);
+        $ustmt->bindValue(12,$cleared,PDO::PARAM_INT);
+        $ustmt->bindValue(14,0,PDO::PARAM_INT);
     } else {
-        $ustmt->bindValue(12,0);
-        $ustmt->bindValue(14,$_POST['repeat']);
+        $ustmt->bindValue(12,0,PDO::PARAM_INT);
+        $ustmt->bindValue(14,$_POST['repeat'],PDO::PARAM_INT);
     }
     if($_POST['move'] == '1' && is_null($row['src']) && $_POST['account'] != '') {
         $ustmt->bindValue(10,$_POST['account']);
-        $ustmt->bindValue(6,NULL);
-        $ustmt->bindValue(7,NULL);
-        $ustmt->bindValue(8,0);
-        $ustmt->bindValue(9,NULL);
+        $ustmt->bindValue(6,NULL,PDO::PARAM_NULL);
+        $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
+        $ustmt->bindValue(8,0,PDO::PARAM_INT);
+        $ustmt->bindValue(9,NULL,PDO::PARAM_NULL);
     } else {
         $ustmt->bindValue(10,$_POST['accountname']);
         if($_POST['account'] != '') {
             $ustmt->bindValue(6,$_POST['account']);
             if(isset($row['src']) && $_POST['account'] == $row['src']) {
             // The other account has not changed
-                $arate = $row['srate'];
+                $brate = $row['srate'];
                 if($_POST['currency'] == $row['srccurrency']) {
-                    $ustmt->bindValue(7,NULL);
+                    $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(7,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(7,round($amount*$brate/$row['drate']),PDO::PARAM_INT);
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
                     $cstmt->execute();
                     $rate = $cstmt->fetchColumn();
                     $cstmt->closeCursor();
-                    $ustmt->bindValue(7,round($amount*$arate/$rate));
+                    $ustmt->bindValue(7,round($amount*$brate/$rate),PDO::PARAM_INT);
                 }
-                $ustmt->bindValue(8,$row['srcclear']);
+                $ustmt->bindValue(8,$row['srcclear'],PDO::PARAM_INT);
                 if ($row['srcdom'] == $row['dstdom']) {
-                    $ustmt->bindValue(9,NULL);
+                    $ustmt->bindValue(9,NULL,PDO::PARAM_NULL);
                 } else {
-                    $ustmt->bindValue(9,$row['srccode']);
+                    $ustmt->bindValue(9,$row['srccode'],PDO::PARAM_INT);
                 }
             } elseif (isset($row['src']) && $_POST['account'] == $row['dst']) {
             //We must have swapped source and destinations
-                $arate = $row['drate'];
+                $brate = $row['drate'];
                 if($_POST['currency'] == $row['dstcurrency']) {
-                    $ustmt->bindValue(7,NULL);
+                    $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(7,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['srccurrency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(7,round($amount*$brate/$row['srate']),PDO::PARAM_INT);
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
                     $cstmt->execute();
                     $rate = $cstmt->fetchColumn();
                     $cstmt->closeCursor();
-                    $ustmt->bindValue(7,round($amount*$arate/$rate));
+                    $ustmt->bindValue(7,round($amount*$brate/$rate),PDO::PARAM_INT);
                 }
-                $ustmt->bindValue(8,$row['dstclear']);
+                $ustmt->bindValue(8,$row['dstclear'],PDO::PARAM_INT);
                 if ($row['srcdom'] == $row['dstdom']) {
-                    $ustmt->bindValue(9,NULL);
+                    $ustmt->bindValue(9,NULL,PDO::PARAM_NULL);
                 } else {
-                    $ustmt->bindValue(9,$row['srccode']);
+                    $ustmt->bindValue(9,$row['srccode'],PDO::PARAM_INT);
                 }
             } else {
                 $rstmt = $db->prepare("
@@ -298,31 +302,31 @@ if($accounttype == "src") {
                 $rstmt->bindValue(1,$_POST['account']);
                 $rstmt->execute();
                 $rstmt->bindColumn(1,$bcurrency);
-                $rstmt->bindColumn(2,$arate);
+                $rstmt->bindColumn(2,$brate);
                 $rstmt->fetch(PDO::FETCH_BOUND);
                if ($_POST['currency'] == $bcurrency) {
-                    $ustmt->bindValue(7,NULL);
+                    $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
                 } elseif($_POST['currency'] == $row['srccurrency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['srate']));
+                    $ustmt->bindValue(7,round($amount*$barate/$row['srate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['currency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['trate']));
+                    $ustmt->bindValue(7,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
-                    $ustmt->bindValue(7,round($amount*$arate/$row['drate']));
+                    $ustmt->bindValue(7,round($amount*$brate/$row['drate']),PDO::PARAM_INT);
                 } else {
                     // not any of the currencies we know about - we will have to go read it to find the rate
                     $cstmt->execute();
                     $rate = $cstmt->fetchColumn();
                     $cstmt->closeCursor();
-                    $ustmt->bindValue(7,round($amount*$arate/$rate));
+                    $ustmt->bindValue(7,round($amount*$brate/$rate),PDO::PARAM_INT);
                 }
-                $ustmt->bindValue(8,0);
-                $ustmt->bindValue(9,NULL);
+                $ustmt->bindValue(8,0,PDO::PARAM_INT);
+                $ustmt->bindValue(9,NULL,PDO::PARAM_NULL);
             } 
         } else {
-            $ustmt->bindValue(6,NULL);
-            $ustmt->bindValue(7,NULL);
-            $ustmt->bindValue(8,0);
-            $ustmt->bindValue(9,NULL);
+            $ustmt->bindValue(6,NULL,PDO::PARAM_NULL);
+            $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
+            $ustmt->bindValue(8,0,PDO::PARAM_INT);
+            $ustmt->bindValue(9,NULL,PDO::PARAM_NULL);
         }
     }
 }
@@ -337,18 +341,21 @@ $clear = ($repeat == '0')? (($cleared == 0)?'f':'t'):'f';
 if($_POST['acchange'] == "2" && $_POST['currency'] != $acurrency) { //only if we requested to set the currencies and they are not the same
     if($amount != 0 && $aamount != 0) { //can only do this if neither value is 0
         //we asked to set the rate from the current transaction.
-        $ratio = abs($aamount/$amount);
+        $ratio = abs($amount/$aamount);
+        $dstmt = $db->query("SELECT name FROM currency WHERE priority = 0;");
+        $default_currency = $dstmt->fetchColumn();
+        $dstmt->closeCursor();
 
         $ustmt = $db->prepare("UPDATE currency SET version = version+1, rate = ? WHERE name = ? ;");
         
-        if($_POST['currency'] == $_SESSION['default_currency']) {
-            $ustmt->bindValue(1,$ratio);
+        if($_POST['currency'] == $default_currency) {
+            $ustmt->bindValue(1,1/$ratio);
             $ustmt->bindValue(2,$acurrency);//we need to change the rate of the account currency
+        } elseif ($acurrency == $default_currency) {
+        	$ustmt->bindValue(1,$ratio);
+        	$ustmt->bindValue(2,$_POST['currency']); //updating the rate of the transaction currency
         } else {
-            $cstmt->execute();
-            $brate = $cstmt->fetchColumn();
-            $cstmt->closeCursor();
-            $ustmt->bindValue(1,$brate/$ratio);
+           $ustmt->bindValue(1,$arate*$ratio);
             $ustmt->bindValue(2,$_POST['currency']);//we are changing the rate of the transaction currency
         }
         $ustmt->execute();
