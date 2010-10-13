@@ -80,6 +80,11 @@ function head_content() {
             });
             }
         });
+        document.addEvent('keydown', function(e) {
+            if(e.key == "enter"){
+                document.id('submit').fireEvent('click',e);
+            }
+        });
     });
     </script>
 <?php
