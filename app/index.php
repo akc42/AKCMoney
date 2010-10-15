@@ -146,7 +146,8 @@ window.addEvent('domready', function() {
     Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 <?php if($user['isAdmin']) {
-?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>);
+?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php
+					 if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>);
 <?php }
 ?>});
 </script>
