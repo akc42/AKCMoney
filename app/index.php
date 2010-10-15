@@ -61,7 +61,7 @@ consist of two main concepts, accounts which hold money, and transactions which 
 single account if the transaction is with the outside world).  Multiple currencies are supported, and can use exchange rates which are initially
 estimated, but are then corrected when the actual value used in a transaction is known.  This is the second release, based on personal use over
 the past 4 years and a third release is planned to allow multiple accounting as is typically seen in business (cash accounts versus management accounts"/>
-<meta name="keywords" content="
+<meta name="keywords" content=""/>
     <link rel="shortcut icon" type="image/png" href="favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
@@ -146,7 +146,7 @@ window.addEvent('domready', function() {
     Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 <?php if($user['isAdmin']) {
-?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php if(isset($_POST['tid'])) {echo $_POST['tid'];} else {echo '0';} ?>);
+?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>);
 <?php }
 ?>});
 </script>

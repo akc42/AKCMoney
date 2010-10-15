@@ -399,12 +399,11 @@ var AKCMoney = function () {
                         if(account.selectedIndex != 0) {
                             //Only do this if we have selected a new account from the list
                             this.editForm.getElement('input[name=move]').value=1; //indicates to update transaction to deal with this specially
-                            $('accountsel').getElement('input[name=tid]').value=this.tid; //tells next call to index.php to go straight into edit of this
                             request.callRequest('updatexaction.php',this.editForm,this,function(holder) {
                             	this.calendar.picker.destroy();
                             	delete this.calendar;
                         		var q = new Hash({'account':account.options[account.selectedIndex].value,'tid':this.tid});
-                            	window.location('index.php?'+q.toQueryString());
+                               	window.location = 'index.php?'+q.toQueryString();
                             });
                         }
                     }.bind(this));         
