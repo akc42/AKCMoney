@@ -269,7 +269,7 @@ $r = 0;
         $codeid = 0;
         if($row['src'] == $account) {
             if(!is_null($row['srcamount'])) {
-                -$amount = $row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
+                $amount = -$row['srcamount'];//if this is a source account we are decrementing the balance with a positive value
             } else {
                 if($row['currency'] != $currency) {
                     $amount = -$row['amount']*$crate/$row['rate'];

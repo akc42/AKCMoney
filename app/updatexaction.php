@@ -92,6 +92,13 @@ data we will reload the page</error>
 }
 $version = $row['version'] + 1;
 
+if($row['amount'] == $amount  && $row['currency'] == $_POST['currency']) {
+	$amountNotChanged = true;
+} else {
+	$amountNotChanged = false;
+}
+
+
 if($accounttype == "src") {
     $ustmt->bindValue(9,($_POST['code'] != '0')?$_POST['code']:NULL,($_POST['code'] != '0')?PDO::PARAM_INT:PDO::PARAM_NULL);
     if($_POST['accountname'] == $row['src']) {
@@ -110,7 +117,7 @@ if($accounttype == "src") {
         $aamount = round(100*$_POST['aamount']);
         $ustmt->bindValue(7,$aamount,PDO::PARAM_INT);
     }
-    $aamount = -$aamount;  //we negate it here so that when used at end, it delivers a negative account value if its source
+    $aamount = -$aamount; //We need it negative if this is a source account
     if($_POST['repeat'] == "0") {
         $ustmt->bindValue(8,$cleared,PDO::PARAM_INT);
         $ustmt->bindValue(14,0,PDO::PARAM_INT);
@@ -134,6 +141,8 @@ if($accounttype == "src") {
                 $brate = $row['drate'];
                 if($_POST['currency'] == $row['dstcurrency']) {
                     $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
+                } elseif ($amountNotChanged) { //if amount not changed just use original amount in transaction
+                	$ustmt->bindValue(11,$row['dstamount'],PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['currency']) {
                     $ustmt->bindValue(11,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['srccurrency']) {
@@ -156,6 +165,8 @@ if($accounttype == "src") {
                 $brate = $row['srate'];
                 if($_POST['currency'] == $row['srccurrency']) {
                     $ustmt->bindValue(11,NULL,PDO::PARAM_NULL);
+                } elseif ($amountNotChanged) { //if amount not changed just use original amount in transaction
+                	$ustmt->bindValue(11,$row['srcamount'],PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['currency']) {
                     $ustmt->bindValue(11,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
@@ -252,6 +263,8 @@ if($accounttype == "src") {
                 $brate = $row['srate'];
                 if($_POST['currency'] == $row['srccurrency']) {
                     $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
+                } elseif ($amountNotChanged) { //if amount not changed just use original amount in transaction
+                	$ustmt->bindValue(7,$row['srcamount'],PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['currency']) {
                     $ustmt->bindValue(7,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['dstcurrency']) {
@@ -274,6 +287,8 @@ if($accounttype == "src") {
                 $brate = $row['drate'];
                 if($_POST['currency'] == $row['dstcurrency']) {
                     $ustmt->bindValue(7,NULL,PDO::PARAM_NULL);
+                } elseif ($amountNotChanged) { //if amount not changed just use original amount in transaction
+                	$ustmt->bindValue(7,$row['dstamount'],PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['currency']) {
                     $ustmt->bindValue(7,round($amount*$brate/$row['trate']),PDO::PARAM_INT);
                 } elseif ($_POST['currency'] == $row['srccurrency']) {
