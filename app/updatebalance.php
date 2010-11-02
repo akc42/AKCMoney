@@ -26,7 +26,7 @@ if(!$user['isAdmin']) die('insufficient permissions');
 $sstmt = $db->prepare("SELECT bversion FROM account WHERE name = ? ;");
 $sstmt->bindValue(1,$_POST['account']);
 
-$ustmt = $db->prepare("UPDATE account SET bversion = bversion + 1, balance = ? WHERE name = ? ;");
+$ustmt = $db->prepare("UPDATE account SET bversion = bversion + 1, balance = ?, date = (strftime('%s','now')) WHERE name = ? ;");
 $balance = round(100*$_POST['balance']);
 $ustmt->bindValue(1,$balance);
 $ustmt->bindValue(2,$_POST['account']);
