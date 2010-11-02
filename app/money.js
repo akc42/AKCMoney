@@ -691,6 +691,8 @@ var AKCMoney = function () {
                         'bversion':$('bversion').value,
                         'balance':openingBalance.getValue()
                     },this,function(holder) {
+                    	$('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
+                    	Utils.dateAdjust($('openbaldate').getParent(),'dateawait','dateconvert');
                         $('bversion').value = holder.getElement('balance').get('version');
                         recalculate();                
                     });

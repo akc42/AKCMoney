@@ -177,7 +177,7 @@ window.addEvent('domready', function() {
 <div id="balance" class="xaction balance row">
     <input type="hidden" name="clearing" value="false" />
     <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
-    <div class="date"><input type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
+    <div class="date"><input id="openbaldate" type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
     <div class="ref">&nbsp;</div>
     <div class="description">Opening Balance</div>
     <div class="amount">&nbsp;</div>
