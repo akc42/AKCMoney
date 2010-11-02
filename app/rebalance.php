@@ -32,7 +32,7 @@ $tstmt = $db->prepare("SELECT * FROM xaction WHERE ( src = ? AND srcclear = 1 ) 
 $tstmt->bindValue(1,$_POST['account']);
 $tstmt->bindValue(2,$_POST['account']);
 
-$ustmt = $db->prepare("UPDATE account SET bversion = ?, balance = ? WHERE name = ? ;");
+$ustmt = $db->prepare("UPDATE account SET bversion = ?, balance = ? , date = (strftime('%s','now')) WHERE name = ? ;");
 $ustmt->bindParam(1,$version,PDO::PARAM_INT);
 $ustmt->bindParam(2,$balance,PDO::PARAM_INT);
 $ustmt->bindValue(3,$_POST['account']);

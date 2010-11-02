@@ -671,6 +671,8 @@ var AKCMoney = function () {
                     openingBalance,
                     function(holder){
                         openingBalance.setValue(holder.getElement('balance').get('text'));
+                    	$('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
+                    	Utils.dateAdjust($('openbaldate').getParent(),'dateawait','dateconvert');
                         var xactions = holder.getElement('xactions').getElements('xaction');
                         xactions.each(function(xaction) {
                             var el = $('t'+xaction.get('tid'));
