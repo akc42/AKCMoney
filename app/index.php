@@ -360,7 +360,7 @@ $r = 0;
 ?></div>
 <?php
 	if($user['isAdmin']) {
-?><div id="xactiontemplate" class="hidden xactionform"
+?><div id="xactiontemplate" class="hidden xactionform">
 	<div class="movequery">
 	    <input type="hidden" name="tid" value="0"/>
 	    <input type="hidden" name="accountname" value="<?php echo $account;?>" />
