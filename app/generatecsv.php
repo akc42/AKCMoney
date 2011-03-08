@@ -30,10 +30,9 @@ function out_csv($row) {
     $out .= "\r\n"; 
     echo $out;   
 }
-
+header("Content-Disposition: attachment;filename=accounts.csv\r\n");
+header("Content-Type: text/csv\r\n");
 require_once('./inc/db.inc');
-header("Content-Type: text/csv");
-header('Content-Dispositon: attachment; filename="accounts.csv"');
 	if(isset($_GET['year'])) {
 		$year = round($_GET['year']);
 	} else {
