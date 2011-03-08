@@ -34,7 +34,7 @@ function out_csv($row) {
 require_once('./inc/db.inc');
 header("Content-Type: text/csv");
 header('Content-Dispositon: attachment; filename="accounts.csv"');
-	if(isset($GET['year'])) {
+	if(isset($_GET['year'])) {
 		$year = round($_GET['year']);
 	} else {
 		$year = round(date("Y"));
