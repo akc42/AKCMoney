@@ -26,7 +26,7 @@ var AKCMoney = function () {
         });
     };
     var nameUnique = function(domainName,xdomain) {
-        return $('domains').getChildren().every(function(domain) {
+        return document.id('domains').getChildren().every(function(domain) {
             if( domain != xdomain) {
                 if (domainName == domain.getElement('form').domain.value) return false;
             }
@@ -76,7 +76,7 @@ var AKCMoney = function () {
     };
     var redoOddEven = function() {
     	var tabCount = 4; //skips over new
-        $('domains').getChildren().each(function(domain,i) {
+        document.id('domains').getChildren().each(function(domain,i) {
             if(i%2!=0) {
                 domain.addClass('even');
             } else {
@@ -90,7 +90,7 @@ var AKCMoney = function () {
     };
     var moveDomain = function(xdomain) {
         var domainName = xdomain.getElement('form').domain.value.toLowerCase();
-        if ($('domains').getChildren().every(function(domain) {
+        if (document.id('domains').getChildren().every(function(domain) {
             if(domain == xdomain) return true;//skip ourselves
             var domainForm = domain.getElement('form');
             if(domainName < domainForm.domain.value.toLowerCase()) { //Domain is same - so now look at domain name
@@ -99,7 +99,7 @@ var AKCMoney = function () {
             }
             return true;
         })) {
-            xdomain.inject($('domains'),'bottom');
+            xdomain.inject(document.id('domains'),'bottom');
         }
         redoOddEven();
     };
@@ -108,15 +108,15 @@ var AKCMoney = function () {
     };
     return {
         Domain: function () {
-            $('adddomain').addEvent('click', function(e) {
+            document.id('adddomain').addEvent('click', function(e) {
                 e.stop();
-                var domainName = $('newdomain').domain.value;
+                var domainName = document.id('newdomain').domain.value;
                 if ( domainName == '') {
                     alert("This domain name should not be blank, a new domain is not being created");
-                    resetFocus.delay(10,$('newdomain').domain);
+                    resetFocus.delay(10,document.id('newdomain').domain);
                 } else {
                     if(nameUnique(domainName,null)) {
-                        request.callRequest('newdomain.php',$('newdomain'),$('newdomain'), function(holder) {
+                        request.callRequest('newdomain.php',document.id('newdomain'),document.id('newdomain'), function(holder) {
                             this.domain.value = ''; //blank the new domain name
                             this.description.value = '';
                             var xdomain = holder.getElement('.xdomain');
@@ -125,7 +125,7 @@ var AKCMoney = function () {
                         });
                     } else {
                         alert("domain name is not unique, please alter until it is");
-                        resetFocus.delay(10,$('newdomain').domain);
+                        resetFocus.delay(10,document.id('newdomain').domain);
                     }
                 }
             }).addEvent('keydown', function(e) {
@@ -133,7 +133,7 @@ var AKCMoney = function () {
                     this.fireEvent('click',e);
                 }
             });
-            $('domains').getChildren().each(addDomainEvents);
+            document.id('domains').getChildren().each(addDomainEvents);
         }
     }
 }();

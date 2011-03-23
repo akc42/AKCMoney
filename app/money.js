@@ -23,7 +23,7 @@ Amount = new Class({
     initialize: function(element){ 
         var aString;
         if(element) {
-            this.element = $(element);
+            this.element = document.id(element);
             if (this.occlude()) return this.occluded;
             if (this.element.get('tag') != 'input') {
                 aString = this.element.get('text');
@@ -70,7 +70,7 @@ Amount = new Class({
         return this.value; 
     },
     setValue: function(amount) {
-        if($type(amount) == 'object') {
+        if(typeOf(amount) == 'object') {
             this.value = amount.getValue();
         } else {
             this.value = amount.toFloat();
@@ -119,7 +119,7 @@ var AKCMoney = function () {
         Implements: [Class.Occlude],
         property: 'transaction',
         initialize: function(element){
-            this.element = $(element);
+            this.element = document.id(element);
             if (this.occlude()) return this.occluded;
             this.amount = new Amount(this.element.getElement('.aamount'));
             this.cumulative = new Amount (this.element.getElement('.cumulative'));
@@ -215,7 +215,7 @@ var AKCMoney = function () {
             this.editMode = true;
             var codediv = this.element.getElement('.codetype')
             var codeimg = codediv.getElement('div').clone();
-            this.editForm = $('xactiontemplate').clone().inject(this.element,'bottom');
+            this.editForm = document.id('xactiontemplate').clone().inject(this.element,'bottom');
             var codeformdiv = this.editForm.getElement('.codetype');
             codeimg.inject(codeformdiv); //inject image into form just after select
             Utils.selectValueSet(this.editForm,'code',codediv.getElement('.codeid').get('text')); //and set selection to this correct value
@@ -231,7 +231,7 @@ var AKCMoney = function () {
             this.editForm.getElement('input[name=tid]').value = this.tid;
             this.editForm.getElement('input[name=rno]').value = this.element.getElement('.ref').get('text');
             this.editForm.getElement('input[name=desc]').value = this.element.getElement('.description').get('text');
-            var xdate = this.editForm.getElement('[input[name=xdate]')
+            var xdate = this.editForm.getElement('input[name=xdate]')
             xdate.value = this.element.getElement('input[name=xxdate]').value;
             this.cumcopy = new Amount(this.editForm.getElement('.cumcopy'));
             this.cumcopy.setValue(this.cumulative);
@@ -415,7 +415,7 @@ var AKCMoney = function () {
                                 this.setVersion(xaction.get('version'));
                                 //We may have changed the date, so we need to move the transaction into position if that is the case
                                 var found = false;
-                                var marker = $('now');
+                                var marker = document.id('now');
                                 var xdate = xaction.get('date');
                                 var dateEl = this.element.getElement('input[name=xxdate]')
                                 var odate = dateEl.value 
@@ -565,7 +565,7 @@ var AKCMoney = function () {
         clearedBalance.setValue(openingBalance);
         sorting.serialize().each(function(id) {
             if( id == "now") return;
-            var el = $(id);
+            var el = document.id(id);
             r++;
             el.removeClass('even');
             if (r%2 == 0) el.addClass('even');
@@ -582,18 +582,18 @@ var AKCMoney = function () {
         Account: function(aN, c,tid) {
             currency = c;
             accountName = aN;
-            $('transactions').getElements('.xaction').each(function(transaction) {
+            document.id('transactions').getElements('.xaction').each(function(transaction) {
                 var t = new Transaction(transaction); //Class attaches to the transaction as it is occluded
                 if (t.tid == tid) {
                     t.edit.delay(10,t); //Allow all other transaction setups to complete and then edit this one
                 }
             });
-            sorting = new Sortables($('transactions'),{
-                clone:true,
+            sorting = new Sortables(document.id('transactions'),{
+                clone:false,
                 opacity:0.5, 
                 revert: { duration: 500, transition: 'elastic:out' },
                 onComplete: function(transaction) {
-                    var m = $('now'); //we need to skip this if we come across it
+                    var m = document.id('now'); //we need to skip this if we come across it
                     if(transaction == m) return
                     var t = transaction.retrieve('transaction');
                     var d = t.getXactionDate();
@@ -647,13 +647,14 @@ var AKCMoney = function () {
                     }
                 }
             });
-            sorting.removeItems($('now')); //We need to remove the now marker from sortables.
+            sorting.removeItems(document.id('now')); //We need to remove the now marker from sortables.
 // Add Event Button
-            $('new').addEvent('click', function(e) {
+            document.id('new').addEvent('click', function(e) {
+		var a;
                 request.callRequest(
                     'newxaction.php',
                     this.getParent(),
-                    $('now'),
+                    document.id('now'),
                     function(holder) {
                         this.set('html',holder.getElement('transaction').get('html'));
                         var xaction = this.getFirst();
@@ -664,44 +665,44 @@ var AKCMoney = function () {
                     }
                 );
             });
-            $('rebalance').addEvent('click',function(e) {
+            document.id('rebalance').addEvent('click',function(e) {
                 request.callRequest(
                     'rebalance.php',
                     this.getParent(),
                     openingBalance,
                     function(holder){
                         openingBalance.setValue(holder.getElement('balance').get('text'));
-                    	$('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
-                    	Utils.dateAdjust($('openbaldate').getParent(),'dateawait','dateconvert');
+                    	document.id('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
+                    	Utils.dateAdjust(document.id('openbaldate').getParent(),'dateawait','dateconvert');
                         var xactions = holder.getElement('xactions').getElements('xaction');
                         xactions.each(function(xaction) {
-                            var el = $('t'+xaction.get('tid'));
+                            var el = document.id('t'+xaction.get('tid'));
                             sorting.removeItems(el);
                             el.destroy();
                         });
-                        $('bversion').value = holder.getElement('balance').get('version');
+                        document.id('bversion').value = holder.getElement('balance').get('version');
                         recalculate();
                     }
                 );
             });
-            openingBalance = new Amount($('openbalance'));
+            openingBalance = new Amount(document.id('openbalance'));
             openingBalance.addEvent('change',function(occurred) {
                 if(occurred) {
                     request.callRequest('updatebalance.php',{
                         'key':Utils.sessionKey,
                         'account':accountName,
-                        'bversion':$('bversion').value,
+                        'bversion':document.id('bversion').value,
                         'balance':openingBalance.getValue()
                     },this,function(holder) {
-                    	$('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
-                    	Utils.dateAdjust($('openbaldate').getParent(),'dateawait','dateconvert');
-                        $('bversion').value = holder.getElement('balance').get('version');
+                    	document.id('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
+                    	Utils.dateAdjust(document.id('openbaldate').getParent(),'dateawait','dateconvert');
+                        document.id('bversion').value = holder.getElement('balance').get('version');
                         recalculate();                
                     });
                 }
             });
-            minMaxBalance = new Amount($('minmaxbalance'));
-            clearedBalance = new Amount($('clrbalance'));
+            minMaxBalance = new Amount(document.id('minmaxbalance'));
+            clearedBalance = new Amount(document.id('clrbalance'));
             recalculate();
         }
     }

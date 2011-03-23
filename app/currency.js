@@ -20,25 +20,25 @@ var AKCMoney = function () {
     var request = new Utils.Queue('currency.php');
     var sorting;
     var defcurrency = function() {
-        $('currencyselector').addEvent('change', function(e) {
-            var container = $('updefcurrency');
+        document.id('currencyselector').addEvent('change', function(e) {
+            var container = document.id('updefcurrency');
             e.stop();
             container.addClass('spinner');
             request.callRequest(
                 'updatedefcur.php',
                 {
                     'version':container.getElement('input[name=version]').value,
-                    'currency': $('currencyselector').value
+                    'currency': document.id('currencyselector').value
                 },
                 this,
                 function (holder) {
                     container.removeClass('spinner');
                     container.set('html',holder.getElement('selector').get('html'));
-                    $('defaultcurrency').empty();
-                    $('defaultcurrency').set('html',holder.getElement('defaultcurrency').get('html'));
+                    document.id('defaultcurrency').empty();
+                    document.id('defaultcurrency').set('html',holder.getElement('defaultcurrency').get('html'));
                     var currencies = holder.getElement('currencies');
-                    $('topcurrencies').empty();
-                    $('topcurrencies').set('html',currencies.get('html'));
+                    document.id('topcurrencies').empty();
+                    document.id('topcurrencies').set('html',currencies.get('html'));
                     defcurrency(); //Set myself up all over again
                     topcurrencies();
                 }
@@ -47,7 +47,7 @@ var AKCMoney = function () {
         });
     };
     var topcurrencies = function() {
-        sorting = new Sortables($('topcurrencies'),{
+        sorting = new Sortables(document.id('topcurrencies'),{
             clone:true,
             opacity:0.5, 
             revert: { duration: 500, transition: 'elastic:out' },
@@ -66,20 +66,20 @@ var AKCMoney = function () {
                         },
                         this,
                         function (holder) {
-                            var select = $('currencyselector');
+                            var select = document.id('currencyselector');
                             var options = holder.getElement('selectoptions').get('html');
                             var newoptions = options.replace(/<select>([\s\S]*?)<\/select>/gi,'$1')
                             select.set('html',newoptions);
-                            $('topcurrencies').removeClass('spinner').set('html',holder.getElement('currencies').get('html')); 
+                            document.id('topcurrencies').removeClass('spinner').set('html',holder.getElement('currencies').get('html')); 
                             topcurrencies(); //Set myself up all over again
                         }
                     );
-                    $('topcurrencies').empty().addClass('spinner');
+                    document.id('topcurrencies').empty().addClass('spinner');
                 }
             }
 
         });
-        $('topcurrencies').getChildren().each(showClick);            
+        document.id('topcurrencies').getChildren().each(showClick);            
     };
     var showClick = function(currency) {
         currency.getElement('input[name=show]').addEvent('change', function(e) {
@@ -87,14 +87,14 @@ var AKCMoney = function () {
             /* We may have moved to the other list since setting this event up, so
                we need to find out if our parent is #othercurrencies or not to decide whether we
                are now showing or not */
-            var show = (currency.getParent() == $('othercurrencies'))
+            var show = (currency.getParent() == document.id('othercurrencies'))
             if(!show) sorting.removeItems(currency);
             request.callRequest(
                 'updateshowcur.php',
                 {
                     'version':currency.getElement('input[name=version]').value,
                     'currency':currency.getElement('.currency').get('text'),
-                    'priority':$('maxpriority').value.toInt(),
+                    'priority':document.id('maxpriority').value.toInt(),
                     'show':show
                 },
                 this,
@@ -108,7 +108,7 @@ var AKCMoney = function () {
                     var thisEl = null;
                     var checkbox;
                     if(status == 'show') { 
-                        $('othercurrencies').getChildren().every(function(el) {
+                        document.id('othercurrencies').getChildren().every(function(el) {
                             if (el.getElement('.currency').get('text') == currency) {
                                 thisEl = el;
                                 return false;
@@ -126,17 +126,17 @@ var AKCMoney = function () {
                         new Element('option',{
                             'title':thisEl.getElement('.description'),
                             'value':currency,'text':currency
-                        }).inject($('currencyselector'),'bottom');
-                        thisEl.inject($('topcurrencies'),'bottom'); //move into top currencies
+                        }).inject(document.id('currencyselector'),'bottom');
+                        thisEl.inject(document.id('topcurrencies'),'bottom'); //move into top currencies
                         thisEl.getElement('input[name=priority]').value=priority;
-                        $('maxpriority').value = priority+1;
+                        document.id('maxpriority').value = priority+1;
                         thisEl.getElement('.rate').removeClass('hidden');
                         checkbox = thisEl.getElement('input[name=show]');
                         checkbox.checked = 'checked';
                         sorting.addItems(thisEl);
                     } else {
-                        $('currencyselector').getElement('option[value='+currency+']').destroy();
-                         $('topcurrencies').getChildren().each(function(el) {
+                        document.id('currencyselector').getElement('option[value='+currency+']').destroy();
+                         document.id('topcurrencies').getChildren().each(function(el) {
                             if (thisEl) {
                                 el.toggleClass('even'); //if we found it, we must toggle because its moving out and down
                                 //also lower its priority
@@ -149,7 +149,7 @@ var AKCMoney = function () {
                         thisEl.getElement('.rate').addClass('hidden');
                         var marker = null;
                         var evenClass = (priority%2 == 0); //Max even, but will become odd when I remove one, so if I am first, I will be even
-                        if ($('othercurrencies').getChildren().every(function(el) {
+                        if (document.id('othercurrencies').getChildren().every(function(el) {
                             if (el.getElement('.currency').get('text') > currency) {
                                 marker = el;
                                 return false;
@@ -158,13 +158,13 @@ var AKCMoney = function () {
                             el.toggleClass('even');
                             return true;
                         })) {
-                            thisEl.inject($('othercurrencies'),'bottom');
+                            thisEl.inject(document.id('othercurrencies'),'bottom');
                         } else {
                             thisEl.inject(marker,'before');
                         }
                         thisEl.removeClass('even');
                         if(evenClass) thisEl.addClass('even');
-                        $('maxpriority').value = priority-1;
+                        document.id('maxpriority').value = priority-1;
                         
                         checkbox = thisEl.getElement('input[name=show]');
                         checkbox.checked = '';
@@ -179,7 +179,7 @@ var AKCMoney = function () {
         Currency: function () {
             defcurrency();  //deal with default currency selection and the ramifications 
             topcurrencies(); //deal with managing the top currencyies
-            $('othercurrencies').getChildren().each(showClick);            
+            document.id('othercurrencies').getChildren().each(showClick);            
         }
     }
 }();

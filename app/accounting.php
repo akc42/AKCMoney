@@ -70,9 +70,9 @@ which allocates the transaction into the accounting system for a domain.  Differ
     	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
-	<script type="text/javascript" src="utils.js" ></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.1.1-yc.js"></script>
+	<script type="text/javascript" src="/js/utils.js" ></script>
 	<script type="text/javascript" src="accounting.js"></script>
 <?php
 }

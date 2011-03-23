@@ -64,16 +64,16 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 <meta name="keywords" content=""/>
     <link rel="shortcut icon" type="image/png" href="favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
-	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
+	<link rel="stylesheet" type="text/css" href="/js/calendar/calendar.css"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="/money/money-ie.css"/>
     	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
-	<script type="text/javascript" src="utils.js" ></script>
-	<script type="text/javascript" src="calendar/calendar.js" ></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.1.1-yc.js"></script>
+	<script type="text/javascript" src="/js/utils.js" ></script>
+	<script type="text/javascript" src="/js/calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money.js" ></script>
 <?php
 }

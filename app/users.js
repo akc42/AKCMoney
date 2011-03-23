@@ -44,7 +44,7 @@ var AKCMoney = function () {
     };
     var nameUnique = function(userName,xuser) {
     	var lun = userName.toLowerCase();
-        return $('users').getChildren().every(function(user) {
+        return document.id('users').getChildren().every(function(user) {
             if( user != xuser) {
                 if (lun == user.getElement('form').user.value.toLowerCase()) return false;
             }
@@ -135,7 +135,7 @@ var AKCMoney = function () {
     };
     var redoOddEven = function() {
     	var tabCount = 8; //skips over new
-        $('users').getChildren().each(function(user,i) {
+        document.id('users').getChildren().each(function(user,i) {
             if(i%2!=0) {
                 user.addClass('even');
             } else {
@@ -155,7 +155,7 @@ var AKCMoney = function () {
     };
     var moveUser = function(xuser) {
         var userName = xuser.getElement('form').user.value.toLowerCase();
-        if ($('users').getChildren().every(function(user) {
+        if (document.id('users').getChildren().every(function(user) {
             if(user == xuser) return true;//skip ourselves
             if(userName < user.getElement('form').user.value.toLowerCase()) { //look at user name
                 xuser.inject(user,'before');
@@ -163,7 +163,7 @@ var AKCMoney = function () {
             }
             return true;
         })) {
-            xuser.inject($('users'),'bottom');
+            xuser.inject(document.id('users'),'bottom');
         }
         redoOddEven();
     };
@@ -206,15 +206,15 @@ var AKCMoney = function () {
     }
     return {
         User: function () {
-            var form = $('newuser');
+            var form = document.id('newuser');
     		var domainOptions = $A(form.domains.options);
-            $('adduser').addEvent('click', function(e) {
+            document.id('adduser').addEvent('click', function(e) {
                 e.stop();
                 var userName = form.user.value.toLowerCase();
                 var passWord = form.passwd.value;
                 if ( userName == '' || passWord == '') {
                     alert("This user name and password should not be blank, a new user is not being created");
-                    resetFocus.delay(10,$('newuser').user);
+                    resetFocus.delay(10,document.id('newuser').user);
                 } else {
                     if(nameUnique(userName,null)) {
 	                    request.callRequest(
@@ -227,7 +227,7 @@ var AKCMoney = function () {
 	                    		'domain': form.domain.options[form.domain.selectedIndex].value,
 	                    		'admin':(form.admin.checked)?'yes':'no'
 	                    	},
-	                    	$('newuser'), 
+	                    	document.id('newuser'), 
 	                    	function(holder) {
 			                    this.user.value = ''; //blank the new user name
 			                    this.passwd.value = '';
@@ -246,7 +246,7 @@ var AKCMoney = function () {
 	                    );
                     } else {
                         alert("User name is not unique, please alter until it is");
-                        resetFocus.delay(10,$('newuser').user);
+                        resetFocus.delay(10,document.id('newuser').user);
                     }
                 }
             }).addEvent('keydown', function(e) {
@@ -293,7 +293,7 @@ var AKCMoney = function () {
 		            }
 		        });
   			});          	
-            $('users').getChildren().each(addUserEvents);
+            document.id('users').getChildren().each(addUserEvents);
         }
     }
 }();

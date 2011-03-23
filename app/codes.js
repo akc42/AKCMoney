@@ -63,7 +63,7 @@ var AKCMoney = function () {
     };
     var redoOddEven = function() {
     	var tabCount = 4; //skips over new
-        $('codes').getChildren().each(function(code,i) {
+        document.id('codes').getChildren().each(function(code,i) {
             if(i%2!=0) {
                 code.addClass('even');
             } else {
@@ -78,7 +78,7 @@ var AKCMoney = function () {
     var moveCode = function(xcode) {
         var codeName = xcode.getElement('form').description.value.toLowerCase();
         var codeType = xcode.getElement('form').codetype.value.toLowerCase();
-        if ($('codes').getChildren().every(function(code) {
+        if (document.id('codes').getChildren().every(function(code) {
             if(code == xcode) return true;//skip ourselves
             var codeForm = code.getElement('form');
 
@@ -95,7 +95,7 @@ var AKCMoney = function () {
             }
             return true;
         })) {
-            xcode.inject($('codes'),'bottom');
+            xcode.inject(document.id('codes'),'bottom');
         }
         redoOddEven();
     };
@@ -104,14 +104,14 @@ var AKCMoney = function () {
     };
     return {
         Code: function () {
-            $('addcode').addEvent('click', function(e) {
+            document.id('addcode').addEvent('click', function(e) {
                 e.stop();
-                var codeName = $('newcode').description.value;
+                var codeName = document.id('newcode').description.value;
                 if ( codeName == '') {
                     alert("This code description should not be blank, a new code is not being created");
-                    resetFocus.delay(10,$('newcode').code);
+                    resetFocus.delay(10,document.id('newcode').code);
                 } else {
-                    request.callRequest('newcode.php',$('newcode'),$('newcode'), function(holder) {
+                    request.callRequest('newcode.php',document.id('newcode'),document.id('newcode'), function(holder) {
                         this.description.value = '';
                         var xcode = holder.getElement('.xcode');
                         moveCode(xcode);
@@ -123,7 +123,7 @@ var AKCMoney = function () {
                     this.fireEvent('click',e);
                 }
             });
-            $('codes').getChildren().each(addCodeEvents);
+            document.id('codes').getChildren().each(addCodeEvents);
         }
     }
 }();

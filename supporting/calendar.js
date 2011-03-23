@@ -21,8 +21,11 @@ Calendar = function() {
 	var calcopy = new Element('div');
 	var calqueue = new Chain();
 	var calendar = function(bind,callback) {
+		var calling = callback.bind(bind);
+		function doCallback() {
+			calling(calcopy.clone(true,true));
+		}
 		if (calendarloaded) {
-			var calling = callback.bind(bind);
 			calling(calcopy.clone(true,true));
 			calqueue.callChain();
 			return true;
@@ -42,7 +45,7 @@ Calendar = function() {
 			req.get();
 			calrequested = true;
 		}
-		calqueue.chain(arguments.callee.bind(this,[bind,callback]));
+		calqueue.chain(doCallback);
 		return false;
 	}
 
@@ -82,7 +85,7 @@ Calendar = function() {
 				var div;
 				this.setOptions(options);
 				//Basic validation
-				if ($type(input) != 'element') return false;
+				if (typeOf(input) != 'element') return false;
 				if (input.get('tag') != 'input') return false;
 				if (input.type != 'hidden') return false;
 				this.input = input;
@@ -117,7 +120,7 @@ Calendar = function() {
 						top: '-1000px',
 						zIndex: 1000
 					}
-				}).addClass(this.options.classes.picker).injectInside(document.body);
+				}).addClass(this.options.classes.picker).inject(document.body);
 
 				// iex 6 needs a transparent iframe underneath the calendar in order to not allow select elements to render through
 				if (window.ie6) {
@@ -128,7 +131,7 @@ Calendar = function() {
 							top: '-1000px',
 							zIndex: 999
 						}
-					}).injectInside(document.body);
+					}).inject(document.body);
 					this.iframe.style.filter = 'progid:DXImageTransform.Microsoft.Alpha(style=0,opacity=0)';
 				}
 
@@ -186,12 +189,12 @@ Calendar = function() {
 					var navs;
 					var i;
 					var firsthr,firstmi,secondhr,secondmi;
-					
+					var that = this;
 					picker.inject(this.picker);
 					this.button.addEvent('click',function(e) {
 						e.stop();
-						this.toggle();
-					}.bindWithEvent(this));
+						that.toggle();
+					});
 					size = window.getScrollSize();
 					coord = this.button.getCoordinates();
 					x = coord.right + this.options.tweak.x;
@@ -300,21 +303,22 @@ Calendar = function() {
 					this.visible = false;
 				} else {
 					document.removeEvent('mousedown', this.hide); // always remove the current mousedown script first
+					var that = this;
 					this.hide = function(e) {
 						var el;
 
 						el = new Event(e).target; //Need to clone the event so that changing el does not effect the original one
 			
 						while (el !== document.body && el.nodeType === 1) {
-							if (el === this.picker || el === this.button ) {
+							if (el === that.picker || el === that.button ) {
 								e.stop;
 								return false;
 							}
 							el = el.parentNode;
 						}
-						this.toggle();
+						that.toggle();
 						return true;
-					}.bindWithEvent(this);
+					};
 
 					document.addEvent('mousedown', this.hide);
 					this.newMorY();
@@ -328,6 +332,7 @@ Calendar = function() {
 				var dates,datee;
 				var td;
 				var today,d;
+				var that = this;
 				//put the class of the month (allows different months pictures to be done via css
 				this.picker.addClass(this.options.months[this.month].toLowerCase());
 								//Now add the navigation
@@ -339,10 +344,10 @@ Calendar = function() {
 					if(this.year !== this.getStart().getFullYear()) {
 						this.navprevyear.addClass(this.options.classes.prev).addEvent('click',function(e) {
 							e.stop();
-							this.year--;
-							this.setVal();
-							this.newMorY();
-						}.bindWithEvent(this));
+							that.year--;
+							that.setVal();
+							that.newMorY();
+						});
 					}
 				}
 				if(this.navnextyear) {
@@ -350,10 +355,10 @@ Calendar = function() {
 					if(this.year !== this.getEnd().getFullYear()) {
 						this.navnextyear.addClass(this.options.classes.next).addEvent('click',function(e) {
 							e.stop();
-							this.year++;
-							this.setVal();
-							this.newMorY();
-						}.bindWithEvent(this));
+							that.year++;
+							that.setVal();
+							that.newMorY();
+						});
 					}
 				}
 
@@ -361,30 +366,30 @@ Calendar = function() {
 				if (this.year !== this.getStart().getFullYear() || this.month !== this.getStart().getMonth()) {
 					this.navprevmonth.addEvent('click',function(e) {
 						e.stop();
-						this.picker.removeClass(this.options.months[this.month].toLowerCase());
-						this.month--;
-						if(this.month < 0) {
-							this.month=11;
-							this.year--;
+						that.picker.removeClass(this.options.months[this.month].toLowerCase());
+						that.month--;
+						if(that.month < 0) {
+							that.month=11;
+							that.year--;
 						}
-						this.setVal();
-						this.newMorY();
-					}.bindWithEvent(this)).addClass(this.options.classes.prev);
+						that.setVal();
+						that.newMorY();
+					}).addClass(this.options.classes.prev);
 				}
 				
 				this.navnextmonth.removeEvents().removeClass(this.options.classes.next);
 				if (this.year !== this.getEnd().getFullYear() || this.month !== this.getEnd().getMonth()) {
 					this.navnextmonth.addEvent('click',function(e) {
 						e.stop();
-						this.picker.removeClass(this.options.months[this.month].toLowerCase());
-						this.month++
-						if(this.month > 11) {
-							this.month=0;
-							this.year++;
+						that.picker.removeClass(this.options.months[this.month].toLowerCase());
+						that.month++
+						if(that.month > 11) {
+							that.month=0;
+							that.year++;
 						}
-						this.setVal();
-						this.newMorY();
-					}.bindWithEvent(this)).addClass(this.options.classes.next);
+						that.setVal();
+						that.newMorY();
+					}).addClass(this.options.classes.next);
 				}
 
 				offset = ((new Date(this.year, this.month, 1).getDay() - this.options.offset) + 7) % 7; // day of the week (offset)
@@ -413,14 +418,17 @@ Calendar = function() {
 								//CSS should make the most important of these stand out
 								td.addClass(this.options.classes.valid);
 								if (today === i) td.addClass(this.options.classes.today);
+								td.store('i',i);
 								if (this.date === i-offset+1) td.addClass(this.options.classes.active);
-								td.addEvent('click', function(e,i) {
+								td.addEvent('click', function(e) {
+									var i;
 									e.stop();
-									if (this.date>=0)this.days[this.date-1+offset].removeClass(this.options.classes.active);
-									this.date = i-offset+1;
-									this.days[i].addClass(this.options.classes.active);
-									this.setVal();
-								}.bindWithEvent(this,i));
+									i = this.retrieve('i');
+									if (that.date>=0) that.days[that.date-1+offset].removeClass(that.options.classes.active);
+									that.date = i-offset+1;
+									this.addClass(that.options.classes.active);
+									that.setVal();
+								});
 							}
 						}
 					}

@@ -73,9 +73,9 @@ var AKCMoney = function () {
         	myStart = start;
         	myEnd = end;
 // Now provide for jumping to new account when the select list changes
-            $('yearsel').addEvent('change',function(e) {
+            document.id('yearsel').addEvent('change',function(e) {
                 e.stop();
-                $('selections').submit();
+                document.id('selections').submit();
             });
             $$('.expand').addEvent('click', codeexpand);
         }

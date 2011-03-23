@@ -18,6 +18,7 @@
 */
 Utils = function () {
     var m_names = ["Jan","Feb","Mar","Apr","May","Jun","Jly","Aug","Sep","Oct","Nov","Dec"];
+    var sender = new Request({link:'chain'}); 
     return {
         dateAdjust: function(topel,todoclass,doneclass) {
 	        var datespans = topel.getElements('.'+todoclass);
@@ -47,43 +48,24 @@ Utils = function () {
         Queue: new Class({
             initialize: function(myURL) {
             	this.pageURL = myURL;
-                this.queue = new Chain();
-                this.running = false;
-                this.requests = new Hash();
-                this.reCall = null;
             },
-            
-            /* this is the main worker.  It appears that if myParams is configured as
-                            {data:this} 
-                then all the subcomponents of the container that this represents will be sent  */
-                
             callRequest:function (myUrl,myParams,bind,myCallback) {
-                var that = this;
-                if(!this.requests.has(myUrl)) {
-                    this.requests.set(myUrl,new Request ({
-                        url:myUrl,
-                        onSuccess: function(html) {
-                            var holder = new Element('div').set('html',html);
-                            if (holder.getElement('error')) {
-                                alert(holder.getElement('error').get('text'));
-								window.location = that.pageURL;
-                            } else {
-                                that.reCall(holder);
-                                that.running = false;
-                                that.queue.callChain();
-                            }
-                        }
-                    }));
+				var that = this;
+				var c = myCallback.bind(bind);
+				function requestComplete(html) {
+					sender.removeEvent('success',requestComplete);
+		            var holder = new Element('div').set('html',html);
+		            if (holder.getElement('error')) {
+		                alert(holder.getElement('error').get('text'));
+						window.location = that.pageURL;
+		            } else {
+		                c(holder);
+		            }
+		        }
+				
+				sender.addEvent('success',requestComplete);
+				sender.send({url:myUrl,data:myParams,method:'post'});
 
-                }
-                if (this.running) {
-                    this.queue.chain(arguments.callee.bind(this,[myUrl,myParams,bind,myCallback]));
-                } else {
-                    this.running = true;
-                    var calling = myCallback.bind(bind)
-                    this.reCall = calling;
-                    this.requests.get(myUrl).post(myParams);
-                }                       
             }
         })
     }
