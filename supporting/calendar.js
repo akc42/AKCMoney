@@ -366,7 +366,7 @@ Calendar = function() {
 				if (this.year !== this.getStart().getFullYear() || this.month !== this.getStart().getMonth()) {
 					this.navprevmonth.addEvent('click',function(e) {
 						e.stop();
-						that.picker.removeClass(this.options.months[this.month].toLowerCase());
+						that.picker.removeClass(that.options.months[that.month].toLowerCase());
 						that.month--;
 						if(that.month < 0) {
 							that.month=11;
@@ -381,7 +381,7 @@ Calendar = function() {
 				if (this.year !== this.getEnd().getFullYear() || this.month !== this.getEnd().getMonth()) {
 					this.navnextmonth.addEvent('click',function(e) {
 						e.stop();
-						that.picker.removeClass(this.options.months[this.month].toLowerCase());
+						that.picker.removeClass(that.options.months[that.month].toLowerCase());
 						that.month++
 						if(that.month > 11) {
 							that.month=0;
