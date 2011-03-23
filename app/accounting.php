@@ -173,7 +173,7 @@ Year:
 <?php
 /*  There are two date complexities that have to be dealt with in this select statement.  Firstly, transactions 
     where the account_code is of type 'A' are going to be depreciated over 3 years - so the end date of any
-    effect on accounts is 3 years after the transaction date.  Secondly, the accounting year end means that if the transaction
+    effect on accounts is year end 2 years after the transaction date.  Secondly, the accounting year end means that if the transaction
     occurs after the accounting year end, it needs to be considered to be in the next year
 */ 
     $stmt = $db->prepare("    
@@ -183,14 +183,10 @@ Year:
             ELSE xaction.date 
             END),'unixepoch') AS firstyear,
         strftime('%Y',max(
-            CASE WHEN code.type = 'A' THEN
-                CASE WHEN CAST (strftime('%m%d',xaction.date,'unixepoch') AS INTEGER) > ? THEN xaction.date + 126144000 
-                ELSE xaction.date +94608000 
-                END
-            ELSE 
-                CASE WHEN CAST (strftime('%m%d',xaction.date,'unixepoch') AS INTEGER) > ? THEN xaction.date + 31536000 
+            CASE 
+				WHEN code.type = 'A' THEN xaction.date +94608000 
+            	WHEN CAST (strftime('%m%d',xaction.date,'unixepoch') AS INTEGER) > ? THEN xaction.date + 31536000 
                 ELSE xaction.date
-                END
             END),'unixepoch') AS lastyear 
     FROM 
         xaction,
@@ -203,8 +199,7 @@ Year:
     ");
     $stmt->bindValue(1,$yearend,PDO::PARAM_INT);
     $stmt->bindValue(2,$yearend,PDO::PARAM_INT);
-    $stmt->bindValue(3,$yearend,PDO::PARAM_INT);
-    $stmt->bindValue(4,$domain);
+    $stmt->bindValue(3,$domain);
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC); 
     for( $yr = $row['firstyear'] ; $yr <= $row['lastyear'] ; $yr++) {
@@ -287,14 +282,7 @@ window.addEvent('domready', function() {
         c.id AS id, 
         c.type AS type, 
         c.description AS description,
-        sum(
-            CASE 
-                WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
-                WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
-                ELSE (CAST((t.date + 94608000 - ?) AS REAL)/94608000) * dfamount
-            END
-        ) AS tamount
-                  
+        sum( dfamount/3) AS tamount          
     FROM 
         dfxaction AS t, account AS a, code AS c
     WHERE
@@ -309,12 +297,7 @@ window.addEvent('domready', function() {
         ");
     $stmt->bindValue(1,$starttime,PDO::PARAM_INT);
     $stmt->bindValue(2,$endtime,PDO::PARAM_INT);
-    $stmt->bindValue(3,$starttime,PDO::PARAM_INT);
-    $stmt->bindValue(4,$endtime,PDO::PARAM_INT);
-    $stmt->bindValue(5,$starttime,PDO::PARAM_INT);
-    $stmt->bindValue(6,$starttime,PDO::PARAM_INT);
-    $stmt->bindValue(7,$endtime,PDO::PARAM_INT);
-    $stmt->bindValue(8,$domain);
+    $stmt->bindValue(3,$domain);
     $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];

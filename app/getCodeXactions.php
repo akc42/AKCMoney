@@ -141,11 +141,7 @@ case 'A':
     $stmt = $db->prepare("
     SELECT
         t.id AS id,t.date AS date,t.version AS version, t.description AS description, rno, repeat, 
-        CASE 
-            WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
-            WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
-            ELSE (CAST((t.date + 94608000 - ?) AS REAL)/94608000) * dfamount
-        END AS amount,
+		dfamount/3 AS amount,
         dfamount AS famount,
         src,srccode, dst, dstcode
     FROM 
@@ -159,14 +155,9 @@ case 'A':
         ");
     $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
     $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(3,$_POST['start'],PDO::PARAM_INT);
-    $stmt->bindValue(4,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(5,$_POST['start'],PDO::PARAM_INT);
-    $stmt->bindValue(6,$_POST['start'],PDO::PARAM_INT);
-    $stmt->bindValue(7,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(8,$_POST['domain']);
-    $stmt->bindValue(9,$_POST['code'],PDO::PARAM_INT);
-    $stmt->bindValue(10,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['domain']);
+    $stmt->bindValue(4,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(5,$_POST['code'],PDO::PARAM_INT);
     break;
 default:
 ?><error>Invalid Account Code Type.  Please Report This Error to an Administrator</error>
