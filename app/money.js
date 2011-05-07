@@ -402,8 +402,7 @@ var AKCMoney = function () {
                             request.callRequest('updatexaction.php',this.editForm,this,function(holder) {
                             	this.calendar.picker.destroy();
                             	delete this.calendar;
-                        		var q = new Hash({'account':account.options[account.selectedIndex].value,'tid':this.tid});
-                               	window.location = 'index.php?'+q.toQueryString();
+                               	window.location='index.php?'+Object.toQueryString({'account':account.options[account.selectedIndex].value,'tid':this.tid});
                             });
                         }
                     }.bind(this));         

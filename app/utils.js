@@ -47,43 +47,29 @@ Utils = function () {
         Queue: new Class({
             initialize: function(myURL) {
             	this.pageURL = myURL;
-                this.queue = new Chain();
-                this.running = false;
-                this.requests = new Hash();
-                this.reCall = null;
+                this.queue = new Request({link:'chain'}); 
             },
             
             /* this is the main worker.  It appears that if myParams is configured as
                             {data:this} 
                 then all the subcomponents of the container that this represents will be sent  */
                 
-            callRequest:function (myUrl,myParams,bind,myCallback) {
-                var that = this;
-                if(!this.requests.has(myUrl)) {
-                    this.requests.set(myUrl,new Request ({
-                        url:myUrl,
-                        onSuccess: function(html) {
-                            var holder = new Element('div').set('html',html);
-                            if (holder.getElement('error')) {
-                                alert(holder.getElement('error').get('text'));
-								window.location = that.pageURL;
-                            } else {
-                                that.reCall(holder);
-                                that.running = false;
-                                that.queue.callChain();
-                            }
+            callRequest:function (myUrl,myParams,myBind,myCallback) {
+				var that = this;
+				this.queue.send({
+					url:myUrl,
+					data:myParams,
+					method:'post',
+					onSuccess:function(html) {
+                        var holder = new Element('div').set('html',html);
+                        if (holder.getElement('error')) {
+                            alert(holder.getElement('error').get('text'));
+							window.location = that.pageURL;
+                        } else {
+							myCallback.bind(myBind,holder)
                         }
-                    }));
-
-                }
-                if (this.running) {
-                    this.queue.chain(arguments.callee.bind(this,[myUrl,myParams,bind,myCallback]));
-                } else {
-                    this.running = true;
-                    var calling = myCallback.bind(bind)
-                    this.reCall = calling;
-                    this.requests.get(myUrl).post(myParams);
-                }                       
+					}
+				});
             }
         })
     }
