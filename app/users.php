@@ -137,7 +137,7 @@ while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
             <input type="hidden" name="version" value="<?php echo $row['version'];?>"/>
             <input type="hidden" name="original" value="<?php echo $row['name']; ?>" />
             <div class="user"><input type="text" name="user" value="<?php echo $row['name']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
-		    <div class="passwd"<input type="password" name="passwd" tabindex="<?php echo $tabIndex++; ?>"/></div>
+		    <div class="passwd"><input type="password" name="passwd" tabindex="<?php echo $tabIndex++; ?>"/></div>
 		    <div class="domains">
 		    	<select name="domains" id="newselect" multiple="multiple" size="4" tabindex="<?php echo $tabIndex++; ?>" <?php
 		    		if($row['isAdmin'] == 1) echo 'disabled="disabled"';?>>
