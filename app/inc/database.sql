@@ -1,5 +1,5 @@
 
--- 	Copyright (c) 2009,2010 money Chandler
+-- 	Copyright (c) 2009,2010,2011 money Chandler
 --  This file is part of AKCMoney.
 
 --    AKCMoney is free software: you can redistribute it and/or modify
@@ -272,10 +272,10 @@ CREATE TABLE account (
     bversion bigint DEFAULT 1 NOT NULL,    -- this is incremented when the balance is updated to check that parallel edits are not happening
     dversion bigint DEFAULT 1 NOT NULL,    -- this is incremented when the details of the account are updated to check for parallel edits
     currency character(3) REFERENCES currency(name),  -- currency in which to show transactions
-    balance bigint DEFAULT 0 NOT NULL, -- opening balance of the account 
-    date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when opening balance was set
-    domain character varying DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL -- domain that account belongs to
-
+    balance bigint DEFAULT 0 NOT NULL, -- reconciled balance of the account 
+    date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when reconciled balance was set
+    domain character varying DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL, -- domain that account belongs to
+	startdate bigint -- if null, account only shows unreconciled transactions, if 0 transactions from start of financial year, otherwise from this date
 );
 
 INSERT INTO account (name,currency,balance) VALUES ('Cash', 'GBP', 0);
@@ -308,6 +308,7 @@ CREATE INDEX xaction_idx_dst ON xaction (dst);
 CREATE INDEX xaction_idx_src ON xaction (src);
 CREATE INDEX xaction_idx_scode ON xaction(srccode);
 CREATE INDEX xaction_idx_dcode ON xaction(dstcode);
+CREATE INDEX xaction_idx_date ON xaction(date);
 
 CREATE TABLE user (
     uid integer primary key,
