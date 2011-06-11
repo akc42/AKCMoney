@@ -54,7 +54,7 @@ var AKCMoney = function () {
     //adds the events related to a user to it
     var addUserEvents = function (xuser) {
         var form = xuser.getElement('form');
-    	var domainOptions = $A(form.domains.options);
+    	var domainOptions = Array.from(form.domains.options);
         form.user.addEvent('blur',function(e) {
             e.stop();
             if(this.value.toLowerCase() != form.original.value) {//Only worry if the value is different from the original value
@@ -86,15 +86,15 @@ var AKCMoney = function () {
         form.admin.addEvent('change', function(e) {
         	if(this.checked) {
         		form.domains.disabled = true;
-            	$A(form.account.options).each(function(option){option.disabled = false});
-            	$A(form.domain.options).each(function(option){option.disabled = false});
+            	Array.from(form.account.options).each(function(option){option.disabled = false});
+            	Array.from(form.domain.options).each(function(option){option.disabled = false});
         	} else {
         		form.domains.disabled = false;
 	    		//if at least one option is selected then leave it like it is, otherwise select everything
 	            if (domainOptions.every(function(option) {return !option.selected})) {
 	            	domainOptions.each(function(option) {option.selected = true});
-	            	$A(form.account.options).each(function(option){option.disabled = false});
-	            	$A(form.domain.options).each(function(option){option.disabled = false});
+	            	Array.from(form.account.options).each(function(option){option.disabled = false});
+	            	Array.from(form.domain.options).each(function(option){option.disabled = false});
 	            } else {
 	            	matchSelectionsToDomains(form);
 	            }
@@ -172,12 +172,12 @@ var AKCMoney = function () {
     };
     var selectedDomains = function(form) {
     	var sd = new Array();
-    	$A(form.domains.options).each(function(option){if (option.selected) sd.push(option.value)});
+    	Array.from(form.domains.options).each(function(option){if (option.selected) sd.push(option.value)});
     	return sd;
     };
     
     var matchSelectionsToDomains = function(form) {
-    	$A(form.account.options).each(function(option,i) {
+    	Array.from(form.account.options).each(function(option,i) {
 			if(i !=0) {
 				var domain = option.getProperty("domain");
 				if(selectedDomains(form).contains(domain)) {
@@ -191,7 +191,7 @@ var AKCMoney = function () {
 				}
 			}
     	});
-    	$A(form.domain.options).each(function(option,i) {
+    	Array.from(form.domain.options).each(function(option,i) {
     		if(i != 0) {
 				if(selectedDomains(form).contains(option.value)) {
 					option.disabled = false;
@@ -207,7 +207,7 @@ var AKCMoney = function () {
     return {
         User: function () {
             var form = document.id('newuser');
-    		var domainOptions = $A(form.domains.options);
+    		var domainOptions = Array.from(form.domains.options);
             document.id('adduser').addEvent('click', function(e) {
                 e.stop();
                 var userName = form.user.value.toLowerCase();
@@ -231,7 +231,7 @@ var AKCMoney = function () {
 	                    	function(holder) {
 			                    this.user.value = ''; //blank the new user name
 			                    this.passwd.value = '';
-								$A(this.domains.options).each(function(option) {
+								Array.from(this.domains.options).each(function(option) {
 									option.selected = true;
 								});
 						
@@ -258,10 +258,10 @@ var AKCMoney = function () {
             	e.stop();
             	if(this.checked) {
             		form.domains.disabled = true;
-		        	$A(form.account.options).each(function(option){
+		        	Array.from(form.account.options).each(function(option){
 		        		option.disabled = false;
 		        	});
-		        	$A(form.domain.options).each(function(option){
+		        	Array.from(form.domain.options).each(function(option){
 		        		option.disabled = false;
 		        	});
             	} else {
@@ -269,8 +269,8 @@ var AKCMoney = function () {
 		    		//if at least one option is selected then leave it like it is, otherwise select everything
 		            if (domainOptions.every(function(option) {return !option.selected})) {
 		            	domainOptions.each(function(option) {option.selected = true});
-			        	$A(form.account.options).each(function(option){option.disabled = false});
-			        	$A(form.domain.options).each(function(option){option.disabled = false});
+			        	Array.from(form.account.options).each(function(option){option.disabled = false});
+			        	Array.from(form.domain.options).each(function(option){option.disabled = false});
 			        } else {
 			        	matchSelectionsToDomains(form);
 			        }
