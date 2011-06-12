@@ -108,6 +108,7 @@ Amount = new Class({
 var AKCMoney = function () {
 //    Key variables holding info about the account that the transactions might need to refer to 
     var accountName;
+	var startDateCalendar;
     var currency;
     var openingBalance;
     var minMaxBalance;
@@ -581,6 +582,7 @@ var AKCMoney = function () {
         Account: function(aN, c,tid) {
             currency = c;
             accountName = aN;
+			startDateCalendar = new Calendar.Single(document.id('startdate'));
             document.id('transactions').getElements('.xaction').each(function(transaction) {
                 var t = new Transaction(transaction); //Class attaches to the transaction as it is occluded
                 if (t.tid == tid) {

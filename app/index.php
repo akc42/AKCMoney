@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009,2010 Alan Chandler
+ 	Copyright (c) 2009,2010,2011 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 
 require_once('./inc/db.inc');
 
+
 if(isset($_GET['account'])) {
 	$account = $_GET['account'];
 } else {
@@ -27,7 +28,7 @@ if(isset($_GET['account'])) {
 		$account = $user['account'];
 	}
 }
-$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, a.currency, c.description AS cdesc, c.rate 
+$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, a.currency, a.startdate,c.description AS cdesc, c.rate 
                         FROM account AS a JOIN currency AS c ON a.currency = c.name,
                         user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
                         WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)");
@@ -124,9 +125,30 @@ an adminstrator, informing them that you had a problem with account name <strong
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
 				<?php echo $cdesc;?>
 			</div>
-
+			<div style="clear:both"></div>
 		</div>
 <?php
+/*
+	The start date has to be set dependant on the setting.  However this is far from easy in all cases.  This code creates the correct value
+*/
+		if(is_null($row['startdate'])) {
+			//Reconciled Balance Date
+			$startime = $row['date'];
+		} elseif ($row['startdate'] == 0 ) {
+			//Financial year start date - so we need go find it	
+			$result = $db->query("SELECT year_end FROM config LIMIT 1");
+			$yearend = $result->fetchColumn();
+			$result->closeCursor();
+
+			/* start time of the financial year. If its after now, then we jump back one year */
+
+			$starttime = mktime(0,0,0,substr($yearend,0,2),substr($yearend,2)+1,round(date("Y")));
+			if ( $starttime > time() ) $starttime = mktime(0,0,0,substr($yearend,0,2),substr($yearend,2)+1,round(date("Y"))-1);
+		} else {
+			//Start date is the right value
+			$startime = $row['startdate'];
+		}
+
 	if($user['isAdmin']){
 ?>		<div class="buttoncontainer accountbuttons">
 		    <input type="hidden" name="account" value="<?php echo $account;?>" />
@@ -134,11 +156,23 @@ an adminstrator, informing them that you had a problem with account name <strong
 		    <input type="hidden" name="currency" value="<?php echo $currency; ?>" />
 		    <input id="bversion" type="hidden" name="bversion" value="<?php echo $row['bversion'];?>" />
             <a id="new" class="button" tabindex="310"><span><img src="add.png"/>New Transaction</span></a>
-            <a id="rebalance" class="button" tabindex="320"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
+            <a id="rebalance" class="button" tabindex="320"><span><img src="balance.png"/>Set Reconciled Balance</span></a>
         </div>
+		<div id="scopeselection">
+			<div><input type="radio" name="scope" value="U" <?php 
+				if ( is_null($row['startdate'])) echo 'checked="checked"'; ?>/>Unreconciled transactions Only</div>
+			<div><input type="radio" name="scope" value="S" <?php 
+				if ( !is_null($row['startdate']) and $row['startdate'] == 0 ) echo 'checked="checked"'; ?>/>Transactions this financial year</div>
+			<div><input type="radio" name="scope" value="D" <?php 
+				if (!is_null($row['startdate']) AND $row['startdate'] > 0 ) echo 'checked="checked"'; ?>/>Transactions from date ... <input 
+					type="hidden" name="startdate" value="<?php echo $startime;?>" id="startdate"/></div>
+		</div>																			
 <?php
 	}
-?><script type="text/javascript">
+?>		<div class="buttoncontainer accountbuttons">
+            <a id="csv" href="generatecsv.php?&account=<?php echo $account; if(!is_null($row['startdate'])) echo '&start='&$row['startdate']; ?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
+        </div>
+<script type="text/javascript">
 var thisAccount;
 
 window.addEvent('domready', function() {
@@ -146,7 +180,7 @@ window.addEvent('domready', function() {
     Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 <?php if($user['isAdmin']) {
-?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php
+?>	AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php
 					 if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>);
 <?php }
 ?>});
@@ -167,24 +201,24 @@ window.addEvent('domready', function() {
     <div class="amount">&nbsp;</div>
     <div id="minmaxbalance" class="amount">0.00</div>
 </div>
-<div class="xaction balance">
-    <div class="date">&nbsp;</div>
-    <div class="ref">&nbsp;</div>
-    <div class="description">Cleared Balance</div>
-    <div class="amount">&nbsp;</div>
-    <div id="clrbalance" class="amount">0.00</div>
-</div>
 <div id="balance" class="xaction balance row">
     <input type="hidden" name="clearing" value="false" />
     <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
-    <div class="date"><input id="openbaldate" type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
+    <div class="date"><input id="recbaldate" type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
     <div class="ref">&nbsp;</div>
-    <div class="description">Opening Balance</div>
+    <div class="description">Reconciled Balance</div>
     <div class="amount">&nbsp;</div>
     <div  class="amount">
         <input  id="openbalance" class="amount" type="text" name="openbalance" 
                 value="<?php echo fmtAmount($balance);?>" tabindex="280"/>
     </div>
+</div>
+<div class="xaction balance">
+    <div class="date"><input id="openbaldate" type="hidden" name="rdate" value="<?php echo $startime?>" class="dateawait" /></div>
+    <div class="ref">&nbsp;</div>
+    <div class="description">Opening Balance</div>
+    <div class="amount">&nbsp;</div>
+    <div id="clrbalance" class="amount">0.00</div>
 </div>
 
 <?php
