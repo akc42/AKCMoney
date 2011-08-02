@@ -92,6 +92,7 @@ if(!isset($_GET['db'])) {
     $result->closeCursor();
 }                
 
+$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);  // We might as well know about any problems asap (for debugging, drop for production)
 $db->setAttribute(PDO::ATTR_TIMEOUT,25);  //set 25 second timeout on obtaining a lock
 $db->exec("PRAGMA foreign_keys = ON");
 
@@ -124,7 +125,7 @@ function menu_items() {
     $menuselect = $db->prepare("
         SELECT a.name, a.domain FROM account AS a, 
         user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
-        WHERE u.uid= ? AND (u.isAdmin = 1 OR c.domain = a.domain)
+        WHERE a.archived = 0 AND u.uid= ? AND (u.isAdmin = 1 OR c.domain = a.domain)
         ORDER BY CASE WHEN a.domain = ? THEN NULL ELSE coalesce(a.domain,'ZZZZZ') END COLLATE NOCASE ,a.name COLLATE NOCASE;
     ");
     $menuselect->bindValue(1,$user['uid'],PDO::PARAM_INT);

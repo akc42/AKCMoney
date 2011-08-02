@@ -275,7 +275,8 @@ CREATE TABLE account (
     balance bigint DEFAULT 0 NOT NULL, -- reconciled balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when reconciled balance was set
     domain character varying DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL, -- domain that account belongs to
-	startdate bigint -- if null, account only shows unreconciled transactions, if 0 transactions from start of financial year, otherwise from this date
+	startdate bigint, -- if null, account only shows unreconciled transactions, if 0 transactions from start of financial year, otherwise from this date
+	archived boolean DEFAULT 0 NOT NULL --indicated if account is archived (does not appear in menus except Account Manager)
 );
 
 INSERT INTO account (name,currency,balance) VALUES ('Cash', 'GBP', 0);

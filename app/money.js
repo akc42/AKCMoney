@@ -110,9 +110,9 @@ var AKCMoney = function () {
     var accountName;
 	var startDateCalendar;
     var currency;
-    var openingBalance;
-    var minMaxBalance;
+    var minBalance;
     var clearedBalance;
+	var reconciledBalance;
     var sorting;
     var request = new Utils.Queue('index.php');
 // Key class for transaction
@@ -134,39 +134,46 @@ var AKCMoney = function () {
             }.bind(this));
             var dateEl = this.element.getElement('.date');
             this.cleared = dateEl.hasClass('cleared');
-            if( !dateEl.hasClass('repeat')) { //we can't clear repeating transactions
+			this.reconciled = dateEl.hasClass('reconciled');
+            if( !dateEl.hasClass('repeat')) { //we can't adjust repeating transactions
                 dateEl.addEvent('click', function(e) {
                     e.stop();
                     if(this.editMode) return;  //Ignore requests whilst editing transaction
-                    this.editMode = true;  //Stop edit happening whilst this is in flight
-                    request.callRequest(
-                        'toggleclear.php',
-                        {
-                            'key':Utils.sessionKey,
-                            'tid':this.tid,
-                            'version': this.element.getElement('input[name=version]').value,
-                            'account':accountName,
-                            'clear':(!dateEl.hasClass('cleared')) //if it has the class then we are NOT clearing it
-                        },
-                        this,
-                        function(holder) {
-                            this.setVersion(holder.getElement('xaction').get('version'));
-                            var xactdate = this.element.getElement('.date');
-                            xactdate.removeClass('cleared'); //remove it if its there
-                            if (holder.getElement('xaction').get('clear') == 'true' ) {
-                                xactdate.removeClass('passed');
-                                xactdate.addClass('cleared');
-                                clearedBalance.add(this.amount);
-                                this.cleared = true;
-                            } else {
-                                var d = new Date();
-                                if((xactdate.getElement('input').value*1000) < d.getTime()) xactdate.addClass('passed');
-                                clearedBalance.subtract(this.amount);
-                                this.cleared = false;
-                            }
-                            this.editMode = false;
-                        }
-                    );
+					if(this.reconciled) {
+					    if (confirm("Do you mean to stop this transaction from being reconciled?  NOTE: If you do it will not change the reconciled balance which you must adjust manually")) {
+					        request.callRequest(
+					            'clearreconciled.php',
+					            {
+					                'key':Utils.sessionKey,
+					                'tid':this.tid,
+					                'account':accountName,
+					                'version':this.version
+					            },
+					            this,
+                                function (holder) {
+                                    var d = new Date();
+                                    dateEl.removeClass('reconciled');
+                                    this.reconciled = false;
+                                    if((dateEl.getElement('input').value*1000) < d.getTime()) dateEl.addClass('passed');
+                                    this.setVersion(holder.getElement('xaction').get('version'));
+                                    recalculate();
+					           }
+					        );
+                        };
+                    } else {
+                        if (this.cleared) {
+                            var d = new Date();
+					        if((dateEl.getElement('input').value*1000) < d.getTime()) dateEl.addClass('passed');
+						    dateEl.removeClass('cleared');
+						    this.cleared = false;
+						    clearedBalance.subtract(this.amount);
+					    } else {
+						    dateEl.addClass('cleared');
+					        dateEl.removeClass('passed');
+						    this.cleared = true;
+						    clearedBalance.add(this.amount);
+					    }
+					}
                 }.bind(this));
             }
             var amountEl = this.element.getElement('.aamount');
@@ -356,15 +363,26 @@ var AKCMoney = function () {
                     Utils.selectValueSet(this.editForm,'repeat',xaction.get('repeat'));
                     repeat.addEvent('change', function () {
                         if(repeat.value != 0) {
-                            cleared.checked = false;
-                            recalculate();
+                            if(cleared.checked) {
+                                //If we continue we will end up clearing the reconciled state of this transaction which is probably not what we meant - so we ask
+                                if (confirm("This will clear reconciled state, but will NOT adjust reconciled balance.  Are you sure you with to proceed")) {
+                                    cleared.checked = false;
+                                    recalculate();
+                                } else {
+                                    repeat.value = 0;  //Force a no repeat
+                                }
+                            }
                         }
                     }); 
                     cleared.addEvent('change',function () {
                         if(repeat.value != 0) {
-                            cleared.checked = false;
+                            cleared.checked = false; //Don't allow it to change
                         } else {
-                            recalculate();
+                            if(confirm("Changing the state will NOT adjust the reconciled balance. Are you sure you wish to proceed?")) {  
+                                recalculate();
+                            } else {
+                                cleared.checked = cleared.checked? false:true; //set it back if didn't agree to go forward
+                            }
                         } 
                     });
                     this.editForm.getElement('.setcurrency').addEvent('click',function(e) {
@@ -525,7 +543,10 @@ var AKCMoney = function () {
             }
         },
         isCleared:function() {
-            return (this.editForm && this.editMode)?this.editForm.getElement('input[name=cleared]').checked :this.cleared;
+            return (this.editForm && this.editMode)? false :this.cleared; //we force any transactions being edited to not be cleared
+        },
+        isReconciled:function() {
+            return (this.editForm && this.editMode)?this.editForm.getElement('input[name=cleared]').checked :this.reconciled
         },
         getXactionDate: function() {
             return this.element.getElement('input[name=xxdate]').value.toInt();
@@ -560,9 +581,9 @@ var AKCMoney = function () {
     var recalculate = function() {
         var runningTotal = new Amount();
         var r=0;
-        runningTotal.setValue(openingBalance);
-        minMaxBalance.setValue(openingBalance);
-        clearedBalance.setValue(openingBalance);
+        runningTotal.setValue(reconciledBalance);
+        minBalance.setValue(reconciledBalance);
+        clearedBalance.setValue(reconciledBalance);
         sorting.serialize().each(function(id) {
             if( id == "now") return;
             var el = document.id(id);
@@ -570,19 +591,48 @@ var AKCMoney = function () {
             el.removeClass('even');
             if (r%2 == 0) el.addClass('even');
             var xaction = el.retrieve('transaction');
-            runningTotal.add(xaction.getAmount());
-            xaction.setCumulative(runningTotal);
-            if(runningTotal.getValue() < minMaxBalance.getValue()) minMaxBalance.setValue(runningTotal);
-            if (xaction.isCleared()) {
-                clearedBalance.add(xaction.getAmount());
-            }           
+            if (xaction.isReconciled()) {
+                xaction.setCumulative(new Amount());  //Setting cumulative to 0 since not valid for reconciled transactions
+            } else {
+                runningTotal.add(xaction.getAmount());
+                xaction.setCumulative(runningTotal);
+                if(runningTotal.getValue() < minBalance.getValue()) minBalance.setValue(runningTotal);
+                if (xaction.isCleared()) {
+                    clearedBalance.add(xaction.getAmount());
+                }
+            }         
         },this);
     };
     return {
         Account: function(aN, c,tid) {
             currency = c;
             accountName = aN;
-			startDateCalendar = new Calendar.Single(document.id('startdate'));
+			/* Add a calendar to select when the start date for the display of transactions from this account */
+			startDateCalendar = new Calendar.Single(document.id('startdate'),{'onHideComplete':function () {
+                request.callRequest('changescope.php',{
+                    'key':Utils.sessionKey,
+                    'account':accountName,
+                    'dversion':document.id('dversion').value,
+                    'scope':'D',
+                    'sdate':document.id('startdate').value
+                },this,function(holder) {
+                    window.location.replace('index.php');  //redisplays this page with new values
+                });
+                    
+			}});
+            document.id('scopeselection').getElements('input[name=scope]').addEvent('click',function(e){
+                e.stop();
+                request.callRequest('changescope.php',{
+                    'key':Utils.sessionKey,
+                    'account':accountName,
+                    'dversion':document.id('dversion').value,
+                    'scope':this.value,
+                    'sdate':document.id('startdate').value
+                },this,function(holder) {
+                    window.location.replace('index.php');  //redisplays this page with new values
+                });
+                    
+            });    
             document.id('transactions').getElements('.xaction').each(function(transaction) {
                 var t = new Transaction(transaction); //Class attaches to the transaction as it is occluded
                 if (t.tid == tid) {
@@ -667,9 +717,17 @@ var AKCMoney = function () {
                 );
             });
             document.id('rebalance').addEvent('click',function(e) {
+                var params = this.getParent().clone(); //This will be the basis of the request, but we now need to get all transactions that are cleared as well
+                document.id('transactions').each(function(xaction) {
+                    if (xaction.getElement('.date').hasClass('cleared')) {
+                        //We now make an input element that will hold one array entry consisting of the transaction id and version separated by 
+                        var i = new Element('input',{'name':'transactions[]','value':xaction.get('id').substr(1) + ':' + xaction.getElement('input[name=version]').value});
+                        i.inject(params);
+                    }
+                });
                 request.callRequest(
                     'rebalance.php',
-                    this.getParent(),
+                    params,
                     openingBalance,
                     function(holder){
                         openingBalance.setValue(holder.getElement('balance').get('text'));
@@ -678,16 +736,21 @@ var AKCMoney = function () {
                         var xactions = holder.getElement('xactions').getElements('xaction');
                         xactions.each(function(xaction) {
                             var el = document.id('t'+xaction.get('tid'));
-                            sorting.removeItems(el);
-                            el.destroy();
+                            var dEl = el.getElement('.date');
+                            dEl.addClass('reconciled');
+                            dEl.removeClass('cleared');
+                            var t = new Transaction(el); //should return the old transaction
+                            t.reconciled = true;
+                            t.cleared = false;
+                            t.setVersion(xaction.get('version'));                            
                         });
                         document.id('bversion').value = holder.getElement('balance').get('version');
                         recalculate();
                     }
                 );
             });
-            openingBalance = new Amount(document.id('openbalance'));
-            openingBalance.addEvent('change',function(occurred) {
+            reconciledBalance = new Amount(document.id('recbalance'));
+            reconciledBalance.addEvent('change',function(occurred) {
                 if(occurred) {
                     request.callRequest('updatebalance.php',{
                         'key':Utils.sessionKey,
@@ -702,9 +765,10 @@ var AKCMoney = function () {
                     });
                 }
             });
-            minMaxBalance = new Amount(document.id('minmaxbalance'));
-            clearedBalance = new Amount(document.id('clrbalance'));
-            recalculate();
+            //Go and recalculate various balances
+            minBalance = new Amount(document.id('minbalance'));
+            clearedBalance = new Amount(document.id('clearbalance'));
+            recalculate();  //need to do this to ensure min and cleared balance get set correctly
         }
     }
 }();

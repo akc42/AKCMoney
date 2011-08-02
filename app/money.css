@@ -86,10 +86,14 @@ div.irow {
     background-color:#E8F2FE;
 }
 
-.cleared {
+.reconciled {
 	background-color:#99FFFF;
 	color:black;
 	text-decoration:line-through;
+}
+.cleared {
+	background-color:#99FFFF;
+	color:black;
 }
 
 
@@ -97,7 +101,7 @@ div.irow {
 	background-color:#CCCC66;
 }
 
-.repeat {
+div.repeat {             /* I want repeat to prempt the color backgrounds of other states like reconciled - I hope making it the more specific div.repeat does it */
     background-color:#FDF501;
 	color:#669900;
 }
