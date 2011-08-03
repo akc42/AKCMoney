@@ -58,10 +58,10 @@ $currency = $row['currency'];
 $oldbalance = $balance;
 $astmt->closeCursor();
 
-$transactions = $_POST['transactions']
+$transactions = $_POST['transactions'];
 
 foreach($transactions as $transaction) {
-    list($tid,$tversion) = split(":",$transaction,2);
+    list($tid,$tversion) = explode(":",$transaction,2);
     $tstmt->bindValue(1,$tid,PDO::PARAM_INT);
     $tstmt->execute();
     $row = $tstmt->fetch(PDO::FETCH_ASSOC);
@@ -100,6 +100,7 @@ foreach($transactions as $transaction) {
         $uxd->execute();
         $uxd->closeCursor();
     }
+    $tversion = $tversion + 1; //We increment the version so it can be corrected for the transaction on the page
 ?><xaction tid="<?php echo $tid; ?>" version="<?php echo $tversion; ?>"></xaction>
 <?php
 

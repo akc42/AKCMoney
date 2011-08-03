@@ -718,7 +718,7 @@ var AKCMoney = function () {
             });
             document.id('rebalance').addEvent('click',function(e) {
                 var params = this.getParent().clone(); //This will be the basis of the request, but we now need to get all transactions that are cleared as well
-                document.id('transactions').each(function(xaction) {
+                document.id('transactions').getElements('.xaction').each(function(xaction) {
                     if (xaction.getElement('.date').hasClass('cleared')) {
                         //We now make an input element that will hold one array entry consisting of the transaction id and version separated by 
                         var i = new Element('input',{'name':'transactions[]','value':xaction.get('id').substr(1) + ':' + xaction.getElement('input[name=version]').value});
@@ -728,11 +728,11 @@ var AKCMoney = function () {
                 request.callRequest(
                     'rebalance.php',
                     params,
-                    openingBalance,
+                    reconciledBalance,
                     function(holder){
-                        openingBalance.setValue(holder.getElement('balance').get('text'));
-                    	document.id('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
-                    	Utils.dateAdjust(document.id('openbaldate').getParent(),'dateawait','dateconvert');
+                        reconciledBalance.setValue(holder.getElement('balance').get('text'));
+                    	document.id('recbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
+                    	Utils.dateAdjust(document.id('recbaldate').getParent(),'dateawait','dateconvert');
                         var xactions = holder.getElement('xactions').getElements('xaction');
                         xactions.each(function(xaction) {
                             var el = document.id('t'+xaction.get('tid'));
