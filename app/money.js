@@ -641,9 +641,9 @@ var AKCMoney = function () {
                     var myFx = new Fx.Scroll(window);
                     var delayed = function() {
                         myFx.toElement(transaction, 'y');
-                        if (ekey == 1) t.edit;
+                        if (ekey == 1) t.edit.delay(600,t); //allow scroll to complete
                     }
-                    delayed.delay(20,t) //Allow all other transaction setups to complete and then edit this one
+                    delayed.delay(20,t) //Allow all other transaction setups to complete and then scroll to this one
                 }
             });
             sorting = new Sortables(document.id('transactions'),{
