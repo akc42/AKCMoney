@@ -210,7 +210,7 @@ Year:
 ?>          </select>
         </form>
 		<div class="buttoncontainer accountbuttons">
-            <a id="csv" href="generatecsv.php?&domain=<?php echo $domain; ?>&year=<?php echo $year;?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
+            <a id="csv" href="domaincsv.php?&domain=<?php echo $domain; ?>&year=<?php echo $year;?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
         </div>
 
 <script type="text/javascript">

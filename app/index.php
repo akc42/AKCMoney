@@ -170,7 +170,7 @@ an adminstrator, informing them that you had a problem with account name <strong
 <?php
 	}
 ?>		<div class="buttoncontainer accountbuttons">
-            <a id="csv" href="generatecsv.php?&account=<?php echo $account; if(!is_null($row['startdate'])) echo '&start='&$row['startdate']; ?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
+            <a id="csv" href="accountcsv.php?&account=<?php echo $account;  ?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
         </div>
 <script type="text/javascript">
 var thisAccount;
