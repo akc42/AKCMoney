@@ -34,8 +34,8 @@ currency always appears first).  The current rate is also shown, but is adjusted
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="/js/mootools-core-1.3-yc.js"></script>
-	<script type="text/javascript" src="mootools-money-1.3.1.1-yc.js"></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.2.1-yc.js"></script>
 	<script type="text/javascript" src="/js/utils.js" ></script>
 	<script type="text/javascript" src="currency.js" ></script>
 

@@ -190,7 +190,7 @@ while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             if ($dual) echo ' dual';?>"><?php echo fmtAmount($row['amount']);?></div>
         <div class="amount cumulative<?php if ($dual) echo ' dual';?>"><?php echo fmtAmount((isset($row['famount']))?$row['famount']:$cumulative);?></div>
         <div class="taccount hidden">
-            <span class=" src"><?php if(!is_null($row['src'])) echo $row['src'];?></span><?php if($dual) echo " -> ";?>
+            <span class="src"><?php if(!is_null($row['src'])) echo $row['src'];?></span><?php if($dual) echo " -> ";?>
             <span class="dst"><?php if(!is_null($row['dst'])) echo $row['dst'];?></span>
         </div>
     </div>

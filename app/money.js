@@ -17,6 +17,8 @@
 
 */
 
+EDIT_KEY = 'AKCmEDIT';  //coordinate this with same define in index.php
+
 Amount = new Class({
     Implements: [Events, Class.Occlude],
     property: 'amount',
@@ -421,7 +423,7 @@ var AKCMoney = function () {
                             request.callRequest('updatexaction.php',this.editForm,this,function(holder) {
                             	this.calendar.picker.destroy();
                             	delete this.calendar;
-                               	window.location='index.php?'+Object.toQueryString({'account':account.options[account.selectedIndex].value,'tid':this.tid});
+                               	window.location='index.php?'+Object.toQueryString({'account':account.options[account.selectedIndex].value,'tid':this.tid,'edit':EDIT_KEY});
                             });
                         }
                     }.bind(this));         
@@ -604,7 +606,7 @@ var AKCMoney = function () {
         },this);
     };
     return {
-        Account: function(aN, c,tid) {
+        Account: function(aN, c,tid,ekey) {
             currency = c;
             accountName = aN;
 			/* Add a calendar to select when the start date for the display of transactions from this account */
@@ -636,7 +638,12 @@ var AKCMoney = function () {
             document.id('transactions').getElements('.xaction').each(function(transaction) {
                 var t = new Transaction(transaction); //Class attaches to the transaction as it is occluded
                 if (t.tid == tid) {
-                    t.edit.delay(10,t); //Allow all other transaction setups to complete and then edit this one
+                    var myFx = new Fx.Scroll(window);
+                    var delayed = function() {
+                        myFx.toElement(transaction, 'y');
+                        if (ekey == 1) t.edit;
+                    }
+                    delayed.delay(20,t) //Allow all other transaction setups to complete and then edit this one
                 }
             });
             sorting = new Sortables(document.id('transactions'),{

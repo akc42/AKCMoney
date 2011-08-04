@@ -18,6 +18,8 @@
 
 */
 
+define('EDIT_KEY','AKCmEDIT'); //coordinate this with same key in money.js
+
 require_once('./inc/db.inc');
 
 
@@ -67,12 +69,11 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 	<link rel="stylesheet" type="text/css" href="money.css"/>
 	<link rel="stylesheet" type="text/css" href="/js/calendar/calendar.css"/>
 	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="/money/money-ie.css"/>
-    	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
+    	<link rel="stylesheet" type="text/css" href="/js/calendar/calendar-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="/js/mootools-core-1.3-yc.js"></script>
-	<script type="text/javascript" src="mootools-money-1.3.1.1-yc.js"></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.2.1-yc.js"></script>
 	<script type="text/javascript" src="/js/utils.js" ></script>
 	<script type="text/javascript" src="/js/calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money.js" ></script>
@@ -181,7 +182,8 @@ window.addEvent('domready', function() {
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 <?php if($user['isAdmin']) {
 ?>	AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php
-					 if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>);
+					 if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>,<?php
+					 if(isset($_GET['edit']) && $_GET['edit'] == EDIT_KEY ) {echo '1';} else {echo '0';} ?>);
 <?php }
 ?>});
 </script>

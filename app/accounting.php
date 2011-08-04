@@ -61,17 +61,12 @@ function head_content() {
 <META NAME="Description" CONTENT="AKC Money is an application to Manage Money, either for a private individual or a small business.  This page
 provides the reports that formally account for the transactions in an accounting sense.  Transactions have an account code applied, and it is this code
 which allocates the transaction into the accounting system for a domain.  Different types of account allocate the transaction amount differently"/>
-<meta name="keywords" content="
+<meta name="keywords" content=""/>
     <link rel="shortcut icon" type="image/png" href="favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
-	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
-	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="/money/money-ie.css"/>
-    	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
-	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="/js/mootools-core-1.3-yc.js"></script>
-	<script type="text/javascript" src="mootools-money-1.3.1.1-yc.js"></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.2.1-yc.js"></script>
 	<script type="text/javascript" src="/js/utils.js" ></script>
 	<script type="text/javascript" src="accounting.js"></script>
 <?php

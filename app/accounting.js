@@ -59,6 +59,24 @@ var AKCMoney = function () {
                         },
                         'mouseleave':function(e) {
                             tac.addClass('hidden');
+                        },
+                        'click':function(e) {
+                            var a;
+                            e.stop();
+                            if (e.control) {
+                                //user clicked with control pressed - we go to the src account
+                                a = tac.getElement('.src').get('text');
+                                if (a != '') {
+                                    window.location='index.php?'+Object.toQueryString({'account':a,'tid':xaction.get('id').substr(1)});
+                                }
+                            } 
+                            if (e.shift) {
+                                //user clicked with shift pressed - we go to the dst account
+                                a = tac.getElement('.dst').get('text');
+                                if (a != '') {
+                                    window.location='index.php?'+Object.toQueryString({'account':a,'tid':xaction.get('id').substr(1)});
+                                }
+                            }
                         }
                     });
                 });
