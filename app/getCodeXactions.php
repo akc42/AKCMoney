@@ -147,7 +147,7 @@ case 'A':
     FROM 
         dfxaction AS t, account AS a, code AS c
     WHERE
-        t.date >= ? - 94608000 AND t.date <= ? AND
+        t.date >= ? - 63072000 AND t.date <= ? AND
         a.domain = ? AND (
         (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = ? AND t.srccode = c.id) OR
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode =  ? AND t.dstcode = c.id))

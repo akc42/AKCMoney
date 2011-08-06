@@ -268,9 +268,9 @@ window.addEvent('domready', function() {
 <?php
     }
     $stmt->closeCursor();
-/* This query is complex because we are depreciating the amount over 3 years, so the contribution to this years accounts is a proportion of the 
-    three years that this accounting period covers.  It could be as much as a 3rd, but might be less if the three year period starts or ends
-    within this accounting period. 94608000 is the number of seconds in 3 years
+/* This query is complex because we are depreciating the amount over 3 years, so the contribution to this years accounts is a third of the 
+    total.  Accounting is simple around 3 year accounting periods, so we could include transactions from this year, or the two previous years.
+    63072000 is the number of seconds in 2 years 
 */
     $stmt = $db->prepare("
     SELECT
@@ -281,7 +281,7 @@ window.addEvent('domready', function() {
     FROM 
         dfxaction AS t, account AS a, code AS c
     WHERE
-        t.date >= ? - 94608000 AND t.date <= ? AND
+        t.date >= ? - 63072000 AND t.date <= ? AND
         c.type = 'A' AND
         a.domain = ? AND (
         (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
