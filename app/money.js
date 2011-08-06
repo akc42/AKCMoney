@@ -763,10 +763,10 @@ var AKCMoney = function () {
                         'key':Utils.sessionKey,
                         'account':accountName,
                         'bversion':document.id('bversion').value,
-                        'balance':openingBalance.getValue()
+                        'balance':reconciledBalance.getValue()
                     },this,function(holder) {
-                    	document.id('openbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
-                    	Utils.dateAdjust(document.id('openbaldate').getParent(),'dateawait','dateconvert');
+                    	document.id('recbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
+                    	Utils.dateAdjust(document.id('recbaldate').getParent(),'dateawait','dateconvert');
                         document.id('bversion').value = holder.getElement('balance').get('version');
                         recalculate();                
                     });
