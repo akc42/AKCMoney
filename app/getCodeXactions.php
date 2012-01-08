@@ -141,17 +141,13 @@ case 'A':
     $stmt = $db->prepare("
     SELECT
         t.id AS id,t.date AS date,t.version AS version, t.description AS description, rno, repeat, 
-        CASE 
-            WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
-            WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
-            ELSE (CAST((t.date + 94608000 - ?) AS REAL)/94608000) * dfamount
-        END AS amount,
+		dfamount/3 AS amount,
         dfamount AS famount,
         src,srccode, dst, dstcode
     FROM 
         dfxaction AS t, account AS a, code AS c
     WHERE
-        t.date >= ? - 94608000 AND t.date <= ? AND
+        t.date >= ? - 63072000 AND t.date <= ? AND
         a.domain = ? AND (
         (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = ? AND t.srccode = c.id) OR
         (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode =  ? AND t.dstcode = c.id))
@@ -159,14 +155,9 @@ case 'A':
         ");
     $stmt->bindValue(1,$_POST['start'],PDO::PARAM_INT);
     $stmt->bindValue(2,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(3,$_POST['start'],PDO::PARAM_INT);
-    $stmt->bindValue(4,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(5,$_POST['start'],PDO::PARAM_INT);
-    $stmt->bindValue(6,$_POST['start'],PDO::PARAM_INT);
-    $stmt->bindValue(7,$_POST['end'],PDO::PARAM_INT);
-    $stmt->bindValue(8,$_POST['domain']);
-    $stmt->bindValue(9,$_POST['code'],PDO::PARAM_INT);
-    $stmt->bindValue(10,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(3,$_POST['domain']);
+    $stmt->bindValue(4,$_POST['code'],PDO::PARAM_INT);
+    $stmt->bindValue(5,$_POST['code'],PDO::PARAM_INT);
     break;
 default:
 ?><error>Invalid Account Code Type.  Please Report This Error to an Administrator</error>
@@ -199,7 +190,7 @@ while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             if ($dual) echo ' dual';?>"><?php echo fmtAmount($row['amount']);?></div>
         <div class="amount cumulative<?php if ($dual) echo ' dual';?>"><?php echo fmtAmount((isset($row['famount']))?$row['famount']:$cumulative);?></div>
         <div class="taccount hidden">
-            <span class=" src"><?php if(!is_null($row['src'])) echo $row['src'];?></span><?php if($dual) echo " -> ";?>
+            <span class="src"><?php if(!is_null($row['src'])) echo $row['src'];?></span><?php if($dual) echo " -> ";?>
             <span class="dst"><?php if(!is_null($row['dst'])) echo $row['dst'];?></span>
         </div>
     </div>

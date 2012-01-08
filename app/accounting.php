@@ -61,18 +61,13 @@ function head_content() {
 <META NAME="Description" CONTENT="AKC Money is an application to Manage Money, either for a private individual or a small business.  This page
 provides the reports that formally account for the transactions in an accounting sense.  Transactions have an account code applied, and it is this code
 which allocates the transaction into the accounting system for a domain.  Different types of account allocate the transaction amount differently"/>
-<meta name="keywords" content="
+<meta name="keywords" content=""/>
     <link rel="shortcut icon" type="image/png" href="favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
-	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
-	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="/money/money-ie.css"/>
-    	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
-	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
-	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.2.1-yc.js"></script>
+	<script type="text/javascript" src="/js/utils-yc-<?php include('inc/version.inc');?>.js" ></script>
 	<script type="text/javascript" src="accounting-yc-<?php include('inc/version.inc');?>.js"></script>
 <?php
 }
@@ -173,7 +168,7 @@ Year:
 <?php
 /*  There are two date complexities that have to be dealt with in this select statement.  Firstly, transactions 
     where the account_code is of type 'A' are going to be depreciated over 3 years - so the end date of any
-    effect on accounts is 3 years after the transaction date.  Secondly, the accounting year end means that if the transaction
+    effect on accounts is year end 2 years after the transaction date.  Secondly, the accounting year end means that if the transaction
     occurs after the accounting year end, it needs to be considered to be in the next year
 */ 
     $stmt = $db->prepare("    
@@ -183,14 +178,10 @@ Year:
             ELSE xaction.date 
             END),'unixepoch') AS firstyear,
         strftime('%Y',max(
-            CASE WHEN code.type = 'A' THEN
-                CASE WHEN CAST (strftime('%m%d',xaction.date,'unixepoch') AS INTEGER) > ? THEN xaction.date + 126144000 
-                ELSE xaction.date +94608000 
-                END
-            ELSE 
-                CASE WHEN CAST (strftime('%m%d',xaction.date,'unixepoch') AS INTEGER) > ? THEN xaction.date + 31536000 
+            CASE 
+				WHEN code.type = 'A' THEN xaction.date +94608000 
+            	WHEN CAST (strftime('%m%d',xaction.date,'unixepoch') AS INTEGER) > ? THEN xaction.date + 31536000 
                 ELSE xaction.date
-                END
             END),'unixepoch') AS lastyear 
     FROM 
         xaction,
@@ -203,8 +194,7 @@ Year:
     ");
     $stmt->bindValue(1,$yearend,PDO::PARAM_INT);
     $stmt->bindValue(2,$yearend,PDO::PARAM_INT);
-    $stmt->bindValue(3,$yearend,PDO::PARAM_INT);
-    $stmt->bindValue(4,$domain);
+    $stmt->bindValue(3,$domain);
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC); 
     for( $yr = $row['firstyear'] ; $yr <= $row['lastyear'] ; $yr++) {
@@ -215,7 +205,7 @@ Year:
 ?>          </select>
         </form>
 		<div class="buttoncontainer accountbuttons">
-            <a id="csv" href="generatecsv.php?&domain=<?php echo $domain; ?>&year=<?php echo $year;?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
+            <a id="csv" href="domaincsv.php?&domain=<?php echo $domain; ?>&year=<?php echo $year;?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
         </div>
 
 <script type="text/javascript">
@@ -278,27 +268,20 @@ window.addEvent('domready', function() {
 <?php
     }
     $stmt->closeCursor();
-/* This query is complex because we are depreciating the amount over 3 years, so the contribution to this years accounts is a proportion of the 
-    three years that this accounting period covers.  It could be as much as a 3rd, but might be less if the three year period starts or ends
-    within this accounting period. 94608000 is the number of seconds in 3 years
+/* This query is complex because we are depreciating the amount over 3 years, so the contribution to this years accounts is a third of the 
+    total.  Accounting is simple around 3 year accounting periods, so we could include transactions from this year, or the two previous years.
+    63072000 is the number of seconds in 2 years 
 */
     $stmt = $db->prepare("
     SELECT
         c.id AS id, 
         c.type AS type, 
         c.description AS description,
-        sum(
-            CASE 
-                WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
-                WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
-                ELSE (CAST((t.date + 94608000 - ?) AS REAL)/94608000) * dfamount
-            END
-        ) AS tamount
-                  
+        sum( dfamount/3) AS tamount          
     FROM 
         dfxaction AS t, account AS a, code AS c
     WHERE
-        t.date >= ? - 94608000 AND t.date <= ? AND
+        t.date >= ? - 63072000 AND t.date <= ? AND
         c.type = 'A' AND
         a.domain = ? AND (
         (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
@@ -309,12 +292,7 @@ window.addEvent('domready', function() {
         ");
     $stmt->bindValue(1,$starttime,PDO::PARAM_INT);
     $stmt->bindValue(2,$endtime,PDO::PARAM_INT);
-    $stmt->bindValue(3,$starttime,PDO::PARAM_INT);
-    $stmt->bindValue(4,$endtime,PDO::PARAM_INT);
-    $stmt->bindValue(5,$starttime,PDO::PARAM_INT);
-    $stmt->bindValue(6,$starttime,PDO::PARAM_INT);
-    $stmt->bindValue(7,$endtime,PDO::PARAM_INT);
-    $stmt->bindValue(8,$domain);
+    $stmt->bindValue(3,$domain);
     $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $profit -= $row['tamount'];

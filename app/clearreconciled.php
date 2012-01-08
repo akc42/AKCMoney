@@ -42,20 +42,21 @@ if($_POST['account'] == $row['src']) {
 $uxs = $db->prepare("
     UPDATE xaction SET
         version = version + 1,
-        srcclear = ?
+        srcclear = 0
     WHERE id = ? ;
     ");
 } else {
 $uxs = $db->prepare("
     UPDATE xaction SET
         version = version + 1,
-        dstclear = ?
+        dstclear = 0
     WHERE id = ? ;
     ");
 }
-$uxs->execute(array(($_POST['clear'] == 'true')? 1 : 0,$_POST['tid']));
+$uxs->bindValue(1,$_POST['tid']);
+$uxs->execute();
 $uxs->closeCursor();
 $db->exec("COMMIT");
-?><xaction tid="<?php echo $_POST['tid']; ?>" clear="<?php echo $_POST['clear']; ?>" version="<?php echo $version ?>" ></xaction>
+?><xaction tid="<?php echo $_POST['tid']; ?>" version="<?php echo $version ?>" ></xaction>
 
 

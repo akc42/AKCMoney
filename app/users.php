@@ -33,9 +33,9 @@ function head_content() {
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
-	<script type="text/javascript" src="md5.js" ></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="/js/utils-yc-<?php include('inc/version.inc');?>.js" ></script>
+	<script type="text/javascript" src="/js/md5.js" ></script>
 	<script type="text/javascript" src="users-yc-<?php include('inc/version.inc');?>.js" ></script>
 <?php
 }
@@ -137,7 +137,7 @@ while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
             <input type="hidden" name="version" value="<?php echo $row['version'];?>"/>
             <input type="hidden" name="original" value="<?php echo $row['name']; ?>" />
             <div class="user"><input type="text" name="user" value="<?php echo $row['name']; ?>" tabindex="<?php echo $tabIndex++; ?>"/></div>
-		    <div class="passwd"<input type="password" name="passwd" tabindex="<?php echo $tabIndex++; ?>"/></div>
+		    <div class="passwd"><input type="password" name="passwd" tabindex="<?php echo $tabIndex++; ?>"/></div>
 		    <div class="domains">
 		    	<select name="domains" id="newselect" multiple="multiple" size="4" tabindex="<?php echo $tabIndex++; ?>" <?php
 		    		if($row['isAdmin'] == 1) echo 'disabled="disabled"';?>>

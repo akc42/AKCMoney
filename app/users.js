@@ -44,7 +44,7 @@ var AKCMoney = function () {
     };
     var nameUnique = function(userName,xuser) {
     	var lun = userName.toLowerCase();
-        return $('users').getChildren().every(function(user) {
+        return document.id('users').getChildren().every(function(user) {
             if( user != xuser) {
                 if (lun == user.getElement('form').user.value.toLowerCase()) return false;
             }
@@ -54,7 +54,7 @@ var AKCMoney = function () {
     //adds the events related to a user to it
     var addUserEvents = function (xuser) {
         var form = xuser.getElement('form');
-    	var domainOptions = $A(form.domains.options);
+    	var domainOptions = Array.from(form.domains.options);
         form.user.addEvent('blur',function(e) {
             e.stop();
             if(this.value.toLowerCase() != form.original.value) {//Only worry if the value is different from the original value
@@ -86,15 +86,15 @@ var AKCMoney = function () {
         form.admin.addEvent('change', function(e) {
         	if(this.checked) {
         		form.domains.disabled = true;
-            	$A(form.account.options).each(function(option){option.disabled = false});
-            	$A(form.domain.options).each(function(option){option.disabled = false});
+            	Array.from(form.account.options).each(function(option){option.disabled = false});
+            	Array.from(form.domain.options).each(function(option){option.disabled = false});
         	} else {
         		form.domains.disabled = false;
 	    		//if at least one option is selected then leave it like it is, otherwise select everything
 	            if (domainOptions.every(function(option) {return !option.selected})) {
 	            	domainOptions.each(function(option) {option.selected = true});
-	            	$A(form.account.options).each(function(option){option.disabled = false});
-	            	$A(form.domain.options).each(function(option){option.disabled = false});
+	            	Array.from(form.account.options).each(function(option){option.disabled = false});
+	            	Array.from(form.domain.options).each(function(option){option.disabled = false});
 	            } else {
 	            	matchSelectionsToDomains(form);
 	            }
@@ -135,7 +135,7 @@ var AKCMoney = function () {
     };
     var redoOddEven = function() {
     	var tabCount = 8; //skips over new
-        $('users').getChildren().each(function(user,i) {
+        document.id('users').getChildren().each(function(user,i) {
             if(i%2!=0) {
                 user.addClass('even');
             } else {
@@ -155,7 +155,7 @@ var AKCMoney = function () {
     };
     var moveUser = function(xuser) {
         var userName = xuser.getElement('form').user.value.toLowerCase();
-        if ($('users').getChildren().every(function(user) {
+        if (document.id('users').getChildren().every(function(user) {
             if(user == xuser) return true;//skip ourselves
             if(userName < user.getElement('form').user.value.toLowerCase()) { //look at user name
                 xuser.inject(user,'before');
@@ -163,7 +163,7 @@ var AKCMoney = function () {
             }
             return true;
         })) {
-            xuser.inject($('users'),'bottom');
+            xuser.inject(document.id('users'),'bottom');
         }
         redoOddEven();
     };
@@ -172,12 +172,12 @@ var AKCMoney = function () {
     };
     var selectedDomains = function(form) {
     	var sd = new Array();
-    	$A(form.domains.options).each(function(option){if (option.selected) sd.push(option.value)});
+    	Array.from(form.domains.options).each(function(option){if (option.selected) sd.push(option.value)});
     	return sd;
     };
     
     var matchSelectionsToDomains = function(form) {
-    	$A(form.account.options).each(function(option,i) {
+    	Array.from(form.account.options).each(function(option,i) {
 			if(i !=0) {
 				var domain = option.getProperty("domain");
 				if(selectedDomains(form).contains(domain)) {
@@ -191,7 +191,7 @@ var AKCMoney = function () {
 				}
 			}
     	});
-    	$A(form.domain.options).each(function(option,i) {
+    	Array.from(form.domain.options).each(function(option,i) {
     		if(i != 0) {
 				if(selectedDomains(form).contains(option.value)) {
 					option.disabled = false;
@@ -206,15 +206,15 @@ var AKCMoney = function () {
     }
     return {
         User: function () {
-            var form = $('newuser');
-    		var domainOptions = $A(form.domains.options);
-            $('adduser').addEvent('click', function(e) {
+            var form = document.id('newuser');
+    		var domainOptions = Array.from(form.domains.options);
+            document.id('adduser').addEvent('click', function(e) {
                 e.stop();
                 var userName = form.user.value.toLowerCase();
                 var passWord = form.passwd.value;
                 if ( userName == '' || passWord == '') {
                     alert("This user name and password should not be blank, a new user is not being created");
-                    resetFocus.delay(10,$('newuser').user);
+                    resetFocus.delay(10,document.id('newuser').user);
                 } else {
                     if(nameUnique(userName,null)) {
 	                    request.callRequest(
@@ -227,11 +227,11 @@ var AKCMoney = function () {
 	                    		'domain': form.domain.options[form.domain.selectedIndex].value,
 	                    		'admin':(form.admin.checked)?'yes':'no'
 	                    	},
-	                    	$('newuser'), 
+	                    	document.id('newuser'), 
 	                    	function(holder) {
 			                    this.user.value = ''; //blank the new user name
 			                    this.passwd.value = '';
-								$A(this.domains.options).each(function(option) {
+								Array.from(this.domains.options).each(function(option) {
 									option.selected = true;
 								});
 						
@@ -246,7 +246,7 @@ var AKCMoney = function () {
 	                    );
                     } else {
                         alert("User name is not unique, please alter until it is");
-                        resetFocus.delay(10,$('newuser').user);
+                        resetFocus.delay(10,document.id('newuser').user);
                     }
                 }
             }).addEvent('keydown', function(e) {
@@ -258,10 +258,10 @@ var AKCMoney = function () {
             	e.stop();
             	if(this.checked) {
             		form.domains.disabled = true;
-		        	$A(form.account.options).each(function(option){
+		        	Array.from(form.account.options).each(function(option){
 		        		option.disabled = false;
 		        	});
-		        	$A(form.domain.options).each(function(option){
+		        	Array.from(form.domain.options).each(function(option){
 		        		option.disabled = false;
 		        	});
             	} else {
@@ -269,8 +269,8 @@ var AKCMoney = function () {
 		    		//if at least one option is selected then leave it like it is, otherwise select everything
 		            if (domainOptions.every(function(option) {return !option.selected})) {
 		            	domainOptions.each(function(option) {option.selected = true});
-			        	$A(form.account.options).each(function(option){option.disabled = false});
-			        	$A(form.domain.options).each(function(option){option.disabled = false});
+			        	Array.from(form.account.options).each(function(option){option.disabled = false});
+			        	Array.from(form.domain.options).each(function(option){option.disabled = false});
 			        } else {
 			        	matchSelectionsToDomains(form);
 			        }
@@ -293,7 +293,7 @@ var AKCMoney = function () {
 		            }
 		        });
   			});          	
-            $('users').getChildren().each(addUserEvents);
+            document.id('users').getChildren().each(addUserEvents);
         }
     }
 }();

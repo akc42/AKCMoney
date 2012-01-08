@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009,2010 Alan Chandler
+ 	Copyright (c) 2009,2010,2011 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -18,7 +18,10 @@
 
 */
 
+define('EDIT_KEY','AKCmEDIT'); //coordinate this with same key in money.js
+
 require_once('./inc/db.inc');
+
 
 if(isset($_GET['account'])) {
 	$account = $_GET['account'];
@@ -27,7 +30,7 @@ if(isset($_GET['account'])) {
 		$account = $user['account'];
 	}
 }
-$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, a.currency, c.description AS cdesc, c.rate 
+$stmt = $db->prepare("SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, a.currency, a.startdate,c.description AS cdesc, c.rate 
                         FROM account AS a JOIN currency AS c ON a.currency = c.name,
                         user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
                         WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)");
@@ -64,16 +67,15 @@ the past 4 years and a third release is planned to allow multiple accounting as 
 <meta name="keywords" content=""/>
     <link rel="shortcut icon" type="image/png" href="favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="money.css"/>
-	<link rel="stylesheet" type="text/css" href="calendar/calendar.css"/>
+	<link rel="stylesheet" type="text/css" href="/js/calendar/calendar.css"/>
 	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="/money/money-ie.css"/>
-    	<link rel="stylesheet" type="text/css" href="/money/calendar/calendar-ie.css"/>
+    	<link rel="stylesheet" type="text/css" href="/js/calendar/calendar-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="mootools-1.2.4.4-money-yc.js"></script>
-	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
-	<script type="text/javascript" src="calendar/calendar.js" ></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="mootools-money-1.3.2.1-yc.js"></script>
+	<script type="text/javascript" src="/js/utils-yc-<?php include('inc/version.inc');?>.js" ></script>
+	<script type="text/javascript" src="/js/calendar/calendar.js" ></script>
 	<script type="text/javascript" src="money-yc-<?php include('inc/version.inc');?>.js" ></script>
 <?php
 }
@@ -110,12 +112,9 @@ an adminstrator, informing them that you had a problem with account name <strong
     $repeattime = time() + $repeatdays*84600;
     $currency = $row['currency'];
     $balance = $row['balance'];
+    $cumbalance = $balance; //We start with the reconciled balance
     $bdate = $row['date'];
     $cdesc = $row['cdesc'];
-    $cumbalance = $balance;
-    $clrbalance = $balance;
-    $minbalance = $balance;
-    $maxbalance = $balance;
     $crate = $row['rate'];
     $domain = (is_null($row['domain']))?'':$row['domain'];
 ?>              <span class="title">Domain:</span> <?php echo $domain;
@@ -124,9 +123,32 @@ an adminstrator, informing them that you had a problem with account name <strong
 				<span class="title">Currency for Account:</span> <span class="currency"><?php echo $currency ;?></span><br/>
 				<?php echo $cdesc;?>
 			</div>
-
+			<div style="clear:both"></div>
 		</div>
 <?php
+/*
+	The start date has to be set dependant on the setting.  However this is far from easy in all cases.  This code creates the correct value
+*/
+	$useStartTime = true;		
+	if(is_null($row['startdate'])) {
+		$useStartTime = false;
+		//Reconciled Balance Date
+		$startTime = $row['date'];
+	} elseif ($row['startdate'] == 0 ) {
+		//Financial year start date - so we need go find it	
+		$result = $db->query("SELECT year_end FROM config LIMIT 1");
+		$yearend = $result->fetchColumn();
+		$result->closeCursor();
+
+		/* start time of the financial year. If its after now, then we jump back one year */
+
+		$startTime = mktime(0,0,0,substr($yearend,0,2),substr($yearend,2)+1,round(date("Y")));
+		if ( $startTime > time() ) $startTime = mktime(0,0,0,substr($yearend,0,2),substr($yearend,2)+1,round(date("Y"))-1);
+	} else {
+		//Start date is the right value
+		$startTime = $row['startdate'];
+	}
+
 	if($user['isAdmin']){
 ?>		<div class="buttoncontainer accountbuttons">
 		    <input type="hidden" name="account" value="<?php echo $account;?>" />
@@ -134,11 +156,24 @@ an adminstrator, informing them that you had a problem with account name <strong
 		    <input type="hidden" name="currency" value="<?php echo $currency; ?>" />
 		    <input id="bversion" type="hidden" name="bversion" value="<?php echo $row['bversion'];?>" />
             <a id="new" class="button" tabindex="310"><span><img src="add.png"/>New Transaction</span></a>
-            <a id="rebalance" class="button" tabindex="320"><span><img src="balance.png"/>Rebalance From Cleared</span></a>
+            <a id="rebalance" class="button" tabindex="320"><span><img src="balance.png"/>Set Reconciled Balance</span></a>
         </div>
+		<div id="scopeselection">
+		    <input id="dversion" type="hidden" name="dversion" value="<?php echo $row['dversion'];?>" />
+			<div><input type="radio" name="scope" value="U" <?php 
+				if ( is_null($row['startdate'])) echo 'checked="checked"'; ?>/>Unreconciled transactions Only</div>
+			<div><input type="radio" name="scope" value="S" <?php 
+				if ( !is_null($row['startdate']) and $row['startdate'] == 0 ) echo 'checked="checked"'; ?>/>Transactions this financial year</div>
+			<div><input type="radio" name="scope" value="D" <?php 
+				if (!is_null($row['startdate']) AND $row['startdate'] > 0 ) echo 'checked="checked"'; ?>/>Transactions from date ... <input 
+					type="hidden" name="startdate" value="<?php echo $startTime;?>" id="startdate"/></div>
+		</div>																			
 <?php
 	}
-?><script type="text/javascript">
+?>		<div class="buttoncontainer accountbuttons">
+            <a id="csv" href="accountcsv.php?&account=<?php echo $account;  ?>" class="button" tabindex="310"><span><img src="spreadsheet.png"/>Create CSV File</span></a>
+        </div>
+<script type="text/javascript">
 var thisAccount;
 
 window.addEvent('domready', function() {
@@ -146,8 +181,9 @@ window.addEvent('domready', function() {
     Utils.dateAdjust($('balance'),'dateawait','dateconvert');
     Utils.dateAdjust($('transactions'),'dateawait','dateconvert');
 <?php if($user['isAdmin']) {
-?>    AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php
-					 if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>);
+?>	AKCMoney.Account("<?php echo $account;?>","<?php echo $currency ;?>",<?php
+					 if(isset($_GET['tid'])) {echo $_GET['tid'];} else {echo '0';} ?>,<?php
+					 if(isset($_GET['edit']) && $_GET['edit'] == EDIT_KEY ) {echo '1';} else {echo '0';} ?>);
 <?php }
 ?>});
 </script>
@@ -165,26 +201,26 @@ window.addEvent('domready', function() {
     <div class="ref">&nbsp;</div>
     <div class="description">Minimum Balance</div>
     <div class="amount">&nbsp;</div>
-    <div id="minmaxbalance" class="amount">0.00</div>
+    <div id="minbalance" class="amount">0.00</div>
+</div>
+<div id="balance" class="xaction balance row">
+    <input type="hidden" name="clearing" value="false" />
+    <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
+    <div class="date"><input id="recbaldate" type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
+    <div class="ref">&nbsp;</div>
+    <div class="description">Reconciled Balance</div>
+    <div class="amount">&nbsp;</div>
+    <div  class="amount">
+        <input  id="recbalance" class="amount" type="text" name="recbalance" 
+                value="<?php echo fmtAmount($balance);?>" tabindex="280"/>
+    </div>
 </div>
 <div class="xaction balance">
     <div class="date">&nbsp;</div>
     <div class="ref">&nbsp;</div>
     <div class="description">Cleared Balance</div>
     <div class="amount">&nbsp;</div>
-    <div id="clrbalance" class="amount">0.00</div>
-</div>
-<div id="balance" class="xaction balance row">
-    <input type="hidden" name="clearing" value="false" />
-    <input type="hidden" name="bversion" value="<?php echo $row['bversion'];?>"/>
-    <div class="date"><input id="openbaldate" type="hidden" name="bdate" value="<?php echo $bdate?>" class="dateawait" /></div>
-    <div class="ref">&nbsp;</div>
-    <div class="description">Opening Balance</div>
-    <div class="amount">&nbsp;</div>
-    <div  class="amount">
-        <input  id="openbalance" class="amount" type="text" name="openbalance" 
-                value="<?php echo fmtAmount($balance);?>" tabindex="280"/>
-    </div>
+    <div id="clearbalance" class="amount"><?php echo fmtAmount($balance);/* cleared balance = reconciled balance when we load the transactions */?></div> 
 </div>
 
 <?php
@@ -248,18 +284,34 @@ $r = 0;
 ?>
 <div id="transactions">
 <?php
-    $stmt = $db->prepare('
-        SELECT 
-            xaction.*, currency.name AS cname, currency.rate AS rate, srcacc.domain AS srcdom, dstacc.domain AS dstdom,
-            sc.type AS sct, sc.description AS scd, dc.type AS dct, dc.description AS dcd  
-        FROM xaction,currency 
-        LEFT JOIN code AS sc ON sc.id = xaction.srccode 
-        LEFT JOIN code AS dc ON dc.id = xaction.dstcode 
-        LEFT JOIN account AS srcacc ON xaction.src = srcacc.name 
-        LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
-        WHERE xaction.currency = currency.name AND (src = ? OR dst = ?) ORDER BY date ASC;');
-    $stmt->bindValue(1,$account);
-    $stmt->bindValue(2,$account);
+	if ( $useStartTime) {
+		$stmt = $db->prepare('
+		    SELECT 
+		        xaction.*, currency.name AS cname, currency.rate AS rate, srcacc.domain AS srcdom, dstacc.domain AS dstdom,
+		        sc.type AS sct, sc.description AS scd, dc.type AS dct, dc.description AS dcd  
+		    FROM xaction,currency 
+		    LEFT JOIN code AS sc ON sc.id = xaction.srccode 
+		    LEFT JOIN code AS dc ON dc.id = xaction.dstcode 
+		    LEFT JOIN account AS srcacc ON xaction.src = srcacc.name 
+		    LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
+		    WHERE xaction.currency = currency.name AND (src = ? OR dst = ?) AND xaction.date > ? ORDER BY xaction.date ASC;');
+		$stmt->bindValue(1,$account);
+		$stmt->bindValue(2,$account);
+		$stmt->bindValue(3,$startTime,PDO::PARAM_INT);
+	} else {
+		$stmt = $db->prepare('
+		    SELECT 
+		        xaction.*, currency.name AS cname, currency.rate AS rate, srcacc.domain AS srcdom, dstacc.domain AS dstdom,
+		        sc.type AS sct, sc.description AS scd, dc.type AS dct, dc.description AS dcd  
+		    FROM xaction,currency 
+		    LEFT JOIN code AS sc ON sc.id = xaction.srccode 
+		    LEFT JOIN code AS dc ON dc.id = xaction.dstcode 
+		    LEFT JOIN account AS srcacc ON xaction.src = srcacc.name 
+		    LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
+		    WHERE xaction.currency = currency.name AND ((src = ? AND srcclear = 0 )OR (dst = ? AND dstclear = 0)) ORDER BY xaction.date ASC;');
+		$stmt->bindValue(1,$account);
+		$stmt->bindValue(2,$account);
+	}
     $stmt->execute();
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $r++;
@@ -278,7 +330,11 @@ $r = 0;
                     $amount = -$row['amount'];
                 }
             }
-            if ($row['srcclear'] != 0) $cleared = true;
+            if ($row['srcclear'] != 0) {
+                $cleared = true;
+            } else {
+                $cumbalance += $amount;
+            }
             if (!is_null($row['dst'])) $dual = true;
             if (!is_null($row['srccode'])) {
                 $codeid = $row['srccode'];
@@ -300,7 +356,11 @@ $r = 0;
                     $amount = $row['amount'];
                 }
             }
-            if ($row['dstclear'] !=0 ) $cleared = true;
+            if ($row['dstclear'] !=0 ) {
+                $cleared = true;
+            } else {
+                $cumbalance += $amount;
+            }
             if (!is_null($row['src'])) $dual = true;
             if (!is_null($row['dstcode'])) {
                 $codeid = $row['dstcode'];
@@ -313,24 +373,21 @@ $r = 0;
                 $codedesc = $row['scd'];
             }
         }
-        $cumbalance += $amount;
         if (!$locatedNow && $row['date'] > time()) {
             $locatedNow=true;
 ?><div id="now" class="hidden"></div>
 <?php
         }
+
 ?><div id="<?php echo 't'.$row['id']; ?>" class="xaction arow<?php if($r%2 == 0) echo ' even';?>">
     <div class="wrapper">    
         <input type="hidden" class="version" name="version" value="<?php echo $row['version']; ?>"/>
-        <div class="date clickable<?php 
-        if($row['repeat'] != 0) {
-            echo ' repeat';
-            if($cleared) $clrbalance += $amount; //do this because in this case we would otherwise miss it
-        } elseif($cleared) {
-            $clrbalance += $amount;
-            echo ' cleared';
+        <div class="date clickable<?php
+        if($row['repeat'] != 0) echo ' repeat'; //We do this regardless of other considerations
+		if ($cleared) {
+			echo ' reconciled'; 
         } else {
-            if ($row['date'] < time()) echo ' passed'; //only indicate passed if not indicating cleared
+            if ($row['date'] < time()) echo ' passed'; //We only clear temporarily, so we don't worry about that just yet
         }
        ?>" ><input type="hidden" name="xxdate" value="<?php echo $row['date'];?>" class="dateawait"/></div>
         <div class="ref"><?php echo $row['rno'];?></div>
@@ -342,7 +399,7 @@ $r = 0;
                 echo ' clickable';
             };
             if ($dual) echo ' dual';?>"><?php echo fmtAmount($amount);?></div>
-        <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php echo fmtAmount($cumbalance);?></div>
+        <div class="amount cumulative<?php if ($dual) echo " dual";?>"><?php if($cleared) {echo "0.00" ;} else {echo fmtAmount($cumbalance); }?></div>
         <div class="codetype">
             <div class="code_<?php echo $codetype; ?>">&nbsp;</div>
             <span class="codeid"><?php echo $codeid; ?></span>
@@ -360,7 +417,7 @@ $r = 0;
 ?></div>
 <?php
 	if($user['isAdmin']) {
-?><div id="xactiontemplate" class="hidden xactionform"
+?><div id="xactiontemplate" class="hidden xactionform">
 	<div class="movequery">
 	    <input type="hidden" name="tid" value="0"/>
 	    <input type="hidden" name="accountname" value="<?php echo $account;?>" />

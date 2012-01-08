@@ -22,24 +22,22 @@ error_reporting(E_ALL);
 require_once('./inc/db.inc');
 if(!$user['isAdmin']) die('insufficient permissions');
 
+$account = $_POST['account'];
+
 $astmt = $db->prepare("SELECT bversion, balance, currency FROM account WHERE name = ? ;");
-$astmt->bindValue(1,$_POST['account']);
+$astmt->bindValue(1,$account);
 
-$dstmt = $db->prepare("DELETE FROM xaction WHERE id = ? ;");
-$dstmt->bindParam(1,$tid,PDO::PARAM_INT);
 
-$tstmt = $db->prepare("SELECT * FROM xaction WHERE ( src = ? AND srcclear = 1 ) OR (dst = ? AND dstclear = 1) ;");
-$tstmt->bindValue(1,$_POST['account']);
-$tstmt->bindValue(2,$_POST['account']);
+$tstmt = $db->prepare("SELECT * FROM xaction WHERE id = ?");
 
 $ustmt = $db->prepare("UPDATE account SET bversion = ?, balance = ? , date = (strftime('%s','now')) WHERE name = ? ;");
 $ustmt->bindParam(1,$version,PDO::PARAM_INT);
 $ustmt->bindParam(2,$balance,PDO::PARAM_INT);
-$ustmt->bindValue(3,$_POST['account']);
+$ustmt->bindValue(3,$account);
 
-$uxs = $db->prepare("UPDATE xaction SET version = version + 1, src = NULL, srcamount = NULL, srcclear = 0 WHERE id = ? ;");
+$uxs = $db->prepare("UPDATE xaction SET version = version + 1, srcclear = 1 WHERE id = ? ;");
 $uxs->bindParam(1,$tid,PDO::PARAM_INT);
-$uxd = $db->prepare("UPDATE xaction SET version = version + 1, dst = NULL, dstamount = NULL, dstclear = 0 WHERE id = ? ;");
+$uxd = $db->prepare("UPDATE xaction SET version = version + 1, dstclear = 1 WHERE id = ? ;");
 $uxd->bindParam(1,$tid,PDO::PARAM_INT);
 
 $db->exec("BEGIN IMMEDIATE");
@@ -50,6 +48,7 @@ if (!isset($row['bversion']) || $row['bversion'] != $_POST['bversion'] || $row['
 ?><error>It appears someone has updated the details of this account in parallel to you working on it.  We will reload the page to 
 ensure you have the correct version</error>
 <?php
+    $astmt->closeCursor();
     $db->exec("ROLLBACK");
     exit;
 }
@@ -58,42 +57,55 @@ $balance = $row['balance'];
 $currency = $row['currency'];
 $oldbalance = $balance;
 $astmt->closeCursor();
+
+$transactions = $_POST['transactions'];
+
+foreach($transactions as $transaction) {
+    list($tid,$tversion) = explode(":",$transaction,2);
+    $tstmt->bindValue(1,$tid,PDO::PARAM_INT);
+    $tstmt->execute();
+    $row = $tstmt->fetch(PDO::FETCH_ASSOC);
+    if($row['version'] <> $tversion || ( $row['src'] == $account && $row['srcclear'] == 1) || ($row['dst'] == $account && $row['dstclear'] == 1) || ( $row['src'] <> $account && $row['dst'] <> $account)) {
+?><error>One of the transactions in the account has been updated in parallel to you working on it.  We will reload the page to
+ensure you have the correct versions</error>
+<?php
+        $tstmt->closeCursor();
+        $db->exec("ROLLBACK");
+        exit;
+    }
+    $tstmt->closeCursor();
+}
 ?><xactions>
 <?php
-$tstmt->execute();
-while($row = $tstmt->fetch(PDO::FETCH_ASSOC)) {
-    $tid = $row['id'];
-    if($row['src'] == $_POST['account']) {
+foreach($transactions as $transaction) {
+    list($tid,$tversion) = split(":",$transaction,2);
+    $tstmt->bindValue(1,$tid,PDO::PARAM_INT);
+    $tstmt->execute();
+    $row = $tstmt->fetch(PDO::FETCH_ASSOC);
+
+    if($row['src'] == $account) {
         if($row['currency'] == $_POST['currency']) {
             $balance -= $row['amount'];
         } else {
             $balance -= $row['srcamount'];
         }
-        if (is_null($row['dst'])) {
-            $dstmt->execute();
-            $dstmt->closeCursor();
-        } else {
-            $uxs->execute();
-            $uxs->closeCursor();
-        }
+        $uxs->execute();
+        $uxs->closeCursor();
     } else {
         if($row['currency'] == $_POST['currency']) {
             $balance += $row['amount'];
         } else {        
             $balance += $row['dstamount'];
         }
-        if (is_null($row['src'])) {
-            $dstmt->execute();
-            $dstmt->closeCursor();
-        } else {
-            $uxd->execute();
-            $uxd->closeCursor();
-         }
+        $uxd->execute();
+        $uxd->closeCursor();
     }
-?><xaction tid="<?php echo $row['id']; ?>"></xaction>
+    $tversion = $tversion + 1; //We increment the version so it can be corrected for the transaction on the page
+?><xaction tid="<?php echo $tid; ?>" version="<?php echo $tversion; ?>"></xaction>
 <?php
+
+    $tstmt->closeCursor();
 }
-$tstmt->closeCursor();
 
 $ustmt->execute();
 $ustmt->closeCursor();

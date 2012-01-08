@@ -26,7 +26,7 @@ var AKCMoney = function () {
         });
     };
     var nameUnique = function(accountName,xaccount) {
-        return $('accounts').getChildren().every(function(account) {
+        return document.id('accounts').getChildren().every(function(account) {
             if( account != xaccount) {
                 if (accountName == account.getElement('form').account.value) return false;
             }
@@ -79,7 +79,7 @@ var AKCMoney = function () {
     };
     var redoOddEven = function() {
     	var tabCount = 5; //skips over new
-    	$('accounts').getChildren().each(function(account,i) {
+    	document.id('accounts').getChildren().each(function(account,i) {
             if(i%2!=0) {
                 account.addClass('even');
             } else {
@@ -95,7 +95,7 @@ var AKCMoney = function () {
     var moveAccount = function(xaccount) {
         var accountName = xaccount.getElement('form').account.value.toLowerCase();
         var domainName = xaccount.getElement('form').domain.value.toLowerCase();
-        if ($('accounts').getChildren().every(function(account) {
+        if (document.id('accounts').getChildren().every(function(account) {
             if(account == xaccount) return true;//skip ourselves
             var accountForm = account.getElement('form');
             var thisDomain = accountForm.domain.value.toLowerCase();
@@ -110,7 +110,7 @@ var AKCMoney = function () {
             }
             return true;
         })) {
-            xaccount.inject($('accounts'),'bottom');
+            xaccount.inject(document.id('accounts'),'bottom');
         }
         redoOddEven();
     };
@@ -119,15 +119,15 @@ var AKCMoney = function () {
     };
     return {
         Account: function () {
-            $('addaccount').addEvent('click', function(e) {
+            document.id('addaccount').addEvent('click', function(e) {
                 e.stop();
-                var accountName = $('newaccount').account.value;
+                var accountName = document.id('newaccount').account.value;
                 if ( accountName == '') {
                     alert("This account name should not be blank, a new account is not being created");
-                    resetFocus.delay(10,$('newaccount').account);
+                    resetFocus.delay(10,document.id('newaccount').account);
                 } else {
                     if(nameUnique(accountName,null)) {
-                        request.callRequest('newaccount.php',$('newaccount'),$('newaccount'), function(holder) {
+                        request.callRequest('newaccount.php',document.id('newaccount'),document.id('newaccount'), function(holder) {
                             this.account.value = ''; //blank the new account name
                             this.currency.selectedIndex = 0; // and selections to default
                             this.domain.selectedIndex = 0;
@@ -137,7 +137,7 @@ var AKCMoney = function () {
                         });
                     } else {
                         alert("Account name is not unique, please alter until it is");
-                        resetFocus.delay(10,$('newaccount').account);
+                        resetFocus.delay(10,document.id('newaccount').account);
                     }
                 }
             }).addEvent('keydown', function(e) {
@@ -145,7 +145,7 @@ var AKCMoney = function () {
                     this.fireEvent('click',e);
                 }
             });
-            $('accounts').getChildren().each(addAccountEvents);
+            document.id('accounts').getChildren().each(addAccountEvents);
         }
     }
 }();

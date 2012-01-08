@@ -33,8 +33,8 @@ function head_content() {
 		<link rel="stylesheet" type="text/css" href="money-ie.css"/>
 	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="print.css" media="print" />
-	<script type="text/javascript" src="mootools-1.2.4-core-yc.js"></script>
-	<script type="text/javascript" src="utils-yc-<?php include('inc/version.inc');?>.js" ></script>
+	<script type="text/javascript" src="/js/mootools-core-1.3.2-yc.js"></script>
+	<script type="text/javascript" src="/js/utils-yc-<?php include('inc/version.inc');?>.js" ></script>
 	<script type="text/javascript" src="domains-yc-<?php include('inc/version.inc');?>.js" ></script>
 <?php
 }

@@ -30,11 +30,10 @@ function out_csv($row) {
     $out .= "\r\n"; 
     echo $out;   
 }
-
+header("Content-Disposition: attachment;filename=accounts.csv\r\n");
+header("Content-Type: text/csv\r\n");
 require_once('./inc/db.inc');
-header("Content-Type: text/csv");
-header('Content-Dispositon: attachment; filename="accounts.csv"');
-	if(isset($GET['year'])) {
+	if(isset($_GET['year'])) {
 		$year = round($_GET['year']);
 	} else {
 		$year = round(date("Y"));
@@ -90,22 +89,15 @@ $tcrstmt->bindValue(3,$_GET['domain']);
 $tcrstmt->bindParam(4,$codeid,PDO::PARAM_INT);
 $tcrstmt->bindParam(5,$codeid,PDO::PARAM_INT);
 
-//Asset Codes, where depreciation Matters
+//Asset Codes, where depreciation Matters (updating for simple model
 $aastmt = $db->prepare("
 SELECT
     c.id AS cid, c.type AS ctype, c.description AS cdesc,
-    sum(
-        CASE 
-            WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
-            WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
-            ELSE (CAST((t.date + 94608000 - ?) AS REAL)/94608000) * dfamount
-        END
-    ) AS tamount
-              
+    sum( dfamount/3) AS tamount
 FROM 
     dfxaction AS t, account AS a, code AS c
 WHERE
-    t.date >= ? - 94608000 AND t.date <= ? AND
+    t.date >= ? - 63072000 AND t.date <= ? AND
     c.type = 'A' AND
     a.domain = ? AND (
     (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
@@ -116,27 +108,18 @@ ORDER BY cdesc COLLATE NOCASE ASC
     ");
 $aastmt->bindValue(1,$starttime,PDO::PARAM_INT);
 $aastmt->bindValue(2,$endtime,PDO::PARAM_INT);
-$aastmt->bindValue(3,$starttime,PDO::PARAM_INT);
-$aastmt->bindValue(4,$endtime,PDO::PARAM_INT);
-$aastmt->bindValue(5,$starttime,PDO::PARAM_INT);
-$aastmt->bindValue(6,$starttime,PDO::PARAM_INT);
-$aastmt->bindValue(7,$endtime,PDO::PARAM_INT);
-$aastmt->bindValue(8,$_GET['domain']);
+$aastmt->bindValue(3,$_GET['domain']);
 
 $tastmt = $db->prepare("
 SELECT
     t.id AS tid,t.date AS date,rno, t.description AS description, 
-    CASE 
-        WHEN t.date < ? AND t.date + 94608000 >= ? THEN dfamount/3
-        WHEN t.date >= ? THEN (CAST((? - t.date) AS REAL)/94608000) * dfamount
-        ELSE (CAST((t.date + 94608000 - ?) AS REAL)/94608000) * dfamount
-    END AS amount,
+    dfamount/3 AS amount,
     dfamount AS famount,
     src,srccode, dst, dstcode
 FROM 
     dfxaction AS t, account AS a, code AS c
 WHERE
-    t.date >= ? - 94608000 AND t.date <= ? AND
+    t.date >= ? - 63072000 AND t.date <= ? AND
     a.domain = ? AND (
     (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = ? AND t.srccode = c.id) OR
     (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode =  ? AND t.dstcode = c.id))
@@ -145,14 +128,9 @@ ORDER BY t.date ASC
 
 $tastmt->bindValue(1,$starttime,PDO::PARAM_INT);
 $tastmt->bindValue(2,$endtime,PDO::PARAM_INT);
-$tastmt->bindValue(3,$starttime,PDO::PARAM_INT);
-$tastmt->bindValue(4,$endtime,PDO::PARAM_INT);
-$tastmt->bindValue(5,$starttime,PDO::PARAM_INT);
-$tastmt->bindValue(6,$starttime,PDO::PARAM_INT);
-$tastmt->bindValue(7,$endtime,PDO::PARAM_INT);
-$tastmt->bindValue(8,$_GET['domain']);
-$tastmt->bindParam(9,$codeid,PDO::PARAM_INT);
-$tastmt->bindParam(10,$codeid,PDO::PARAM_INT);
+$tastmt->bindValue(3,$_GET['domain']);
+$tastmt->bindParam(4,$codeid,PDO::PARAM_INT);
+$tastmt->bindParam(5,$codeid,PDO::PARAM_INT);
 
 //Balance Codes, where source/destination determines the sign
 $abstmt = $db->prepare("
