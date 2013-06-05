@@ -19,6 +19,7 @@
 */
 
 define('DB_DIR','/home/alan/dev/money/db/'); //coordinate with doLogin.php and install.php and doInstall.php
+
 define('PRIVATE_KEY','AKCmPrivateKey');  /*Need to coordinate this value with doLogin.php and doInstall (which creates the Cookie values) */
 //This is a convenient place to force everything we output to not be cached 
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
