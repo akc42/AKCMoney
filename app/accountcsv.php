@@ -54,7 +54,7 @@ $stmt = $db->prepare("
             d.description,
             CAST(-dfamount AS REAL)/100.0 AS amount,
             x.srcclear AS reconciled,  
-            d.srccode AS cid,
+            CASE WHEN sa.domain = da.domain THEN ifnull(d.srccode,d.dstcode) ELSE d.srccode END AS cid,
             d.dst AS otheraccount,
             x.currency,
             CAST (-x.amount AS REAL)/100.0  AS currencyamount,
@@ -62,6 +62,8 @@ $stmt = $db->prepare("
         FROM 
             dfxaction d 
             JOIN xaction x ON d.id = x.id
+            JOIN account sa ON d.src = sa.name
+            LEFT JOIN account da ON d.dst = da.name
         WHERE d.src = ?
         UNION
         SELECT
@@ -72,7 +74,7 @@ $stmt = $db->prepare("
             d.description,
             CAST(dfamount AS REAL)/100.0 AS amount,
             x.dstclear AS reconciled,  
-            d.dstcode AS cid,
+            CASE WHEN da.domain = sa.domain THEN ifnull(d.dstcode,d.srccode) ELSE d.dstcode END AS cid,
             d.src AS otheraccount,
             x.currency,
             CAST(x.amount AS REAL)/100.0  AS currencyamount,
@@ -80,6 +82,8 @@ $stmt = $db->prepare("
         FROM 
             dfxaction d 
             JOIN xaction x ON d.id = x.id
+            JOIN account da ON d.dst = da.name
+            LEFT JOIN account sa ON d.src = sa.name
         WHERE d.dst = ?
     ) t 
     LEFT JOIN code c ON c.id = t.cid

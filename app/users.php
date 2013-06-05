@@ -75,7 +75,7 @@ window.addEvent('domready', function() {
 <div class="xuser newuser">
     <form id="newuser" action="newuser.php" method="post" onSubmit="return false;">
 	    <div class="user"><input type="text" name="user" tabindex="<?php echo $tabIndex++; ?>"/></div>
-	    <div class="passwd"<input type="password" name="passwd" tabindex="<?php echo $tabIndex++; ?>"/></div>
+	    <div class="passwd"><input type="password" name="passwd" tabindex="<?php echo $tabIndex++; ?>"/></div>
         <div class="domains">
         	<select name="domains" multiple="multiple" size="4" tabindex="<?php echo $tabIndex++; ?>">
 <?php
