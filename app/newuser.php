@@ -75,7 +75,7 @@ if($_POST['admin'] != 'yes') {
             <input type="hidden" name="version" value="1"/>
             <input type="hidden" name="original" value="<?php echo $_POST['user']; ?>" />
             <div class="user"><input type="text" name="user" value="<?php echo $_POST['user']; ?>"/></div>
-		    <div class="passwd"<input type="password" name="passwd"/></div>
+		    <div class="passwd"><input type="password" name="passwd"/></div>
 		    <div class="domains">
 		    	<select name="domains" id="newselect" multiple="multiple" size="4" <?php
 		    		if($_POST['admin'] == 'yes') echo 'disabled="disabled"';?>>

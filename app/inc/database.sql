@@ -349,7 +349,7 @@ CREATE TABLE config (
 );
 
 INSERT INTO config(db_version,repeat_days,year_end) 
-            VALUES (2, 90,'1231');
+            VALUES (3, 90,'1231');
 
 CREATE VIEW dfxaction AS
     SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,
