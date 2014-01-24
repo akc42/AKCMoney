@@ -1,5 +1,5 @@
 
--- 	Copyright (c) 2009,2010,2011 money Chandler
+-- 	Copyright (c) 2014 money Chandler
 --  This file is part of AKCMoney.
 
 --    AKCMoney is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@ INSERT INTO codeType VALUES ('C','Direct Costs'); -- Direct Costs incurred by th
 INSERT INTO codeType VALUES ('R','Revenue'); -- Revenues Due
 INSERT INTO codeType VALUES ('A','Computer Asset'); --Capital purchase of Computer Asset
 INSERT INTO codeType VALUES ('B','Balancing Account');  --Holds personal costs that are to be re-embersed by the business
+INSERT INTO codeType VALUES ('O','Off Balance Sheet');  --Items that should not appear in domain accounting
 
 -- account codes define the accounting code associated with this account 
 
@@ -55,6 +56,7 @@ INSERT INTO code (type,description) VALUES ('R', 'Invoices for Web Design and Ho
 INSERT INTO code (type,description) VALUES ('A','Computer Equipment'); --Depreciable Computer Equipment
 INSERT INTO code (type,description) VALUES ('B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
 INSERT INTO code (type,description) VALUES ('B','Loans'); --loans made to the company
+INSERT INTO code (type,description) VALUES ('O','Profit and Dividends'); -- Off Balance Sheet Items we want to track
 
 -- Define valid Repeat Values for Transactions
 
@@ -349,7 +351,7 @@ CREATE TABLE config (
 );
 
 INSERT INTO config(db_version,repeat_days,year_end) 
-            VALUES (3, 90,'1231');
+            VALUES (4, 90,'1231');
 
 CREATE VIEW dfxaction AS
     SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,

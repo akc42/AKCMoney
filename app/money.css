@@ -271,6 +271,9 @@ div.code_A, option.code_A {
 div.code_B, option.code_B {
     background:transparent url(codes.png) no-repeat 0 -80px;
 }
+div.code_O, option.code_O {
+    background:transparent url(codes.png) no-repeat 0 -100px;
+}
 
 div.codetype option, div.codesel option {
 	padding-left:23px;

@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2014 Alan Chandler
     This file is part of AKCMoney.
 
     AKCMoney is free software: you can redistribute it and/or modify
@@ -60,11 +60,17 @@ if(!isset($_GET['db'])) {
         $row = $result->fetch(PDO::FETCH_ASSOC);
     }
 
-/*
-       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
     if($row['db_version'] < 4) { //update to version 4
         $result->closeCursor();
         $db->exec(file_get_contents('./inc/update3.sql'));
+        $result = $db->query('SELECT * FROM config;');
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+    }
+/*
+       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
+    if($row['db_version'] < 5) { //update to version 5
+        $result->closeCursor();
+        $db->exec(file_get_contents('./inc/update4.sql'));
         $result = $db->query('SELECT * FROM config;');
         $row = $result->fetch(PDO::FETCH_ASSOC);
     }
@@ -158,6 +164,25 @@ function menu_items() {
 ?>      <li><a href="accounting.php?domain=<?php echo urlencode($menuitem); ?>"><?php echo $menuitem; ?></a></li><?php
     }
     $menuselect->closeCursor();
+    //Look at showing the off balance sheet items if they exist
+    $menuselect = $db->prepare("
+        SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
+            SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
+            OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid 
+            AND p.domain = a.domain WHERE u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1)
+        WHERE c.type = 'O';
+        ");
+    $menuselect->bindValue(1,$user['uid'],PDO::PARAM_INT);
+    $menuselect->execute();
+    $menuitems = $menuselect->fetchAll(PDO::FETCH_COLUMN);
+    $doneseparator = false;
+    foreach($menuitems as $menuitem) {
+        if(!$doneseparator) {
+?>      <li>-------------</li><?php
+            $doneseparator = true;
+        }
+?>      <li><a href="offbalancesheet.php?code=<?php echo urlencode($menuitem['id']); ?>"><?php echo $menuitem['description']; ?></a></li><?php
+    }
 ?>  </ul>
 </li>
 <li><a href="user.php"><span>My Account</span></a></li>
