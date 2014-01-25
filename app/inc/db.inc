@@ -174,9 +174,8 @@ function menu_items() {
         ");
     $menuselect->bindValue(1,$user['uid'],PDO::PARAM_INT);
     $menuselect->execute();
-    $menuitems = $menuselect->fetchAll(PDO::FETCH_COLUMN);
     $doneseparator = false;
-    foreach($menuitems as $menuitem) {
+    while ($menuitem = $menuselect->fetch(PDO::FETCH_ASSOC)) {
         if(!$doneseparator) {
 ?>      <li>-------------</li><?php
             $doneseparator = true;
