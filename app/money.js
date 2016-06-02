@@ -22,7 +22,7 @@ EDIT_KEY = 'AKCmEDIT';  //coordinate this with same define in index.php
 Amount = new Class({
     Implements: [Events, Class.Occlude],
     property: 'amount',
-    initialize: function(element){ 
+    initialize: function(element){
         var aString;
         if(element) {
             this.element = document.id(element);
@@ -40,12 +40,12 @@ Amount = new Class({
                             this.setText();
                         }
                         this.element.focus();
-                    }   
+                    }
                 }.bind(this));
             }
         } else {
             aString = "0.00";
-        } 
+        }
 		this.value = new Number(aString);
     },
     add:function(amount) {
@@ -69,7 +69,7 @@ Amount = new Class({
         return this;
     },
     getValue: function() {
-        return this.value; 
+        return this.value;
     },
     setValue: function(amount) {
         if(typeOf(amount) == 'object') {
@@ -108,7 +108,7 @@ Amount = new Class({
 });
 
 var AKCMoney = function () {
-//    Key variables holding info about the account that the transactions might need to refer to 
+//    Key variables holding info about the account that the transactions might need to refer to
     var accountName;
 	var startDateCalendar;
     var currency;
@@ -207,15 +207,15 @@ var AKCMoney = function () {
                                         this.editMode = false;
                                         sorting.addItems(this.element);
                                         recalculate();
-                                    }        
+                                    }
                                 }
                             );
                         } else {
                             this.editMode = false;
                             sorting.addItems(this.element);
                         }
-                        this.amount.setValue(amount);    
-                        input.dispose();    
+                        this.amount.setValue(amount);
+                        input.dispose();
                     }.bind(this));
                     input.focus();
                 }.bind(this));
@@ -283,14 +283,14 @@ var AKCMoney = function () {
                         mover.getElement('span').set('html','<img src="move.png" />Move to '+newtype);
                         recalculate();
                     }.bind(this));
-                    
+
                     var a = xaction.getElement('amount');
                     var trate = a.get('rate').toFloat();
                     var isZero = (a.get('zero') == "true");
                     var account = xaction.getElement('account');
                     var arate = account.getElement('amount').get('rate').toFloat();
                     var crate = this.editForm.getElement('.crate');
-                    crate.set('text',trate/arate);   
+                    crate.set('text',trate/arate);
                     var amount = new Amount(this.editForm.getElement('input[name=amount]'));
                     var oldValue = a.get('text').toFloat();
                     amount.setValue(a.get('text'));
@@ -307,14 +307,14 @@ var AKCMoney = function () {
                                 if (accountType.value == "src") this.amount.negate();
                                 recalculate();
                             }
-                            oldValue = amount.getValue();                                
+                            oldValue = amount.getValue();
                         }
                     }.bind(this));
                     var aamount = new Amount(this.editForm.getElement('input[name=aamount]'));
                     aamount.setValue(account.getElement('amount').get('text'));
                     aamount.addEvent('change', function(occurred) {
                         if(occurred) {
-                        
+
                             var acchange = this.editForm.getElement('input[name=acchange]');
                             if(acchange.value == 0) {
                                 acchange.value = 1;
@@ -356,7 +356,7 @@ var AKCMoney = function () {
                             return true;
                         }.bind(this));
                     }.bind(this));
-                    
+
                     var other = account.getNext();
                     Utils.selectValueSet(this.editForm,'account',(other)?other.get('name'):'');
                     var cleared = this.editForm.getElement('input[name=cleared]');
@@ -375,17 +375,17 @@ var AKCMoney = function () {
                                 }
                             }
                         }
-                    }); 
+                    });
                     cleared.addEvent('change',function () {
                         if(repeat.value != 0) {
                             cleared.checked = false; //Don't allow it to change
                         } else {
-                            if(confirm("Changing the state will NOT adjust the reconciled balance. Are you sure you wish to proceed?")) {  
+                            if(confirm("Changing the state will NOT adjust the reconciled balance. Are you sure you wish to proceed?")) {
                                 recalculate();
                             } else {
                                 cleared.checked = cleared.checked? false:true; //set it back if didn't agree to go forward
                             }
-                        } 
+                        }
                     });
                     this.editForm.getElement('.setcurrency').addEvent('click',function(e) {
                         this.editForm.getElement('input[name=acchange]').value=2;
@@ -426,7 +426,7 @@ var AKCMoney = function () {
                                	window.location='index.php?'+Object.toQueryString({'account':account.options[account.selectedIndex].value,'tid':this.tid,'edit':EDIT_KEY});
                             });
                         }
-                    }.bind(this));         
+                    }.bind(this));
                     this.editForm.getElement('.closeeditform').addEvent('click',function(e) {
                         e.stop();
                         request.callRequest('updatexaction.php',this.editForm,this,
@@ -438,7 +438,7 @@ var AKCMoney = function () {
                                 var marker = document.id('now');
                                 var xdate = xaction.get('date');
                                 var dateEl = this.element.getElement('input[name=xxdate]')
-                                var odate = dateEl.value 
+                                var odate = dateEl.value
                                 dateEl.value= xdate;
                                 var del= this.element.getElement('.date');
                                 if(xaction.get('repeat') == 0) {
@@ -450,7 +450,7 @@ var AKCMoney = function () {
                                     } else {
                                         del.removeClass('cleared');
                                     }
-                                    
+
                                     if(xdate < new Date().getTime()/1000) {
                                         if(!this.cleared) del.addClass('passed');
                                     } else {
@@ -468,14 +468,14 @@ var AKCMoney = function () {
                                         while(!found) {
                                             previous = previous.getPrevious()
                                             if (previous == marker) previous = previous.getPrevious();
-                                            if(previous) {                            
+                                            if(previous) {
                                                 if (xdate > previous.getElement('input[name=xxdate]').value) {
                                                     found = true;
                                                     this.element.inject(previous,'after');
                                                 }
                                             } else {
                                                 found = true;
-                                                this.element.inject(this.element.getParent(),'top');   
+                                                this.element.inject(this.element.getParent(),'top');
                                             }
                                         }
                                     } else {
@@ -602,7 +602,7 @@ var AKCMoney = function () {
                 if (xaction.isCleared()) {
                     clearedBalance.add(xaction.getAmount());
                 }
-            }         
+            }
         },this);
     };
     return {
@@ -620,7 +620,7 @@ var AKCMoney = function () {
                 },this,function(holder) {
                     window.location.replace('index.php');  //redisplays this page with new values
                 });
-                    
+
 			}});
             document.id('scopeselection').getElements('input[name=scope]').addEvent('click',function(e){
                 e.stop();
@@ -633,8 +633,8 @@ var AKCMoney = function () {
                 },this,function(holder) {
                     window.location.replace('index.php');  //redisplays this page with new values
                 });
-                    
-            });    
+
+            });
             document.id('transactions').getElements('.xaction').each(function(transaction) {
                 var t = new Transaction(transaction); //Class attaches to the transaction as it is occluded
                 if (t.tid == tid) {
@@ -648,7 +648,7 @@ var AKCMoney = function () {
             });
             sorting = new Sortables(document.id('transactions'),{
                 clone:false,
-                opacity:0.5, 
+                opacity:0.5,
                 revert: { duration: 500, transition: 'elastic:out' },
                 onComplete: function(transaction) {
                     var m = document.id('now'); //we need to skip this if we come across it
@@ -661,7 +661,7 @@ var AKCMoney = function () {
                     if(p) {
                         p = p.retrieve('transaction');
                         pd = p.getXactionDate();
-                        if(pd > d) {
+                        if(pd >= d) {
                            //we must have moved down (to a later date) for this to be so
                             n = transaction.getNext();
                             if (n == m) n = n.getNext(); //skip now marker
@@ -682,10 +682,10 @@ var AKCMoney = function () {
                             if (n) {
                                 n = n.retrieve('transaction');
                                 nd = n.getXactionDate();
-                                if ( nd < d) {
+                                if ( nd <= d) {
                                     //we must have moved up (to a earlier date) for this to be so
                                     if (pd > nd-1) { //if previous at same date
-                                        t.setXactionDate(n.getXactionDate()); //make it one second earlier
+                                        t.setXactionDate(n.getXactionDate()); //make it the same time
                                     } else {
                                         t.setXactionDate(n.getXactionDate()-1); //make it one second earlier
                                     }
@@ -697,7 +697,7 @@ var AKCMoney = function () {
                         if (n == m) n= n.getNext(); //skip now marker
                         if (n) {
                             n = n.retrieve('transaction');
-                            if (n.getXactionDate()  < d) {
+                            if (n.getXactionDate()  <= d) {
                                 //we must have moved up to a later date for this to be so
                                 t.setXactionDate(n.getXactionDate()-1); //make it one second earlier
                             } //else nothing to be done we haven't moved
@@ -727,7 +727,7 @@ var AKCMoney = function () {
                 var params = this.getParent().clone(); //This will be the basis of the request, but we now need to get all transactions that are cleared as well
                 document.id('transactions').getElements('.xaction').each(function(xaction) {
                     if (xaction.getElement('.date').hasClass('cleared')) {
-                        //We now make an input element that will hold one array entry consisting of the transaction id and version separated by 
+                        //We now make an input element that will hold one array entry consisting of the transaction id and version separated by
                         var i = new Element('input',{'name':'transactions[]','value':xaction.get('id').substr(1) + ':' + xaction.getElement('input[name=version]').value});
                         i.inject(params);
                     }
@@ -749,7 +749,7 @@ var AKCMoney = function () {
                             var t = new Transaction(el); //should return the old transaction
                             t.reconciled = true;
                             t.cleared = false;
-                            t.setVersion(xaction.get('version'));                            
+                            t.setVersion(xaction.get('version'));
                         });
                         document.id('bversion').value = holder.getElement('balance').get('version');
                         recalculate();
@@ -768,7 +768,7 @@ var AKCMoney = function () {
                     	document.id('recbaldate').removeClass('dateconvert').addClass('dateawait').value = new Date().getTime()/1000;
                     	Utils.dateAdjust(document.id('recbaldate').getParent(),'dateawait','dateconvert');
                         document.id('bversion').value = holder.getElement('balance').get('version');
-                        recalculate();                
+                        recalculate();
                     });
                 }
             });
