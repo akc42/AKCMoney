@@ -1,0 +1,19 @@
+{
+  "name": "akcmoneyv4",
+  "description" : "AKC Money Management System v4",
+  "authors" : [
+    "Alan Chandler"
+  ],
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "app-elements": "polymerelements/app-elements#^0.9.0",
+    "iron-elements": "PolymerElements/iron-elements#^1.0.0",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.1",
+    "stacktrace-js": "~1.0.1",
+    "polymer": "polymer/polymer#^1.4.0"
+  },
+  "devDependencies": {
+     "web-component-tester": "^4.0.0"
+  }
+}
