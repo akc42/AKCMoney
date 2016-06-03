@@ -24,9 +24,9 @@ require_once('./inc/db.inc');
 if(!$user['isAdmin']) die('insufficient permissions');
 
 $sstmt = $db->prepare("
-    SELECT 
-        t.version AS version, t.amount AS amount, tc.rate AS trate, 
-        src, srcamount, sc.rate AS srate, 
+    SELECT
+        t.version AS version, t.amount AS amount, tc.rate AS trate,
+        src, srcamount, sc.rate AS srate,
         dst, dstamount, dc.rate AS drate
     FROM xaction AS t
     JOIN currency AS tc ON t.currency = tc.name
@@ -62,7 +62,7 @@ information we are going to reload the page</error>
 }
 $version = $row['version'] + 1;
 
-$amount = (int)($_POST['amount']*100); //convert amount back to be a big int.
+$amount = round((float)($_POST['amount'])*100); //convert amount back to be a big int.
 if($_POST['account'] == $row['src']) {
     $amount = -$amount;
 }
@@ -70,7 +70,7 @@ if($_POST['account'] == $row['src']) {
     should be noted that this routine is only called where one of src or dst is the same currency as the transaction, but that
     does not imply that the other account (dst or src) is also of the same currency - so it might need updating and here we check */
 
-if ($row['amount'] != 0) { 
+if ($row['amount'] != 0) {
     $scaling = $amount/$row['amount'];
 }
 
