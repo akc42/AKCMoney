@@ -587,20 +587,22 @@ var AKCMoney = function () {
         minBalance.setValue(reconciledBalance);
         clearedBalance.setValue(reconciledBalance);
         sorting.serialize().each(function(id) {
-            if( id == "now") return;
-            var el = document.id(id);
-            r++;
-            el.removeClass('even');
-            if (r%2 == 0) el.addClass('even');
-            var xaction = el.retrieve('transaction');
-            if (xaction.isReconciled()) {
-                xaction.setCumulative(new Amount());  //Setting cumulative to 0 since not valid for reconciled transactions
-            } else {
-                runningTotal.add(xaction.getAmount());
-                xaction.setCumulative(runningTotal);
-                if(runningTotal.getValue() < minBalance.getValue()) minBalance.setValue(runningTotal);
-                if (xaction.isCleared()) {
-                    clearedBalance.add(xaction.getAmount());
+            if(id) {
+                if( id == "now") return;
+                var el = document.id(id);
+                r++;
+                el.removeClass('even');
+                if (r%2 == 0) el.addClass('even');
+                var xaction = el.retrieve('transaction');
+                if (xaction.isReconciled()) {
+                    xaction.setCumulative(new Amount());  //Setting cumulative to 0 since not valid for reconciled transactions
+                } else {
+                    runningTotal.add(xaction.getAmount());
+                    xaction.setCumulative(runningTotal);
+                    if(runningTotal.getValue() < minBalance.getValue()) minBalance.setValue(runningTotal);
+                    if (xaction.isCleared()) {
+                        clearedBalance.add(xaction.getAmount());
+                    }
                 }
             }
         },this);
@@ -650,7 +652,7 @@ var AKCMoney = function () {
                 clone:false,
                 opacity:0.5,
                 revert: { duration: 500, transition: 'elastic:out' },
-                onComplete: function(transaction) {
+                onSort: function(transaction) {
                     var m = document.id('now'); //we need to skip this if we come across it
                     if(transaction == m) return
                     var t = transaction.retrieve('transaction');
@@ -707,8 +709,8 @@ var AKCMoney = function () {
             });
             sorting.removeItems(document.id('now')); //We need to remove the now marker from sortables.
 // Add Event Button
-            document.id('new').addEvent('click', function(e) {
-		var a;
+                document.id('new').addEvent('click', function(e) {
+		        var a;
                 request.callRequest(
                     'newxaction.php',
                     this.getParent(),
