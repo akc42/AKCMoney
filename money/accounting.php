@@ -142,6 +142,8 @@ an adminstrator, informing them that you had a problem with domain name <strong>
                     $info = getdate($row['date']);
                     $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mon'],$info['mday'],$info['year']+1); //yearly
                     break;
+                case 7:
+                    $row['date'] += 2419200 ; //add four weeks
                default:
                     $db->rollBack();
                     die('invalid repeat period in database, transaction id = '.$row['id']);

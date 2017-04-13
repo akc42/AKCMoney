@@ -62,16 +62,18 @@ INSERT INTO code (type,description) VALUES ('O','Profit and Dividends'); -- Off 
 
 CREATE TABLE repeat (
     rkey integer PRIMARY KEY, -- key used in transaction 
-    description character varying(25) NOT NULL 
+    description character varying(25) NOT NULL ,
+    priority integer
 );
 
-INSERT INTO repeat VALUES (0, 'No Repeat');
-INSERT INTO repeat VALUES (1, 'Weekly');
-INSERT INTO repeat VALUES (2, 'Fortnightly');
-INSERT INTO repeat VALUES (3, 'Monthly');
-INSERT INTO repeat VALUES (4, 'Monthly (at End)');
-INSERT INTO repeat VALUES (5, 'Quarterly');
-INSERT INTO repeat VALUES (6, 'Yearly');
+INSERT INTO repeat VALUES (0, 'No Repeat',0);
+INSERT INTO repeat VALUES (1, 'Weekly',1);
+INSERT INTO repeat VALUES (2, 'Fortnightly',2);
+INSERT INTO repeat VALUES (3, 'Monthly',4);
+INSERT INTO repeat VALUES (4, 'Monthly (at End)',5);
+INSERT INTO repeat VALUES (5, 'Quarterly',6);
+INSERT INTO repeat VALUES (6, 'Yearly',7);
+INSERT INTO repeat VALUES (7, '4 Weekly',3);
 
 CREATE TABLE currency (
     name character(3) PRIMARY KEY, -- standard international symbol for currency
@@ -351,7 +353,7 @@ CREATE TABLE config (
 );
 
 INSERT INTO config(db_version,repeat_days,year_end) 
-            VALUES (4, 90,'1231');
+            VALUES (5, 90,'1231');
 
 CREATE VIEW dfxaction AS
     SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,

@@ -266,6 +266,9 @@ window.addEvent('domready', function() {
                     $info = getdate($row['date']);
                     $row['date'] = mktime($info['hours'],$info['minutes'],$info['seconds'],$info['mon'],$info['mday'],$info['year']+1); //yearly
                     break;
+                case 7:
+                    $row['date'] += 2419200 ; //add four weeks
+                    break;
                default:
                     $db->rollBack();
                     die('invalid repeat period in database, transaction id = '.$row['id']);
@@ -453,7 +456,7 @@ $r = 0;
         <div class="repeatsel">
             <select name="repeat" tabindex="60" >
 <?php
-		$result = $db->query('SELECT * FROM repeat;');
+		$result = $db->query('SELECT * FROM repeat ORDER BY priority;');
 		while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
 ?>              <option value="<?php echo $row['rkey']; ?>" <?php
             if($row['rkey'] == 0) echo 'selected="selected"';?>><?php

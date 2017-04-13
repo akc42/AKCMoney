@@ -1,4 +1,4 @@
-- 	Copyright (c) 2014 money Chandler
+--Copyright (c) 2015 money Chandler
 --  This file is part of AKCMoney.
 
 --    AKCMoney is free software: you can redistribute it and/or modify
@@ -17,9 +17,19 @@
 
 BEGIN IMMEDIATE;
 
-INSERT OR IGNORE INTO codeType VALUES ('O','Off Balance Sheet');  --Items that should not appear in domain accounting
+ALTER TABLE repeat ADD priority integer;
+
+UPDATE repeat SET priority = 0 WHERE rkey = 0;
+UPDATE repeat SET priority = 1 WHERE rkey = 1;
+UPDATE repeat SET priority = 2 WHERE rkey = 2;
+UPDATE repeat SET priority = 4 WHERE rkey = 3;
+UPDATE repeat SET priority = 5 WHERE rkey = 4;
+UPDATE repeat SET priority = 6 WHERE rkey = 5;
+UPDATE repeat SET priority = 7 WHERE rkey = 6;
+
+INSERT INTO repeat VALUES (7, '4 Weekly',3);  --New Repeat Period
 
 
-UPDATE config SET version = version + 1, db_version = 4;
+UPDATE config SET version = version + 1, db_version = 5;
 
 COMMIT;

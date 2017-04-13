@@ -66,11 +66,18 @@ if(!isset($_GET['db'])) {
         $result = $db->query('SELECT * FROM config;');
         $row = $result->fetch(PDO::FETCH_ASSOC);
     }
-/*
-       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
     if($row['db_version'] < 5) { //update to version 5
         $result->closeCursor();
         $db->exec(file_get_contents('./inc/update4.sql'));
+        $result = $db->query('SELECT * FROM config;');
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+    }
+
+/*
+       // TO BE ADDED WHEN THERE IS A NEXT UPDATE
+    if($row['db_version'] < 6) { //update to version 5
+        $result->closeCursor();
+        $db->exec(file_get_contents('./inc/update5.sql'));
         $result = $db->query('SELECT * FROM config;');
         $row = $result->fetch(PDO::FETCH_ASSOC);
     }
