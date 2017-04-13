@@ -2,3 +2,5 @@ app/bower_components
 server/node_modules
 money.sublime-workspace
 db/*.db
+**/*-yc*.js
+**/version.inc
