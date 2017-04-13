@@ -3,5 +3,5 @@ server/node_modules
 money.sublime-workspace
 db/*.db
 **/*-yc*.js
-app/inc/version.inc
+**/version.inc
 
