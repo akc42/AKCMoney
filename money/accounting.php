@@ -144,9 +144,10 @@ an adminstrator, informing them that you had a problem with domain name <strong>
                     break;
                 case 7:
                     $row['date'] += 2419200 ; //add four weeks
+                    break;
                default:
                     $db->rollBack();
-                    die('invalid repeat period in database, transaction id = '.$row['id']);
+                    die('invalid repeat period in database, transaction id = '.$row['id'].' repeat period = '.$row['repeat']);
             }
             if ($row['date'] < $endtime) $repeats_to_do = true; //still have to do some more after this, since this didn't finish the job
             $ins->execute(array($row['date'],$row['src'],$row['dst'],$row['srcamount'],$row['dstamount'],$row['srccode'],$row['dstcode'],
