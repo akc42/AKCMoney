@@ -1,0 +1,69 @@
+/**
+@licence
+    Copyright (c) 2020 Alan Chandler, all rights reserved
+
+    This file is part of AKCMoney.
+
+    AKCMoney is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    AKCMoney is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+:root {
+  --color:white;
+  --background-color: rgb(5, 5, 5);
+  --accent-color: fuchsia;
+  --accent-constrast-color: white;
+  --secondary-color: navy;
+  --secondary-contrast-color: white;
+  --dialog-color: white;
+  --cancel-color: lavender;
+  --cancel-contrast-color: navy;
+  --shadow-color: rgba(255,255,255,0.5);
+  --link-color: limegreen;
+  --error-color: var(--secondary-contrast-color);
+  --error-text-color: var(--secondary-color);
+  --error-icon-color: red;
+  --disabled-color: grey;
+  --header-icon-background-color: var(--accent-color);
+  --header-icon-color: var(--accent-constrast-color);
+  --overlay-color: var(--secondary-color);
+  --overlay-background-color: var(--secondary-constrast-color);
+  --menu-separator: grey;
+ 
+
+  --item-present: lawngreen;
+  --item-not-present: orangered;
+  --create-item-color: lawngreen;
+
+
+  --fm-pick-open: blue; 
+  --fm-editable-comment: lawngreen;
+  --fm-fixed-comment: darkorange;
+  --emoji-button-color: gold;
+  --emoji-color: gold;
+
+  --opid-1: rgb(255,0,0);
+  --opid-2: rgb(0,255,255);
+  --opid-3: rgb(255,255,0);
+  --opid-4: rgb(0,0,255);
+  --opid-5: rgb(0,255,0);
+  --opid-6: rgb(255,0,255);
+  
+  --name-input-length: 120px; 
+  --pw-input-length: 100px; 
+}
+  
+body {
+  color: var(--color);
+  background-color: var(--background-color);
+}

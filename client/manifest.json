@@ -1,0 +1,35 @@
+{
+
+  "name": "AKCMoney",
+  "short_name": "Money",
+    "icons": [{
+      "src": "images/money-logo-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    }, {
+      "src": "images/money-logo-logo-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }, {
+      "src": "images/money--logo-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }, {
+      "src": "images/money-logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg"
+    },{
+      "src": "images/money-logo.svg",
+      "sizes": "384x384",
+      "type": "image/svg"
+    },{
+      "src": "images/money-logo-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#adcabd"
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+/*
+ 	Copyright (c) 2009 - 2020 Alan Chandler
+    This file is part of AKCMoney.
+
+    AKCMoney is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    AKCMoney is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+      content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes, shrink-to-fit=no">
+
+    <title>AKC Money</title>
+    <!-- because this can be served from anywhere base allows us to use relative urls -->
+    <base href="/">
+    <link rel="shortcut icon" sizes="32x32" href="images/money-logo-32x32.png">
+    <meta name="description" content="AKC Money is an application to Manage Money, either for a private individual or a small business.  It 
+consist of two main concepts, accounts which hold money, and transactions which transfer money from one account to another (or just to or from a
+single account if the transaction is with the outside world).  Multiple currencies are supported, and can use exchange rates which are initially
+estimated, but are then corrected when the actual value used in a transaction is known.  This is the second release, based on personal use over
+the past 4 years and a third release is planned to allow multiple accounting as is typically seen in business (cash accounts versus management accounts"/>
+<meta name="keywords" content=""/>">
+
+    <meta name="theme-color" content="#ff00ff">
+    <!-- Add to homescreen for Chrome on Android. Fallback for manifest.json -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="FMob">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FMob">
+
+    <!-- Homescreen icons -->
+    <link rel="apple-touch-icon" href="appimages/football-logo.svg">
+    <link rel="apple-touch-icon" sizes="72x72" href="appimages/football-logo.svg">
+    <link rel="apple-touch-icon" sizes="96x96" href="appimages/football-logo.svg">
+    <link rel="apple-touch-icon" sizes="144x144" href="appimages/football-logo.svg">
+    <link rel="apple-touch-icon" sizes="192x192" href="appimages/football-logo.svg">
+
+    <!-- Tile icon for Windows 8 (144x144 + tile color) -->
+    <meta name="msapplication-TileImage" content="appimages/football-logo.svg">
+    <meta name="msapplication-TileColor" content="#42d9ff">
+    <meta name="msapplication-tap-highlight" content="no">
+    <link rel="manifest" href="manifest.json">
+    <!-- The main stylesheet -->
+    <link rel="stylesheet" href="/style.css">
+
+    <script src="/libs/webcomponents-loader.js" defer></script>
+    <script type="module" src="/pages/main-app.js" async></script>
+
+    <style>
+      html {
+        background: #ffffff;
+      }
+
+      body {
+        margin: 0;
+        height:100vh;
+        width:100vw;
+        font-family: sans-serif;
+        line-height: 1.5;
+        letter-spacing: 0.1em;
+        background-color: var(--background-color);
+        color: var(--color);
+      }
+
+      /* styling for render while resources are loading */
+      main-app[unresolved] {
+        display: flex;
+        flex-direction: column-reverse;
+        font-size: 10pt;
+
+        height: 100%;
+        width: 100%
+
+      }
+
+      main-app[unresolved] header {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        flex: 0 1 64px;
+        background-color: var(--accent-color);
+        color: var(--accent-constrast-color);
+        box-shadow: 0px 20px 41px 0px rgba(0,0,0,0.2);
+      }
+
+      main-app[unresolved] section {
+        flex: 1,1,auto;
+        letter-spacing: 0.3em;
+        font-weight: 600;
+      }
+      @media (min-width: 500px) {
+
+        main-app[unresolved] {
+          flex-direction: column;
+        }
+      }
+
+    </style>
+
+  </head>
+  <body>
+    <main-app unresolved >
+      <header class="header"><div>AKCMoney</div></header>
+      <section><div>Application Loading ...</div></section>
+    </main-app>
+    <noscript>
+      Please enable JavaScript to use AKCMoney.
+    </noscript>
+    <script type="module">
+      window.performance.mark('index_loaded');
+      window.performance.measure('index_loaded','navigationStart','index_loaded');
+    </script>
+
+  </body>
+</html>
