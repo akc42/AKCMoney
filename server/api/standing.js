@@ -21,17 +21,21 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:validate');
+  const debug = require('debug')('money:standing');
   const db = require('@akc42/server-utils/database');
-  module.exports = async function(user, params, responder, genCook) {
+
+  module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const updatedUser = db.prepare(`SELECT * FROM user WHERE uid = ?`).get(user.uid);
-    updatedUser.password = !!updatedUser.password; //hide actual value
-    updatedUser.remember = user.remember; //Not a database field
-    if (user.version !== updatedUser.version || user.name !== updatedUser.name || 
-      user.password !== updatedUser.password || user.account !== updatedUser.account || user.domain !== updatedUser.domain) {
-        genCook(updatedUser); //Need to make a new cookie as the value has changed
-    }
-    responder.addSection('user', updatedUser);
+    const getCurrency = db.prepare('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC');
+    const getCodes = db.prepare('SELECT * FROM code ORDER BY type DESC, description COLLATE NOCASE ASC');
+    const getRepeats = db.prepare('SELECT rkey,description FROM repeat ORDER BY priority');
+
+    db.transaction(() => {
+      debug('add currency and codes');
+      responder.addSection('currency', getCurrency.all());
+      responder.addSection('codes', getCodes.all());
+      responder.addSection('repeats', getRepeats.all());
+    })();
+    debug('request complete');
   };
 })();

@@ -62,7 +62,7 @@ class FormManager extends LitElement  {
 
   render() {
     return html`
-      <slot id="mychildren"></slot>        
+      <slot id="mychildren"></slot>       
     `;
   }
   get params() {

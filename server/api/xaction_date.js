@@ -21,17 +21,23 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:validate');
+  const debug = require('debug')('money:xactiondate');
   const db = require('@akc42/server-utils/database');
-  module.exports = async function(user, params, responder, genCook) {
+
+  module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const updatedUser = db.prepare(`SELECT * FROM user WHERE uid = ?`).get(user.uid);
-    updatedUser.password = !!updatedUser.password; //hide actual value
-    updatedUser.remember = user.remember; //Not a database field
-    if (user.version !== updatedUser.version || user.name !== updatedUser.name || 
-      user.password !== updatedUser.password || user.account !== updatedUser.account || user.domain !== updatedUser.domain) {
-        genCook(updatedUser); //Need to make a new cookie as the value has changed
-    }
-    responder.addSection('user', updatedUser);
+    const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
+    const updateXaction = db.prepare('UPDATE xaction SET version = version + 1, date = ? WHERE id = ?');
+    db.transaction(() => {
+      const version = getXactionVersion.get(params.id);
+      if (version === params.version) {
+        updateXaction.run(params.date, params.id);
+        responder.addSection('status', 'OK');
+      } else {
+        responder.addSection('status', 'Fail');
+      }
+    })();
+    debug('request complete');
+    
   };
 })();

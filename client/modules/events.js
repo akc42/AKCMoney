@@ -59,6 +59,22 @@ export class AuthChanged extends Event {
   }
 };
 
+
+export class BalanceChanged extends Event {
+  /*
+     The following are the fields provided by this event
+
+     changed: Object containining a field called "cleared".  If true, the object contains another field called "amount", which is
+     amount which should be added (subtracted if negative) to the cleared balance.  Regardless of the setting of cleared, two
+     other fields, "balance" and "index" - should be output.  If cleared its value should match the input balance, otherwise its
+     calculated from the src/dst of account.  
+  */
+  constructor(changed) {
+    super('balance-changed',{composed: true, bubbles: true});
+    this.changed = changed;
+  }
+};
+
 export class DeleteRequest extends Event {
   
 
@@ -89,6 +105,18 @@ export class OverwriteWarning extends Event {
   }
 };
 
+export class UserRefresh extends Event {
+  /*
+     The following are the fields provided by this event
+
+     none :  
+
+  */
+  constructor(status) {
+    super('user-refresh',{composed: true, bubbles: true});
+    this.status = status;
+  }
+};
 
 
 export class ValueChanged extends Event {

@@ -1,4 +1,3 @@
-
 /**
 @licence
     Copyright (c) 2020 Alan Chandler, all rights reserved
@@ -18,31 +17,45 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import { LitElement, html, css } from '../libs/lit-element.js';
 
+import page from '../styles/page.js';
 
-import { css } from '../libs/lit-element.js';
-
-export default css`
-  button {
-    background-color: var(--button-color);
-    min-width:80px;
-    min-height:30px;
-    color: var(--button-text-color);
-    border: none;
-    padding: 5px;
-    border-radius:5px;
-    box-shadow: 2px 2px 5px 4px var(--shadow-color);
-    cursor: pointer;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+/*
+     <sorter-page>: Sorting Accounts
+*/
+class SorterPage extends LitElement {
+  static get styles() {
+    return [page, css``];
   }
-  button > material-icon {
-    margin-right: 2px;
-  } 
-
-  button:active {
-    box-shadow: none;
+  static get properties() {
+    return {
+    
+    };
   }
-`;
+  constructor() {
+    super();
+  }
+  connectedCallback() {
+    super.connectedCallback();
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+  }
+  update(changed) {
+    super.update(changed);
+  }
+  firstUpdated() {
+  }
+  updated(changed) {
+    super.updated(changed);
+  }
+  render() {
+    return html`
+      <style>
+      </style>
+      <p>Not implemented Yet</p>
+    `;
+  }
+}
+customElements.define('sorter-page', SorterPage);

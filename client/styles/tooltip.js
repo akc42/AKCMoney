@@ -38,8 +38,8 @@ export default  css`
     width: fit-content;
     min-width: 44px;
     white-space: pre;
-    color: var(--secondary-contrast-color);
-    background: var(--secondary-color);
+    color: var(--tooltip-text-color);
+    background: var(--tooltip-color);
     font-size: 12px;
     font-weight: normal;
     font-family: helvetica;
@@ -60,7 +60,7 @@ export default  css`
       margin: 0;
       width: 0;
       box-shadow: 0px 0px 50px 3px var(--shadow-color);
-      border-bottom: 5px solid var(--secondary-color);
+      border-bottom: 5px solid var(--tooltip-color);
       border-right: 5px solid transparent;
       border-left: 5px solid transparent;
       border-top: 0px;
@@ -142,7 +142,7 @@ export default  css`
     right: 100%;
     left: auto;
     margin: -2px 5px 0px 0px;
-    border-left: 5px solid var(--secondary-color);
+    border-left: 5px solid var(--tooltip-color);
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
     border-right: 0px;
@@ -158,7 +158,7 @@ export default  css`
     top: 50%;
     left: 100%;
     margin: -2px 0px 0px 5px;
-    border-right: 5px solid var(--secondary-color);
+    border-right: 5px solid var(--tooltip-color);
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
     border-left: 0px;

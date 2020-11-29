@@ -107,7 +107,8 @@ class CalendarDialog extends LitElement {
       pm: {type: Boolean},  //set if time triggered to pm
       minuteGuard: {type: Number},
       hourGuard: {type: Number}, //something that only changes if the hour changes
-      dayGuard: {type: Number}
+      dayGuard: {type: Number},
+      noUnset: {type: Boolean} //if set there should be no Unset Function
     };
   }
   constructor() {
@@ -128,6 +129,7 @@ class CalendarDialog extends LitElement {
     this.weeks = [];
     this._gotRequest = this._gotRequest.bind(this);
     this.eventLocked = true;
+    this.noUnset = false;
 
   }
   connectedCallback() {
@@ -352,9 +354,10 @@ class CalendarDialog extends LitElement {
           </div>
         `:'')}
         <div class="unset">
-          <button cancel @click=${this._unset}>${this.value === 0? (this.setZero? 'Restore' : 'Today') : 'Unset'}</button>
+          <button cancel @click=${this._unset}>${this.noUnset? 'Restore':(this.value === 0? (this.setZero? 'Restore' : 'Today') : 'Unset')}</button>
         </div>
       </div>
+      
     </dialog-box>
     `;
   }
@@ -372,6 +375,7 @@ class CalendarDialog extends LitElement {
     this.overlay.positionTarget = e.composedPath()[0];
     this.original = e.date.date;
     this.value = e.date.date;
+    if(this.noUnset) this.savedValue = this.value;
     this.withTime = e.date.time;
     this.overlay.show();
   }
@@ -435,8 +439,10 @@ class CalendarDialog extends LitElement {
   _show() {
     this.overlay.show();
   }
-  _unset() {
-    if (this.value  === 0) {
+  async _unset() {
+    if (this.value  === 0 || this.noUnset) {
+      this.value = 0;
+      await this.requestUpdate();
       this.value = this.savedValue;
     } else {
       this.savedValue = this.value;

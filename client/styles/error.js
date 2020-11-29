@@ -23,26 +23,16 @@
 import { css } from '../libs/lit-element.js';
 
 export default css`
-  button {
-    background-color: var(--button-color);
-    min-width:80px;
-    min-height:30px;
-    color: var(--button-text-color);
-    border: none;
-    padding: 5px;
-    border-radius:5px;
-    box-shadow: 2px 2px 5px 4px var(--shadow-color);
-    cursor: pointer;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-  button > material-icon {
-    margin-right: 2px;
-  } 
 
-  button:active {
-    box-shadow: none;
-  }
+     [role="alert"] {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        color: var(--error-color);
+
+      }
+      [role="alert"] material-icon {
+        --icon-size: 10pt;
+        margin: 0 10px;
+      }
 `;

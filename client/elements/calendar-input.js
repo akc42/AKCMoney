@@ -21,9 +21,6 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 
 import './date-format.js';
 
-
-
-
 class CalendarRequest extends Event {
 
 
@@ -73,7 +70,8 @@ class CalendarInput extends LitElement {
         flex-direction: row;
         justify-content:space-evenly;
         align-items: center;
-        border: 2px solid var(--accent-color);
+        background-color: var(--panel-background-color);
+        border: 2px solid var(--panel-border-color);
         cursor: pointer;
       } 
     `;
@@ -104,9 +102,11 @@ class CalendarInput extends LitElement {
     this.removeEventListener('calendar-reply', this._calendarReply);
   }
   update(changed) {
-    if (changed.has('value') && this.value === null) {
-      this.value = 0;
+/*    if (changed.has('value')) {
+      if (this.value === null) this.value = 0;
+      this.dispatchEvent(new ValueChanged(this.value));
     } 
+*/
     super.update(changed);
   }
 

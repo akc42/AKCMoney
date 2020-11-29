@@ -1,0 +1,103 @@
+/*
+ 	Copyright (c) 2009,2010 Alan Chandler
+    This file is part of AKCMoney.
+
+    AKCMoney is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    AKCMoney is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+body {font-family: Arial Helvetica, sans-serif;font-size: 10pt;line-height: 12pt;color: black;background: white;}
+
+#header {
+    width:728px;
+    height:90px;
+    background: white url("banner.jpg") top left  no-repeat;
+   }
+#footer {
+    width:728px;
+    height:90px;
+    padding:5px;
+    background: white url("footer.jpg") top left  no-repeat;
+    color:white;
+    font-size:0.8em;
+    margin-top:10px;
+    clear:both;
+   }
+#footer a,#footer a:visited {color:white;}
+
+/* ================================================================ 
+This copyright notice must be kept untouched in the stylesheet at 
+all times.
+
+The original version of this stylesheet and the associated (x)html
+is available at http://www.cssplay.co.uk/menu/pro_drop3.html
+Copyright (c) 2005-2007 Stu Nicholls. All rights reserved.
+This stylesheet and the associated (x)html may be modified in any 
+way to fit your requirements.
+=================================================================== */
+/* AKC - this menu has been modified extensively.  It also appears that the url
+ in the copyright notice directly above this comment is no longer available */
+
+.preload1 {background: url(blank_over.gif);}
+.preload2 {background: url(blank_overa.gif);}
+
+ul.menu {padding:0; margin-top:5px; list-style:none; height:36px; background:#fff; position:relative; z-index:500; font-family:arial, verdana, sans-serif;}
+ul.menu>li {display:block; float:left;}
+ul.menu>li>a {display:block; float:left; height:36px; line-height:27px; color:#ccc; text-decoration:none; font-size:11px; font-weight:bold; padding:0 0 0 12px; cursor:pointer;background: url(blank.gif);}
+ul.menu>li>a span {float:left; display:block; padding:0 24px 0 12px; height:36px;background:url(blank.gif) right top;}
+ul.menu li>a span.down {float:left; display:block; padding:0 24px 0 12px; height:36px; background:url(blanka.gif) no-repeat right top;}
+ul.menu li>a:hover {color:#fff; background: url(blank_over.gif) no-repeat;}
+ul.menu li>a:hover span {background:url(blank_over.gif) no-repeat right top;}
+ul.menu li>a:hover span.down {background:url(blank_overa.gif) no-repeat right top;}
+
+ul.menu>li:hover> a {color:#fff; background: url(blank_over.gif) no-repeat;}
+ul.menu>li:hover > a span {background:url(blank_over.gif) no-repeat right top;}
+ul.menu>li:hover > a span.down {background:url(blank_overa.gif) no-repeat right top;}
+
+
+/* Style the list OR link hover. Depends on which browser is used */
+
+ul.menu a:hover {visibility:visible; position:relative; z-index:200;}
+ul.menu li:hover {position:relative; z-index:200;}
+
+/* keep the 'next' level invisible by placing it off screen. */
+ul.menu ul {position:absolute; left:0; top:36px; background: #f4f4f4; padding:6px; padding-right:20px;border:1px solid #3a93d2; white-space:nowrap; list-style:none; display:none; max-height:12em; overflow-y:auto;overflow-x:hidden;}
+
+ul.menu :hover ul {display:block; z-index:300;}
+ul.menu :hover ul li {display:block; font-weight:normal; position:relative;}
+ul.menu :hover ul li a {font-size:11px; color:#000; text-decoration:none;}
+ul.menu :hover ul li.selected { background-color:#FFFD7C;}
+ul.menu :hover ul li a:hover {background:#3a93d2; color:#fff;}
+/* END OF Copyright (c) 2005-2007 Stu Nicholl */
+
+#main {
+    width:728px;
+    }
+
+h1,h2 {
+    color:#007AB2;
+}
+
+h2 {
+    text-align:center;
+}
+
+a {
+	text-decoration:none;
+}
+
+#version {
+    float: right;
+}
+
+

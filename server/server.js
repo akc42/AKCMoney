@@ -65,9 +65,10 @@
     res.end('---403---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail
 
   }
-  function errored(req,res,message) {
+  function errored(req,res,error) {
     debug('In "Errored"');
-    logger(req.headers['x-forwarded-for'] ,'error', message,'with request url of ',req.originalUrl);
+    const message = `Error${error.message ? ': ' + error.message: '' } ${error.stack? ': ' + error.stack: ''}`;
+    logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
     res.statusCode = 500;
     res.end('---500---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail.
 
@@ -98,8 +99,9 @@
       */
       const dbSettingsTable = db.prepare(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'settings'`).pluck().get();
       if (dbSettingsTable === 0) {
+        debug('update version to have settings table');
         //we don't yet have a settings table
-        const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `upgrade_to_settings.sql`), { encoding: 'utf8' });
+        const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `update_to_settings.sql`), { encoding: 'utf8' });
         db.exec(update);        
       }
       //try and open the database, so that we can see if it us upto date
@@ -173,6 +175,8 @@
           clientConfig.repeatDays = s.get('repeat_days');
           clientConfig.yearEnd = s.get('year_end');
         })();
+//        const payload = { uid: 1, name: 'alan', password: false, isAdmin: 1, account: 'Bank - Current', domain: 'Personal' }; //TEMP
+//        res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //TEMP
         versionPromise.then(info => {
           //we might have already done this but it doesn't matter
           clientConfig.version = info.version; 
@@ -241,7 +245,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
 
       debug('Setting up to Check Cookies from further in');
       api.use((req, res, next) => {
-        debuguser('checking cookie');
+        debuguser('checking tracking cookie');
         const cookies = req.headers.cookie;
         if (!cookies) {
           forbidden(req, res, 'No Cookie');
@@ -277,7 +281,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       debug('set up logging api')
       api.post('/log/:topic/:message/:gap', (req,res) => {
         const ip = req.headers['x-forwarded-for'];
-        const message = `${chalk.black.bgCyan(req.params.topic)} ${req.params.message}${req.params.gap !== undefined ? chalk.redBright(' +' + req.params.gap + 'ms') : ''}`;
+        const message = `${chalk.black.bgCyan(req.body.topic)} ${req.body.message}${req.body.gap !== undefined ? chalk.redBright(' +' + req.body.gap + 'ms') : ''}`;
         logger(ip,'log',message );
         res.end();
       });
@@ -286,36 +290,36 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       */
       debug('Setting up User Login')
       api.post('/login', async (req,res) => {
-        debugauth('Trying to Login',req.body.name);
-        const user = db.prepare('SELECT * FROM user WHERE name = ?').get(req.body.name);
+        debugauth('Trying to Login',req.body.username);
+        const user = db.prepare('SELECT * FROM user WHERE name = ?').get(req.body.username);
         let success = false;        
         if (user) {
           debugauth('We found a user');
           success = true;
           if (user.password) {
             debugauth('Check Password');
-            success = await bcrypt.compare(req.body.password, user.password);
+            success = await bcrypt.compare(req.body.pwd, user.password);
           }
         }
         debugauth('login was ', success, 'Write log entry');
         db.prepare(`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES (?,?,?,?,?)`)
-          .run(req.headers['x-forwarded-for'],req.track.uid, req.track.ip,params.name,success? 1: 0);
+          .run(req.headers['x-forwarded-for'],req.track.uid, req.track.ip,req.body.name,success? 1: 0);
 
         if (success) {
           user.password = !!user.password; //turn password into a boolean as to whether it exists;
-          res.setHeader('Set-Cookie', generateCookie(user, serverConfig.authCookie, serverConfig.tokenExpires)); //refresh cookie to the new value 
+          user.remember = req.body.remember !== undefined && user.password;
+          res.setHeader('Set-Cookie', generateCookie(user, serverConfig.authCookie, user.remember ? serverConfig.tokenExpires:false)); //refresh cookie to the new value 
           res.end(JSON.stringify(user));
         } else {
-          res.end();
+          res.end(JSON.stringify({}));
         }
         debugauth('login all done');
-
       });
 
 
       debug('Setting up to Check Auth Cookie');
       api.use((req, res, next) => {
-        debugauth('Check Cookie');
+        debugauth('Check Auth Cookie');
         const cookies = req.headers.cookie;
         const authTester = new RegExp(`^(.*; +)?${serverConfig.authCookie}=([^;]+)(.*)?$`);
         const matches = cookies.match(authTester);
@@ -325,11 +329,20 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           try {
             const payload = jwt.decode(token, serverConfig.tokenKey);  //this will throw if the cookie is expired
             req.user = payload;
-            res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //refresh cookie to the new value 
+            res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, payload.remember ? serverConfig.tokenExpires: false)); //refresh cookie to the new value 
             debugauth('Cookie Check Complete')
             next();
           } catch (error) {
-            forbidden(req, res, 'Invalid Auth Token: Error: ' + error.toString());
+            if (error.constructor.name === 'Token expired') {
+              /*
+                there might be a  small windows of a few milliseconds were the token is expired and so has the cookie, but we 
+                still see the cookie - not sure.  This just allows for that possibility.  Validate_user should pick this up and
+                get the user to login again.
+              */
+              res.end();
+            } else {
+              forbidden(req, res, 'Invalid Auth Token: Error: ' + error.toString());
+            }
           }
         } else {
           forbidden(req, res, 'Invalid Cookie');
@@ -345,10 +358,17 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           debugapi(`Received /api/${a}`);
           try {
             const responder = new Responder(res);
-            await apis[a](req.user, req.body, responder);
+            await apis[a](
+              req.user, 
+              req.body, 
+              responder, 
+              user => res.setHeader('Set-Cookie', 
+                generateCookie(user, serverConfig.authCookie, user.remember ? serverConfig.tokenExpires : false)
+              ) //refresh cookie to the new value 
+            );
             responder.end();
           } catch (e) {
-            errored(req, res, e.toString());
+            errored(req, res, e);
           }
         });
       }

@@ -21,17 +21,17 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:validate');
+  const debug = require('debug')('money:offsheet');
   const db = require('@akc42/server-utils/database');
-  module.exports = async function(user, params, responder, genCook) {
+
+  module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const updatedUser = db.prepare(`SELECT * FROM user WHERE uid = ?`).get(user.uid);
-    updatedUser.password = !!updatedUser.password; //hide actual value
-    updatedUser.remember = user.remember; //Not a database field
-    if (user.version !== updatedUser.version || user.name !== updatedUser.name || 
-      user.password !== updatedUser.password || user.account !== updatedUser.account || user.domain !== updatedUser.domain) {
-        genCook(updatedUser); //Need to make a new cookie as the value has changed
-    }
-    responder.addSection('user', updatedUser);
+    const offsheets = db.prepare(`SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
+            SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
+            OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid 
+            AND p.domain = a.domain WHERE a.domain = ? AND u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1)
+        WHERE c.type = 'O'`).get(params.domain, user.uid);
+    responder.addSection('offsheet', offsheets);
+    debug('request complete');
   };
 })();

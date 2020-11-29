@@ -21,18 +21,10 @@
 
 import { html,css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import {api} from '../libs/utils.js';
-
-import global from '../modules/globals.js';
-
 import {connectUrl, disconnectUrl} from '../libs/location.js';
 
 import RouteManager from '../elements/route-manager.js';
-
-
 import '../elements/delete-dialog.js';
-
-
 import {WaitRequest} from '../elements/waiting-indicator.js';
 
 export class PageManager extends RouteManager {
@@ -45,89 +37,48 @@ export class PageManager extends RouteManager {
   }
   static get properties() {
     return {
-      hoster: {type: String},
-      isAdmin:{type: Boolean}
+      accounts: {type: Array}, //Sorted list of accounts
+      domains: {type: Array} //List of domains
     };
   }
   constructor() {
     super();
-    this.hoster = '';
-    this.isAdmin = false;
+    this.accounts = [];
+    this.domains = [];
   }
 
   connectedCallback() {
     super.connectedCallback();
-    const configPromise = new Promise(resolve => {
-      global.config.then(() => {
-        const hostTester = new RegExp(`^(.*; +)?${localStorage.getItem('meetingHost')}=([^;]+)(.*)?$`);
-        const matches = document.cookie.match(hostTester);
-        if (matches) {
-          //we do have a hoster cookie, so lets validate it
-          api('user/check_hoster').then(response => {
-            if (response.hoster !== undefined) {
-              this.hoster = response.hoster.name;
-              this.isAdmin = response.hoster.admin;
-              sessionStorage.setItem('myName', this.hoster);
-            } else {
-              this.hoster = '';
-              this.isAdmin = false;
-              document.cookie = localStorage.getItem('meetingHost') + '=; path=/; expires = Thu, 01 Jan 1970 00:00:01 GMT';  //clear cookie
-            }
-            resolve();
-          });
-        } else {
-          this.hoster = '';
-          resolve();
-        }
-      });
-    });
-
-    connectUrl(route => {
-      configPromise.then(() => { //make sure we have the config before proceeding further
-        this.route = route;
-      });
-    });
+    connectUrl(route => this.route = route);
   }
   disconnectedCallback() {
     super.disconnectedCallback();
     disconnectUrl();
   }
-
   render() {
     return html`
-
       <delete-dialog ></delete-dialog>
       ${cache({
-        admin: html`<admin-page managed-page 
-          .route=${this.subRoute} 
-          .hoster=${this.hoster}></admin-page>`,
-        forgotten: html`<forgotten-page managed-page></forgotten-page>`,
-        home:html`<home-page managed-page .hoster=${this.hoster}></home-page>`,
-        host: html`<host-page 
-                      managed-page 
-                      .route=${this.subRoute} 
-                      .hoster=${this.hoster} 
-                      ?admin=${this.isAdmin} 
-                      @auth-changed=${this._authChanged}></host-page>`,
-        login: html`<login-page managed-page @auth-changed=${this._authChanged}></login-page>`,
-        pin: html`<pin-page managed-page .hoster=${this.hoster} .route=${this.subRoute}></pin-page>`,
-        room: html`<room-page managed-page .hoster=${this.hoster} .route=${this.subRoute}></room-page>`
+        home: html`<home-page managed-page></home-page>`,
+        account: html`<account-page managed-page .accounts=${this.accounts} .route=${this.subRoute}></account-page>`,
+        domain: html`<domain-page managed-page .route=${this.subRoute}></domain-page>`,
+        offsheet: html`<offsheet-page managed-page .route=${this.subRoute}></offsheet-page>`,
+        profile: html`<profile-page managed-page .accounts=${this.accounts} .domains=${this.domains} .route=${this.subRoute}></profile-page>`,
+        sorter: html`<sorter-page managed-page .accounts=${this.accounts} .domain=${this.domain}></sorter-page>`,
+        admin: html`<admin-page managed-page .domains=${this.domains} .route=${this.subRoute}></admin-page>`
       }[this.page])}
-
     `;
   }
   loadPage(page) {
     switch (page) {  
       case 'admin':
-        if(!this.isAdmin) return false;
-      case 'host':
-        if(this.hoster.length === 0) return false;
-      case 'forgotten':
-      case 'login':
-      case 'pin':
-      case 'room':
-        const name = sessionStorage.getItem('myName');
-        if (!name) return false;  //must have collected a name to proceed
+        const user = sessionStorage.getItem('user')
+        if (user.isAdmin !== 1) return false;
+      case 'account':
+      case 'domain':
+      case 'offsheet':
+      case 'profile':
+      case 'sorter':
       case 'home':
         break;
       default:
@@ -136,17 +87,6 @@ export class PageManager extends RouteManager {
     this.dispatchEvent(new WaitRequest(true));
     import(`./${page}-page.js`).then(() => this.dispatchEvent(new WaitRequest(false)));
     return true;
-  }
-  _authChanged(e) {
-    e.stopPropagation();
-    if (e.changed.name.length > 0) {
-      this.hoster = e.changed.name;
-      this.isAdmin = e.changed.admin;
-    } else {
-      this.hoster = '';
-      this.isAdmin = false;
-      document.cookie = localStorage.getItem('meetingHost') + '=; path=/; expires = Thu, 01 Jan 1970 00:00:01 GMT';  //clear cookie
-    }
   }
 }
 customElements.define('page-manager',PageManager);

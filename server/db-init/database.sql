@@ -66,7 +66,8 @@ INSERT INTO code (type,description) VALUES ('O','Profit and Dividends'); -- Off 
 
 CREATE TABLE repeat (
     rkey integer PRIMARY KEY, -- key used in transaction 
-    description character varying(25) NOT NULL 
+    description character varying(25) NOT NULL,
+    priority integer 
 );
 
 INSERT INTO repeat VALUES (0, 'No Repeat');
@@ -76,6 +77,7 @@ INSERT INTO repeat VALUES (3, 'Monthly');
 INSERT INTO repeat VALUES (4, 'Monthly (at End)');
 INSERT INTO repeat VALUES (5, 'Quarterly');
 INSERT INTO repeat VALUES (6, 'Yearly');
+INSERT INTO repeat VALUES (7, 'Four Weekly');
 
 CREATE TABLE currency (
     name character(3) PRIMARY KEY, -- standard international symbol for currency
@@ -265,7 +267,7 @@ INSERT INTO currency VALUES ('USD', 0.636, 1, 2, 'United States of America, Doll
 -- domain is an area of the accounts that is a whole.  Used primarily so we can do special things to transactions between domains
 
 CREATE TABLE domain (
-    name character varying PRIMARY KEY,
+    name character varying COLLATE NOCASE PRIMARY KEY,
     description character varying,
     version bigint DEFAULT 1 NOT NULL
 );
@@ -274,13 +276,13 @@ CREATE TABLE domain (
 
 -- an account, the fundemental accounting vehicle within the system.      
 CREATE TABLE account (
-    name character varying PRIMARY KEY,    -- name of the account
+    name character varying COLLATE NOCASE PRIMARY KEY,    -- name of the account
     bversion bigint DEFAULT 1 NOT NULL,    -- this is incremented when the balance is updated to check that parallel edits are not happening
     dversion bigint DEFAULT 1 NOT NULL,    -- this is incremented when the details of the account are updated to check for parallel edits
     currency character(3) REFERENCES currency(name),  -- currency in which to show transactions
     balance bigint DEFAULT 0 NOT NULL, -- reconciled balance of the account 
     date bigint DEFAULT (strftime('%s','now')) NOT NULL, -- date when reconciled balance was set
-    domain character varying DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL, -- domain that account belongs to
+    domain character varying COLLATE NOCASE DEFAULT NULL REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL, -- domain that account belongs to
 	startdate bigint, -- if null, account only shows unreconciled transactions, if 0 transactions from start of financial year, otherwise from this date
 	archived boolean DEFAULT 0 NOT NULL --indicated if account is archived (does not appear in menus except Account Manager)
 );
@@ -297,11 +299,11 @@ CREATE TABLE xaction (
     version bigint DEFAULT 1 NOT NULL,   -- version of transaction, used to check for parallel updates
     amount bigint DEFAULT 0 NOT NULL, -- amount of transaction (times 100 to make it an integer) of transaction in currency below
     currency character(3) NOT NULL REFERENCES currency(name),   -- currency transaction was conducted in
-    src character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- source account (debits this account when amount is +ve [the normal case])
+    src character varying COLLATE NOCASE REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- source account (debits this account when amount is +ve [the normal case])
     srcamount bigint,                 -- if the source account is a different currency then this is the amount (same sign as) in that currency
     srcclear boolean DEFAULT 0 NOT NULL,  -- the amount is cleared in the source account
     srccode integer REFERENCES code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to account for this transaction
-    dst character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- destination account (credits this account when amount is +ve [the normal case])
+    dst character varying COLLATE NOCASE REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL, -- destination account (credits this account when amount is +ve [the normal case])
     dstamount bigint,                 -- if the destination account is a different currency then this is the amount in that currency
     dstclear boolean DEFAULT 0 NOT NULL, -- if the amount is cleared in the destination account
     dstcode integer REFERENCES code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to account for this transaction
@@ -319,9 +321,9 @@ CREATE INDEX xaction_idx_date ON xaction(date);
 
 CREATE TABLE user (
     uid integer primary key,
-    name character varying UNIQUE,
+    name character varying COLLATE NOCASE UNIQUE,
     version bigint DEFAULT 1 NOT NULL, --version of this record
-    password character varying, -- md5 of password
+    password character varying, -- bcrypt hash of password
     isAdmin boolean NOT NULL DEFAULT 0,  -- if admin has capability of everything
     domain character varying  REFERENCES domain(name) ON UPDATE CASCADE ON DELETE SET NULL, --default domain to use for accounting
     account character varying REFERENCES account(name) ON UPDATE CASCADE ON DELETE SET NULL-- initial account to use when displaying
@@ -333,11 +335,24 @@ INSERT INTO user (name, isAdmin) VALUES ('Admin', 1);  --make the admin user
 
 CREATE TABLE capability (
     uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,
-    domain character REFERENCES domain(name) ON UPDATE CASCADE ON DELETE CASCADE,
+    domain character COLLATE NOCASE REFERENCES domain(name) ON UPDATE CASCADE ON DELETE CASCADE,
     primary key (uid,domain)
 );
 
 CREATE INDEX capability_idx_uid ON capability(uid);
+
+CREATE TABLE priority (
+    uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,
+    domain character varying COLLATE NOCASE REFERENCES domain(name) ON UPDATE CASCADE ON DELETE CASCADE,
+    account character varying COLLATE NOCASE REFERENCES account(name) ON UPDATE CASCADE ON DELETE CASCADE,
+    sort smallint NOT NULL, --a sort order (lowest first) for account in list for this user when using this domain
+    PRIMARY KEY (uid,domain,account)
+);
+
+CREATE INDEX priority_idx_account ON priority(account);
+CREATE INDEX priority_idx_uid_domain ON priority(uid,domain);
+
+
 
 CREATE TABLE login_log (
     lid integer primary key,
@@ -345,7 +360,7 @@ CREATE TABLE login_log (
     ipaddress character varying, --ip address of login attempt
     track_uid character varying, --track uid
     track_ip character varying,
-    username character varying,
+    username character varying COLLATE NOCASE,
     isSuccess boolean NOT NULL
 );
 
@@ -358,7 +373,7 @@ INSERT INTO settings (name,value) VALUES('version',1); --version of this configu
 INSERT INTO settings (name,value) VALUES('creation_date', strftime('%s','now'));  -- record the date the database is first installed;
 INSERT INTO settings (name,value) VALUES('token_key', 'newTokenKey'); --key used to encrypt/decrypt cookie token (new value set during db create)
 INSERT INTO settings (name,value) VALUES('repeat_days', 90); -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
-INSERT INTO settings (name,value) VALUES('year_end', '1231'); -- Month and Date (MMDD) as a numeric string of financial year end.
+INSERT INTO settings (name,value) VALUES('year_end', 1231); -- Month and Date (100* MM + DD) as a numeric of financial year end.
 INSERT INTO settings (name,value) VALUES('client_log','logger'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing.
 INSERT INTO settings (name,value) VALUES('client_uid', 0); --if non zero this uid logs everything
 INSERT INTO settings (name,value) VALUES('min_pass_len', 6); --minimum password length

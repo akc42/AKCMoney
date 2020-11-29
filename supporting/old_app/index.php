@@ -296,8 +296,7 @@ $r = 0;
 		    LEFT JOIN account AS dstacc ON xaction.dst = dstacc.name 
 		    WHERE xaction.currency = currency.name AND (src = ? OR dst = ?) AND xaction.date > ? ORDER BY xaction.date ASC;');
 		$stmt->bindValue(1,$account);
-		$stmt->bindValue(2,$account);
-		$stmt->bindValue(3,$startTime,PDO::PARAM_INT);
+		$stmt->bindValue(2,$account);tt		$stmt->bindValue(3,$startTime,PDO::PARAM_INT);
 	} else {
 		$stmt = $db->prepare('
 		    SELECT 

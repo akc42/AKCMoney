@@ -1,5 +1,3 @@
-const { css } = require("../libs/lit-element");
-
 /**
 @licence
     Copyright (c) 2020 Alan Chandler, all rights reserved
@@ -24,11 +22,22 @@ const { css } = require("../libs/lit-element");
 import { css } from '../libs/lit-element.js';
 
 export default css`
+  section.page {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100%;
+  }
   section.scrollable {
     overflow-y:auto;
     scroll-snap-type: y mandatory;
     overflow-x:hidden;
+
     
+  }
+  form {
+    color: var(--form-text-color);
+    background-color: var(--form-background-color);
   }
   a:link {
     color: var(--link-color);
@@ -48,5 +57,8 @@ export default css`
   a:active {
     color: var(--link-color);
     text-decoration: underline;
+  }
+  [hidden] {
+    display:none!important;
   }
 `;

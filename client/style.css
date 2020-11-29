@@ -19,51 +19,76 @@
 */
 
 :root {
-  --color:white;
-  --background-color: rgb(5, 5, 5);
-  --accent-color: fuchsia;
-  --accent-constrast-color: white;
-  --secondary-color: navy;
-  --secondary-contrast-color: white;
+  --color: white;
+  --background-color: rgb(5,5,5);
+  --button-color: navy;
+  --button-text-color: white;
   --dialog-color: white;
-  --cancel-color: lavender;
-  --cancel-contrast-color: navy;
+  --dialog-text-color: rgb(5,5,5);
+  --heading-text-color: steelblue;
+  --table-text-color: black;
+  --table-heading-background: khaki;
+  --panel-background-color: transparent;
+  --panel-border-color:navy;
+  --input-border-color:navy;
+  --table-panel-background: gainsboro;
+  --table-even-color:aliceblue;
+  --form-background-color: khaki;
+  --form-text-color: rgb(40,40,40);
+  --currency-designator-color: crimson;
+  --shadow-color: rgba(255,255,255,0.8);
+  --cleared-transaction: paleturquoise;
+  --old-transaction: darkkhaki;
+  --repeating-transaction: yellow;
+  --transaction-form-background: khaki;
+  --tooltip-color: aliceblue;
+  --tooltip-text-color: black;
   --shadow-color: rgba(255,255,255,0.5);
-  --link-color: limegreen;
-  --error-color: var(--secondary-contrast-color);
-  --error-text-color: var(--secondary-color);
-  --error-icon-color: red;
-  --disabled-color: grey;
-  --header-icon-background-color: var(--accent-color);
-  --header-icon-color: var(--accent-constrast-color);
-  --overlay-color: var(--secondary-color);
-  --overlay-background-color: var(--secondary-constrast-color);
-  --menu-separator: grey;
+  --menu-hover-color: steelblue;
+  --menu-shadow-color: rgba(0,0,0,0.5);
+  --drag-over-color: blue;
+  --error-color: red;
+
+  --home-icon-color: blue;
+  --accounts-icon-color: red;
+  --domains-icon-color: limegreen;
+  --profile-icon-color: rebeccapurple;
+  --sort-icon-color:orange;
+  --logoff-icon-color: brown;
+  --admin-icon-color: fuchsia;
+  --currency-icon-color: steelblue;
+  --codes-icon-color: burlywood;
+  --users-icon-color: navy;
+  --radio-button-color: navy;
+
+
+
+  --add-icon-color: limegreen;
+  --delete-icon-color: red;
+  --balance-icon-color: orange;
+  --move-icon-color: royalblue;
+  --switch-icon-color:skyblue;
+  --save-icon-color: black;
+  --set-icon-color: darkgreen;
+  --undo-icon-color: burlywood;
+  --csv-icon-color: skyblue;
+  --pdf-icon-color: darkred;
+
+  --menu-separator-color: grey;
  
 
-  --item-present: lawngreen;
-  --item-not-present: orangered;
-  --create-item-color: lawngreen;
 
+  --name-input-length: 120px;
+  --amount-width: 70px;
+  --pw-input-length: 120px; 
 
-  --fm-pick-open: blue; 
-  --fm-editable-comment: lawngreen;
-  --fm-fixed-comment: darkorange;
-  --emoji-button-color: gold;
-  --emoji-color: gold;
-
-  --opid-1: rgb(255,0,0);
-  --opid-2: rgb(0,255,255);
-  --opid-3: rgb(255,255,0);
-  --opid-4: rgb(0,0,255);
-  --opid-5: rgb(0,255,0);
-  --opid-6: rgb(255,0,255);
-  
-  --name-input-length: 120px; 
-  --pw-input-length: 100px; 
+  --max-page-width: 1000px;
 }
   
 body {
   color: var(--color);
   background-color: var(--background-color);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size:12px;
+  --icon-size: 20px;
 }
