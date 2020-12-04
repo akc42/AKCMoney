@@ -23,19 +23,6 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 import {domHost} from '../libs/utils.js';
 
-export class WaitRequest extends Event {
-  /*
-     The following are the fields provided by this event
-
-     wait: true or false, depending with wait on or off.
-  */
-
-  constructor(wait) {
-    super('wait-request', { composed: true, bubbles: true });
-    this.wait = wait;
-  }
-};
-
 class WaitingIndicator extends LitElement {
   static get styles () {
     return css`
@@ -62,7 +49,7 @@ class WaitingIndicator extends LitElement {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: var(--accent-color);
+          background: var(--waiting-color);
           margin: -3px 0 0 -3px;
         }
         .spinner div:nth-child(1) {
@@ -164,7 +151,7 @@ class WaitingIndicator extends LitElement {
   }
   _gotRequest(e) {
     e.stopPropagation(e); 
-    this.waiting = e.wait;
+    this.waiting = e.detail;
   }
 }
 customElements.define('waiting-indicator', WaitingIndicator);

@@ -27,12 +27,13 @@ export default css`
     flex-direction: column;
     justify-content: flex-start;
     height: 100%;
+    overflow:hidden;
   }
   section.scrollable {
-    overflow-y:auto;
+    overflow-y:scroll;
     scroll-snap-type: y mandatory;
     overflow-x:hidden;
-
+    margin-right: var(--scrollbar-width);
     
   }
   form {

@@ -19,8 +19,7 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import {AuthChanged } from '../modules/events.js';
-import {LocationAltered} from '../libs/location.js';
+
 
 import button from '../styles/button.js';
 import page from '../styles/page.js';
@@ -29,18 +28,6 @@ import {Debug} from '../libs/utils.js';
 
 const logger = Debug('error');
 
-class ErrorStatus extends Event {
-  /*
-     The following are the fields provided by this event
-
-     status: We have an update releted to our error
-
-  */
-  constructor(status) {
-    super('error-status', { composed: true, bubbles: true });
-    this.status = status;
-  }
-};
 /*
      <error-manager>: a page which handles errors.
 */
@@ -108,7 +95,7 @@ class ErrorManager extends LitElement {
 ${e.error.stack}
 has occured`;
     logger(message, true);
-    this.dispatchEvent(new ErrorStatus('error'));
+    this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }
   _promiseRejection(e) {
@@ -121,28 +108,28 @@ has occured`;
     } else {
       const message = `Client Error: Uncaught Promise Rejection with reason ${e.reason} has occured`;
       logger(message, true);
-      this.dispatchEvent(new ErrorStatus('error'));
+      this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
       this.anError = true;
     }
   }
   _reset() {
     this.anError = false;
     this.forbidden = false;
-    this.dispatchEvent(new ErrorStatus('reset'));
+    this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'reset'}));
   }
   _serverError(e) {
     if (this.anError) return;
 //    e.preventDefault();
     //put us back to home
     window.history.pushState({}, null, '/');
-    window.dispatchEvent(new LocationAltered());
+    window.dispatchEvent(new CustomEvent('location-altered',{bubbles: true, composed: true}));
     if (e.reason === 403) {
       //unauthorised so log off
-      window.dispatchEvent(new AuthChanged(false));
+      window.dispatchEvent(new CustomEvent('auth-changed', {bubbles: true, composed: true, detail:false}));
       this.forbidden=true;
 
     }
-    this.dispatchEvent(new ErrorStatus( 'error'));
+    this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }
 

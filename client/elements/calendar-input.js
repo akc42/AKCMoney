@@ -128,10 +128,10 @@ class CalendarInput extends LitElement {
   }
   _calendarReply(e) {
     e.stopPropagation();
-    this.value = e.date;
+    this.value = e.detail;
   }
   _show() {
-    this.dispatchEvent(new CalendarRequest({date: this.value, time: this.withTime}))
+    this.dispatchEvent(new CustomEvent('calender-request', {bubbles: true, composed: true, detail:{date: this.value, time: this.withTime}}))
   }
   
 }

@@ -27,23 +27,7 @@ import './dialog-box.js';
 
 
 import button from '../styles/button.js';
-class CalendarReply extends Event {
 
-
-  /*
-     The following are the fields provided by this event
-
-     date: Resultant Date/Time after editing in seconds since 1970
-
-  */
-
-  constructor(date) {
-    super('calendar-reply', { composed: true, bubbles: true });
-    this.date = date;
-  }
-};
-
-import { ValueChanged} from '../modules/events.js';
 
 const monthFormatter = Intl.DateTimeFormat('default', {
   month: 'long'
@@ -178,7 +162,7 @@ class CalendarDialog extends LitElement {
     if (changed.has('value')) {
       if (this.value !== this.originalValue) {
         this.originalValue = this.value;
-        this.overlay.positionTarget.dispatchEvent(new CalendarReply(this.value));
+        this.overlay.positionTarget.dispatchEvent(new CustomEvent('calendar-reply',{bubbles: true, composed: true, detail: this.value}));
       }
       if (this.value !== 0) {
         const d = new Date();
@@ -365,7 +349,7 @@ class CalendarDialog extends LitElement {
 
   _closing(e) {
     e.stopPropagation();
-    this.overlay.positionTarget.dispatchEvent(new ValueChanged(this.value)); //tell the outside world we have a value
+    this.overlay.positionTarget.dispatchEvent(new CustomEvent('value-changed',{ bubbles: true, composed: true, detail:this.value})); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {

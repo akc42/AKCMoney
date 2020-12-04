@@ -24,11 +24,13 @@ import {api, AppKeys, configPromise, switchPath} from '../libs/utils.js';
 
 import '../elements/material-icon.js';
 import '../elements/dialog-box.js';
+import '../elements/accounts-dialog.js';
+import '../elements/domains-dialog.js';
 import './error-manager.js';
 
-import page from '../styles/page.js';
+
 import tooltip from '../styles/tooltip.js';
-import { SessionState } from './session-manager.js';
+import './session-manager.js';
 
 
 
@@ -71,6 +73,7 @@ class MainApp extends LitElement {
       this.copyrightYear = sessionStorage.getItem('copyrightYear');
     });
     this._keyPressed = this._keyPressed.bind(this);
+
   }
   connectedCallback() {
     super.connectedCallback();
@@ -100,12 +103,6 @@ class MainApp extends LitElement {
         } else {
           this.keys.connect();
         }
-
-        this.menuIcon = this.shadowRoot.querySelector('#menuicon')
-        this.mainMenu = this.shadowRoot.querySelector('#mainmenu');
-        this.accountsMenu = this.shadowRoot.querySelector('#accountsmenu');
-        this.domainsMenu = this.shadowRoot.querySelector('#domainsmenu');
-        this.adminMenu = this.shadowRoot.querySelector('#adminmenu');
         if (!changed.has('domain')) {
           this._fetchAccDom();
           this._fetchOff();
@@ -113,17 +110,22 @@ class MainApp extends LitElement {
       } else {
         if (this.keys !== undefined) this.keys.disconnect()
         document.body.removeEventListener('key-pressed', this._keyPressed);
-        this.menuicon = null;
-        this.mainMenu = null;
-        this.accountsMenu = null;
-        this.domainsMenu = null;
-        this.adminMenu - null;
       }
     }
     super.update(changed);
   }
   firstUpdated() {
     this.sessionMgr = this.shadowRoot.querySelector('#session');
+    const scrollDiv = document.createElement("div");
+    scrollDiv.className = "scrollbar-measure";
+    this.shadowRoot.appendChild(scrollDiv);
+
+    // Get the scrollbar width
+    const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+    this.style.setProperty('--scrollbar-width', `-${scrollbarWidth}px`);
+
+    // Delete the DIV 
+    this.shadowRoot.removeChild(scrollDiv);
   }
   updated(changed) {
     if (changed.has('authorised')) {
@@ -133,6 +135,21 @@ class MainApp extends LitElement {
         this.domain = this.user.domain;
       } else {
         this.user = {uid: 0};
+      }
+    }
+    if (changed.has('user')) {
+      if (this.user.uid > 0) {
+        this.menuIcon = this.shadowRoot.querySelector('#menuicon')
+        this.mainMenu = this.shadowRoot.querySelector('#mainmenu');
+        this.accountsMenu = this.shadowRoot.querySelector('#accountsmenu');
+        this.domainsMenu = this.shadowRoot.querySelector('#domainsmenu');
+        this.adminMenu = this.shadowRoot.querySelector('#adminmenu');
+      } else {
+        this.menuicon = null;
+        this.mainMenu = null;
+        this.accountsMenu = null;
+        this.domainsMenu = null;
+        this.adminMenu - null;
       }
     }
     super.updated(changed);
@@ -146,7 +163,13 @@ class MainApp extends LitElement {
           display: flex;
           flex-direction: column-reverse;
         }
-
+        .scrollbar-measure {
+          width: 100px;
+          height: 100px;
+          overflow: scroll;
+          position: absolute;
+          top: -9999px;
+        }
         header {
           height: 64px;
           display:flex;
@@ -168,6 +191,7 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
         section {
           height: calc(100vh - 64px);
           margin: 0 5px;
+          overflow:hidden;
         }
         #menuicon {
           --icon-size: 40px;
@@ -359,8 +383,11 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
 
 
       </style>
+      
       <waiting-indicator></waiting-indicator>
       ${cache(this.authorised?html`
+        <domains-dialog .domains=${this.domains}></domains-dialog>
+        <accounts-dialog id="accountsmenu" .accounts=${this.accounts}></accounts-dialog>
         <dialog-box id="mainmenu">
           <div class="menucontainer">
             <button type="button" role="menuitem" @click=${this._goHome}>
@@ -370,7 +397,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
               <hr class="sep"/>
             `:``}
             ${this.accounts.length > 0 ? html`
-              <button type="button" id="am" role="menuitem" @click=${this._accountsMenu}>
+              <button type="button" id="am" role="menuitem" @click=${this._accountsMenu} @value-changed=${this._accountSelected}>
                 <material-icon class="accounts-icon">topic</material-icon>
                 <span>Accounts</span>
                 <span><material-icon>navigate_next</material-icon></span>
@@ -401,18 +428,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             `:''}
           </div>
         </dialog-box>
-        <dialog-box id="accountsmenu" position="right">
-          <div class="menucontainer">
-            ${cache(this.accounts.map((account,i) => html`
-              ${i !== 0 ? html`<hr class="sep"/>`:''}
-              <button type="button" role="menuitem" 
-                data-index="${i}" @click=${this._accountSelected}>
-                <span>${account.name} (${account.domain})</span>
-                ${account.name === this.account ? html`<span><material-icon class="accounts-icon">check_box</material-icon></span>` : ''}
-              </button>
-            `))}        
-          </div>
-        </dialog-box>
+
         <dialog-box id="domainsmenu" position="right">
           <div class="menucontainer">
             ${this.domains.map((domain, i) => html`
@@ -429,7 +445,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             `)}  
           </div>          
         </dialog-box>
-        ${this.user.isAdmin ? html`
+        ${this.user.isAdmin === 1 ? html`
           <dialog-box id="adminmenu" position="right">
             <div class="menucontainer">
                 <button id="accounts" type="button" role="menuitem" @click=${this._selectPage}>
@@ -497,19 +513,21 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _accountSelected(e) {
     e.stopPropagation();
-    const index = parseInt(e.dataset.index,10);
-    this.account = this.accounts[index].name;
+    this.account = e.detail;
+    this.accountsMenu.side = false;
     this.mainMenu.close();
     switchPath('/account', {account: this.account});
   }
   _accountsMenu(e) {
     e.stopPropagation();
     if (this.accountsMenu) {
-      this.accountsMenu.positionTarget = this.shadowRoot.querySelector('#am');
-      this.accountsMenu.show();
+      this.accountsMenu.side = true;
+      const menu = this.shadowRoot.querySelector('#am');
+      menu.dispatchEvent(new CustomEvent('accounts-request', {bubbles:true, composed:true, detail:this.account}));
     }
   }
   _adminMenu(e) {
+    e.stopPropagation();
     if (this.adminMenu) {
       this.adminMenu.positionTarget = this.shadowRoot.querySelector('#ad')
       this.adminMenu.show();
@@ -517,11 +535,11 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _authChanged(e) {
     e.stopPropagation();
-    this.authorised = e.changed;
+    this.authorised = e.detail;
   }
   _domainChanged(e) {
     e.stopPropagation();
-    this.domain = e.changed;
+    this.domain = e.detail;
   }
   _domainSelected(e) {
     e.stopPropagation();
@@ -529,7 +547,6 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.domain = this.domains[index];
     this.mainMenu.close();
     switchPath('/domain', { domain: this.domain });    
-    this.mainMenu.close();
   }
   _domainsMenu(e) {
     e.stopPropagation();
@@ -555,7 +572,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       this.serverError = true;
     } else if (e.status === 'reset') {
       this.serverError = false;
-      this.sessionMgr.dispatchEvent(new SessionState('reset'));
+      this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'reset'}));
     }   
   }
   async _fetchAccDom() {
@@ -601,7 +618,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     e.stopPropagation();
     this.authorised = false;
     this.user = { uid: 0, isAdmin: false, account: '', domain: '' };
-    this.sessionMgr.dispatchEvent(new SessionState('logoff'));
+    this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'logoff'}));
   } 
   _menu(e) {
     e.stopPropagation();
@@ -617,10 +634,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _userRefresh(e) {
     e.stopPropagation();
-    const status = e.status;
+    const status = e.detail;
     //the following two statements will cause a re-validation of user.
     this.authorised = false;
-    this.sessionMgr.dispatchEvent(new SessionState('reset'));
+    this.sessionMgr.dispatchEvent(new CustomEvent('session-state',{bubbles: true, composed: true, detail:'reset'}));
     if (status) {
       switchPath('/');  //successfully updated profile
     } else {

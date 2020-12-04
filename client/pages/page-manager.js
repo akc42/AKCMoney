@@ -25,7 +25,7 @@ import {connectUrl, disconnectUrl} from '../libs/location.js';
 
 import RouteManager from '../elements/route-manager.js';
 import '../elements/delete-dialog.js';
-import {WaitRequest} from '../elements/waiting-indicator.js';
+
 
 export class PageManager extends RouteManager {
   static get styles() {
@@ -84,8 +84,8 @@ export class PageManager extends RouteManager {
       default:
         return false;
     }
-    this.dispatchEvent(new WaitRequest(true));
-    import(`./${page}-page.js`).then(() => this.dispatchEvent(new WaitRequest(false)));
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    import(`./${page}-page.js`).then(() => this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false})));
     return true;
   }
 }

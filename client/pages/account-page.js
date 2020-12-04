@@ -27,6 +27,7 @@ import '../elements/calendar-input.js';
 import '../elements/date-format.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
+
 /*
      <account-page>: Displays the transaction so an account
 */
@@ -217,7 +218,7 @@ class AccountPage extends LitElement {
         #transactions {
           background-color: white;
           color: var(--table-text-color);
-          margin: 0px 5px 10px 5px;
+          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
           display: flex;
           flex-direction: column;
 
@@ -233,10 +234,11 @@ class AccountPage extends LitElement {
 
 
         [draggable] {
-          cursor: move;
+          cursor: pointer;
         }
         [draggable].dragging {
           opacity: 0.4;
+          cursor: move;
         }
         [draggable].over:not(.dragging) {
           background-color: var(--drag-over-color);
@@ -256,7 +258,14 @@ class AccountPage extends LitElement {
           position: absolute;
           transform: translate(-100px,-100px);
         }
+        #parallel {
+          max-width: 600px;
+          padding: 10px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
 
+        }
         @media (min-width: 500px) {
           .action {
             grid-template-columns: 4fr 5fr 4fr 2fr;
@@ -352,10 +361,12 @@ class AccountPage extends LitElement {
                   .acurrency=${this.account.currency}
                   .arate=${this.account.rate}
                   .accounts=${this.accounts}
-                  .currencies=${this.currencies}
+                  .currencies=${this.currency}
                   .codes=${this.codes}
+                  @amount-changed=${this._amountChanged}
                   @balance-changed=${this._balanceChanged}  
                   @transaction-changed=${this._transactionChanged}
+                  @versionError=${this._versionError};
                   ></account-transaction>
               </div>
             `)}
@@ -372,15 +383,19 @@ class AccountPage extends LitElement {
       </section>
     `;
   }
+  _amountChanged(e) {
+    e.stopPropagation();
+    const index = e.currentTarget.index;
+    const amount = e.currentTarget.amount;
+    this.transactions[index].amount = amount;  //Just store the value - no need to force an update
+  }
   _balanceChanged(e) {
     e.stopPropagation();
-    const {balance, index, cleared} = e.changed;
-    if (cleared) {
-      this.clearedBalance += e.changed.amount;
+    const index = e.currentTarget.index + 1;
+    if (index < this.balances.length) {
+      this.balances[index] = e.detail;
+      this.balances = [...this.balances];
     }
-    const balances = [...this.balances];
-    balances[index] = balance;
-    this.balances = balances; 
 
   }
   _dragDrop(e) {
@@ -395,8 +410,6 @@ class AccountPage extends LitElement {
       dst = dst - (src < dst? 1: 0); //adjust for removed transaction
       this._insertTransaction(dst, srcTrans[0], src > dst);
     }
-
-
     return false
   }
   _dragEnd(e) {
@@ -415,7 +428,6 @@ class AccountPage extends LitElement {
   }
   _dragStart(e) {
     e.stopPropagation();
-    console.log('drag start', e.currentTarget.dataset.index);
     e.currentTarget.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', e.currentTarget.dataset.index);
@@ -428,53 +440,119 @@ class AccountPage extends LitElement {
       this.startDate = response.startdate;
       this.startType = response.starttype;
       this.reconciledBalance = this.clearedBalance = this.account.balance;
-      this.transactions = response.transactions;
+      
+      if (response.transactions.length > 0) {
+        /*
+          Allow us to differenciate between previously reconcilled transactions and ones we
+          clear only in the client, by marking the ones as reconcilled as we receive them from the database.
+        */
+        let previousTime = response.transactions[0].date - 61; //one minute
+        let previousTransaction;
+        for(const transaction of response.transactions) {
+          if (transaction.date - previousTime < 60) {
+            let currentDayEnd = ((Math.floor(transaction.date / 86400) + 1) * 86400) - 1 ;
+            transaction.date = Math.min(previousTime + 60, currentDayEnd); //force it to spread, but not past current day.
+            if (previousTransaction !== undefined) {
+              previousTime = Math.max(previousTime - 60, Math.floor(previousTime/86400) * 86400); //keep it in the same day, but otherwise a minute away
+              if( previousTransaction.date !== previousTime) {
+                previousTransaction.date = previousTime;
+                const reply = await api('/xaction_date', {
+                  id: previousTransaction.id,
+                  version: previousTransaction.version,
+                  date: previousTransaction.date
+                });
+                if (reply.status === 'OK') {
+                  previousTransaction.version++;
+                } else {
+                  this.dialog.show();
+                  break;
+                }
+              }
+            }
+            const reply = await api('/xaction_date', {
+              id: transaction.id,
+              version: transaction.version,
+              date: transaction.date
+            });
+            if (reply.status === 'OK') {
+              transaction.version++;
+            } else {
+              this.dialog.show();
+              break;
+            }
+            
+          }
+          previousTime = transaction.date;
+          previousTransaction = transaction;
+          transaction.reconcilled = (transaction.src === this.account.name && transaction.srcclear === 1) || 
+            (transaction.dst === this.account.name && transaction.dstclear === 1);
+        }
+        this.transactions = response.transactions;
+      }
       this._rebalance();
     }
   }
   async _insertTransaction(dst,transaction, up) {
+    this._printTime('Current source time', transaction.date);
     let newdate = Math.floor(this.transactions[dst].date/86400) * 86400 + 43200; //midday
+    this._printTime('Midday on destination', newdate);
     const dstDay = Math.floor(this.transactions[dst].date / 86400);
     const srcDay = Math.floor(transaction.date / 86400);
     if (up) {
       if (srcDay === dstDay) {
+        this._printTime('Moving up on same day - destination time', this.transactions[dst].date);
         newdate = Math.ceil(((srcDay * 86400) + this.transactions[dst].date) / 2); //midway from start of day to date of relevant xaction
+        this._printTime('midway between destination and previous midnight', newdate);
       } else {
         newdate -= 86400; //mid day the day before
+        this._printTime('Midday day before destination date', newdate);
       }
       if (dst > 0) {
         //if previous transaction date is too close we may need to adjust
+        this._printTime('check if date need adjusting from dest -1', this.transactions[dst -1].date);
         newdate = Math.max(newdate, Math.ceil((this.transactions[dst -1].date + this.transactions[dst].date)/2))
+        this._printTime('revised time', newdate);
       } 
     } else {
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (currentTime > this.transactions[dst].date && Math.floor(currentTime / 86400) === srcDay) {
-        newdate = currentTime; //As long as we are after our destination and out day is the same, we can use the current time
-      } else  if (srcDay === dstDay) {
+      if (srcDay === dstDay) {
+        this._printTime('Moving down on same day - destination time', this.transactions[dst].date);
         //days the same, so use half way between the dst transaction time and the end of the day
         newdate = Math.floor(((srcDay + 1) * 86400 - 1 + this.transactions[dst].date)/2);
+        this._printTime('midway between destination and next midnight', newdate);
       } else {
         newdate += 86400; //mid day the day after
+        this._printTime('Midday day after destination date');
       }
       if (dst < (this.transactions.length -1)) {
         //If next transaction date is too close we may need to adjust
+        this._printTime('check if date need adjusting from dest + 1', this.transactions[dst + 1].date);
         newdate = Math.min(newdate, Math.floor((this.transactions[dst + 1].date + this.transactions[dst].date) / 2))
+        this._printTime('revised time', newdate);
       }
     }
     transaction.date = newdate;
-    this.transactions.splice(dst, 0, transaction);  //add our new transaction into place    
-
-    const response = await api('/xaction_date', {
-      id: transaction.id, 
-      version: transaction.version, 
-      date: transaction.date
-    });
-    if (response.status === 'OK') {
-      this.transactions = [...this.transactions];
-      this._rebalance();
-    } else {
-      this.dialog.show();
+    this.transactions.splice(up? dst: dst + 1, 0, transaction);  //add our new transaction into place    
+    if (transaction.id !== 0) { //only update date if transaction is in db
+      const response = await api('/xaction_date', {
+        id: transaction.id, 
+        version: transaction.version, 
+        date: transaction.date
+      });
+      if (response.status === 'OK') {
+        transaction.version++;
+        this.transactions = [...this.transactions];
+        this._rebalance();
+      } else {
+        this.dialog.show();
+      }
     }
+  }
+  _printTime(reason, time) {
+
+    const d = new Date();
+    d.setTime(time * 1000);
+    console.log(reason, d.toLocaleString());
+
   }
   _rebalance() {
     let cumulative = this.clearedBalance;
@@ -482,16 +560,18 @@ class AccountPage extends LitElement {
     this.balances = [];
     this.balances.push(cumulative);
     for (const transaction of this.transactions) {
-      let amount;
-      if (transaction.currency === this.account.currency) {
-        amount = transaction.amount;
-      } else {
-        amount = Math.round(transaction.amount * this.account.rate / transaction.trate)
-      }
-      if (transaction.src === this.account.name && transaction.srcclear === 0) {
-        cumulative -= amount;
-      } else if (transaction.dstclear === 0) {
-        cumulative += amount;
+      if (!transaction.reconcilled) {
+        let amount;
+        if (transaction.currency === this.account.currency) {
+          amount = transaction.amount;
+        } else {
+          amount = Math.round(transaction.amount * this.account.rate / transaction.trate)
+        }
+        if (transaction.src === this.account.name && transaction.srcclear === 0) {
+          cumulative -= amount;
+        } else if (transaction.dstclear === 0) {
+          cumulative += amount;
+        }
       }
       this.balances.push(cumulative);
       this.minimumBalance = Math.min(cumulative, this.minimumBalance);
@@ -509,7 +589,14 @@ class AccountPage extends LitElement {
   }
   _transactionChanged(e) {
     e.stopPropagation();
+    const index = e.currentTarget.index;
+    const transaction = e.currentTarget.transaction;
+    this.transactions[index] = transaction;
+    this._rebalance();
 
+  }
+  _versionError(e) {
+    this.dialog.show();
   }
 }
 customElements.define('account-page', AccountPage);

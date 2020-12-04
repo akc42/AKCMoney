@@ -20,7 +20,6 @@
 import {html, css } from '../libs/lit-element.js';
 import { cache } from '../libs/cache.js';
 import RouteManager from '../elements/route-manager.js';
-import { WaitRequest } from '../elements/waiting-indicator.js';
 
 /*
      <admin-page>: Controls the admin functions
@@ -81,8 +80,8 @@ class AdminPage extends RouteManager {
       default:
         return false;
     }
-    this.dispatchEvent(new WaitRequest(true));
-    import(`./admin-${page}.js`).then(() => this.dispatchEvent(new WaitRequest(false)));
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    import(`./admin-${page}.js`).then(() => this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false})));
     return true;
   }
 }

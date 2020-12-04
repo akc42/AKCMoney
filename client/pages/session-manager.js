@@ -25,28 +25,15 @@ import {api, configPromise, switchPath} from '../libs/utils.js';
 
 import page from '../styles/page.js';
 
-import { AuthChanged} from '../modules/events.js';
 import {Debug} from '../libs/utils.js';
 
-import {WaitRequest} from '../elements/waiting-indicator.js';
+import  '../elements/waiting-indicator.js';
 
 import '/api/user.js';  //create user cookie
 
 const debug = Debug('session');
 
 
-export class SessionState extends Event {
-  /*
-     The following are the fields provided by this event
-
-     state: 
-
-  */
-  constructor(state) {
-    super('session-state',{composed: true, bubbles: true});
-    this.state = state;
-  }
-};
 
 /*
      <session-manager>
@@ -86,28 +73,28 @@ class SessionManager extends LitElement {
       if (!this.authorised) {
         this.state = 'reset';
       }
-      this.dispatchEvent(new AuthChanged(this.authorised));
+      this.dispatchEvent(new CustomEvent('auth-changed',{bubbles: true, composed: true, detail:this.authorised}));
     }
     super.update(changed);
   }
   updated(changed) {
     if (changed.has('state')) {
       debug(`state-changed to ${this.state}`);
-      this.dispatchEvent(new WaitRequest(true))
+      this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
       switch(this.state) {
         case 'authorised':
-          this.dispatchEvent(new WaitRequest(false));
+          this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
           this.authorised = true;     
           break;
         case 'error': 
           //just suspend if error
-          this.dispatchEvent(new WaitRequest(false));
+          this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
           break;
         case 'login':
-          import('./login-page.js').then(() => this.dispatchEvent(new WaitRequest(false)))
+          import('./login-page.js').then(() => this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false})));
           break;
         case 'logoff':
-          this.dispatchEvent(new WaitRequest(false));
+          this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
           //remove the cookie
           document.cookie = `${sessionStorage.getItem('authCookie')}=;expires=Thu, 01 Jan 1970 00:00:01 GMT; Path=/`;
           switchPath('/');
@@ -121,7 +108,7 @@ class SessionManager extends LitElement {
             if (matches) {
               performance.mark('start_user_validate');
               api('validate_user').then(response => {
-                this.dispatchEvent(new WaitRequest(false));
+                this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
                 performance.mark('end_user_validate');
                 performance.measure('user_validate', 'start_user_validate', 'end_user_validate');
                 if (response.user !== undefined) {
@@ -148,7 +135,7 @@ class SessionManager extends LitElement {
   }
   _setState(e) {
     e.stopPropagation();
-    this.state = e.state;
+    this.state = e.detail;
   }
 }
 customElements.define('session-manager', SessionManager);

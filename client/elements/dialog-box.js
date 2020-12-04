@@ -21,32 +21,6 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 
-class OverlayClosed extends Event {
-  /*
-     The following are the fields provided by this event
-
-     reason: reason overlay closed
-     position: x,y coordinates of mouse click outside box that caused it to close 
-
-  */
-  constructor(reason, position) {
-    super('overlay-closed', { composed: true, bubbles: true });
-    this.reason = reason;
-    this.position = position;
-  }
-};
-class OverlayClosing extends Event {
-  /*
-     The following are the fields provided by this event
-
-     none
-
-  */
-  constructor() {
-    super('overlay-closing', { composed: true, bubbles: true });
-  }
-};
-
 function activeElement() {
   let last = document.activeElement;
   if (last !== null) {
@@ -177,7 +151,7 @@ class DialogBox extends LitElement  {
     if (reason !== 'testing') {
       this.closedPromise = new Promise(accept => this.closeResolver = accept);
       if (this.sizingTarget.open) {
-        if (this.dispatchEvent(new OverlayClosing())) {
+        if (this.dispatchEvent(new CustomEvent('overlay-closing', {bubbles: true, composed: true}))) {
           //close if not prevented
           this.sizingTarget.close(reason || 'request');
         } else {
@@ -229,7 +203,14 @@ class DialogBox extends LitElement  {
     if (needsClose) this.close('click');
   }
   _dialogClosed() {
-    this.dispatchEvent(new OverlayClosed(this.sizingTarget.returnValue,this.clickPosition));
+    this.dispatchEvent(new CustomEvent('overlay-closed',{
+      bubbles: true, 
+      composed: true,
+      detail:{
+        returnValue:this.sizingTarget.returnValue,
+        position:this.clickPosition
+      }
+    }));
     if(this.closeResolver !== undefined) this.closeResolver();
   }
   _slotChange() {

@@ -23,71 +23,6 @@ import { LitElement } from '../libs/lit-element.js';
 
 import {domHost} from '../libs/utils.js';
 import Route from '../libs/route.js';
-import {RouteChanged} from '../libs/route.js';
-
-class PageClose extends Event {
-
-
-  /*
-     The following are the fields provided by this event
-
-    none: 
-
-  */
-
-  constructor() {
-    super('page-close', { composed: true, bubbles: true });
-  }
-};
-
-class PageClosed extends Event {
-
-
-  /*
-     The following are the fields provided by this event
-
-    none: 
-
-  */
-
-  constructor() {
-    super('page-closed', { composed: true, bubbles: true });
-  }
-};
-
-
-class PageData extends Event {
-
-
-  /*
-     The following are the fields provided by this event
-
-     pageData: 
-
-  */
-
-  constructor(pageData) {
-    super('page-data', { composed: true, bubbles: true });
-    this.pageData = pageData;
-  }
-};
-
-export class PageTitle extends Event {
-
-
-  /*
-     The following are the fields provided by this event
-
-     pageTitle: Title to be displayed at head of page
-
-  */
-
-  constructor(pageTitle) {
-    super('page-title', { composed: true, bubbles: true });
-    this.pageTitle = pageTitle;
-  }
-};
-
 
 
 export default class RouteManager extends  LitElement {
@@ -127,24 +62,24 @@ export default class RouteManager extends  LitElement {
             this.subRoute.params.page : this.homePage();
           if (page !== this.page) {
             //clear before changing to another route
-            this.dispatchEvent(new PageData(''));
+            this.dispatchEvent(new CustomEvent('page-data',{bubbles: true, composed: true, detail:''}));
             // load page import on demand.            
             if(this.loadPage(page)) {
               this.page = page;
               performance.mark('start_page_' + page);
               if (this.constructor.titles !== undefined) {
                 const title = this.constructor.titles[page];
-                if (title !== undefined) this.dispatchEvent(new PageTitle(title));
+                if (title !== undefined) this.dispatchEvent(new CustomEvent('page-title',{bubbles: true, composed: true, detail:title}));
               }
             } else {
-              this.dispatchEvent(new PageClose())
+              this.dispatchEvent(new CustomEvent('page-close', {bubbles: true, composed: true}))
             }
           }
         } else {
           const page = this.homePage();
           //if this is the first time through we may not have our home page yet
           if (!this.loadPage(page)) { 
-            this.dispatchEvent(new PageClose());
+            this.dispatchEvent(new CustomEvent('page-close', {bubbles: true, composed: true}));
           } else {
             this.page = page;
           }
@@ -157,7 +92,7 @@ export default class RouteManager extends  LitElement {
   }
   _closeRequest(e) {
     e.stopPropagation();
-    this.dispatchEvent(new PageData(''));
+    this.dispatchEvent(new CustomEvent('page-data',{bubbles: true, composed: true, detail:''}));
     if (e.composedPath()[0] === this) { //we don't need to cater for event retargetting
     //this event was meant for us, so lets see if we are at the home page or not
       if (this.page !==null && this.page.length > 0 && this.page !== this.homePage()) {
@@ -168,15 +103,15 @@ export default class RouteManager extends  LitElement {
         */
         const element = this.shadowRoot.querySelector('[managed-page]');
         if (element) {
-          element.dispatchEvent(new PageClose());
+          element.dispatchEvent(new CustomEvent('page-close', {bubbles: true, composed: true}));
         } else {
           /*
             this should not have happened - route back to our home page and throw an error
           */
-          window.dispatchEvent(new RouteChanged({
+          window.dispatchEvent(new CustomEvent('route-changed',{bubbles: true, composed: true, detail:{
               segment: this.route.segment,
               path: '/'
-          }));
+          }}));
           
           throw new Error('didn\'t find the element with "managed-page" attribute when closing page ' + this.page);
         }
@@ -184,10 +119,10 @@ export default class RouteManager extends  LitElement {
         /*
           We tries to go to a route that wasn;t allowed before establishing any route. so establish home page.
         */
-        window.dispatchEvent(new RouteChanged({
+        window.dispatchEvent(new CustomEvent('route-changed',{bubbles: true, composed: true, detail:{
           segment: this.route.segment,
           path: '/'
-        }));
+        }}));
         
       } else {
         /* we are at home page 
@@ -195,7 +130,7 @@ export default class RouteManager extends  LitElement {
           or if we are trying to do an explicit reroute then do if via abstract */
         const host = domHost(this);
         if (!this.closeReroute() && host) {
-          host.dispatchEvent(new PageClosed());
+          host.dispatchEvent(new CustomEvent('page-closed', {bubbles: true, composed: true}));
         }
       }
     } else {
@@ -209,10 +144,10 @@ export default class RouteManager extends  LitElement {
         the url, and therefore we can emulate what route does without the complexity
         that it uses
       */
-      window.dispatchEvent(new RouteChanged({
+      window.dispatchEvent(new CustomEvent('route-changed',{bubbles: true, composed: true, detail:{
         segment: this.route.segment,
         path: '/'
-      }));
+      }}));
     }
   }
   _closeResponse(e) {
@@ -222,10 +157,10 @@ export default class RouteManager extends  LitElement {
     */
     e.stopPropagation();
     //see comment above to see why this works
-    window.dispatchEvent(new RouteChanged({
+    window.dispatchEvent(new CustomEvent('route-changed',{bubbles: true, composed: true, detail:{
       segment: this.route.segment,
       path: '/'      
-    }));
+    }}));
   }
   // abstract (or not if we are happy with what they do)
   homePage() {return 'home';}

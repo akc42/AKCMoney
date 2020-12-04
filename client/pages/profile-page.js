@@ -18,12 +18,15 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
-import {submit} from '../modules/form.js';
+import {submit} from '../libs/utils.js';
+
+import '../elements/list-selector.js';
+
 import page from '../styles/page.js';
 import error from '../styles/error.js';
 
 import button from '../styles/button.js';
-import { UserRefresh } from '../modules/events.js';
+
 
 /*
      <profile-page>: Page to edit your use account
@@ -39,8 +42,6 @@ class ProflePage extends LitElement {
       replica: {type: String},
       account: {type: String},
       domain: {type: String},
-      accounts: {type: Array},
-      domains: {type: Array},
       visible: {type: Boolean},
       pneeded: {type: Boolean},
       route: {type: Object},
@@ -54,8 +55,7 @@ class ProflePage extends LitElement {
     this.replica = '';
     this.account = '';
     this.domain = '';
-    this.accounts = [];
-    this.domains = [];
+
     this.visible = false;
     this.pneeded = false;
     this.route = {active: false};
@@ -189,26 +189,28 @@ class ProflePage extends LitElement {
           <label for="replica">Confirm Password:</label>
           <input id="replica" name="replica" type="${this.visible ? 'text' : 'password'}" .value=${this.replica} @input=${this._repChanged}/>
           <label for="domain">Default Domain</label>
-          <select id="domain" name="domain">
-            ${this.domains.map(domain => html`
-              <option value="${domain}" ?selected=${domain === this.domain}>${domain}</option>
-            `)}
-          </select>
+          <input type="hidden" name="domain" .value=${this.domain} />
+          <list-selector id="domain" list="domains" .value=${this.domain} @value-changed=${this._domainChanged}></list-selector>
           <label for="account">Default Account:</label>
-          <select id="account" name="account">
-            ${this.accounts.map(account => html`
-              <option value=${account.name} ?selected=${account.name === this.account}>${account.name} (${account.domain})</option>
-            `)}
-          </select>
+          <input type="hidden" name="account" .value=${this.account} />
+          <list-selector id="account" list="accounts" .value=${this.account} @value-changed=${this._accountChanged}></list-selector>
           <button type="submit" @click=${this._update}><material-icon>save</material-icon><span>Save and Close</span></button>  
         </form>
       </section>
 
     `;
   }
+  _accountChanged(e) {
+    e.stopPropagation();
+    this.account = e.detail;
+  }
+  _domainChanged(e) {
+    e.stopPropagation();
+    this.domain = e.detail;
+  }
   _formResponse(e) {
     e.stopPropagation();
-    const response = e.response;
+    const response = e.detail;
     if (response !== null) {
       switch (response.status) {
         case 'good':
@@ -216,12 +218,12 @@ class ProflePage extends LitElement {
           this.password = '';
           this.replica = ''
           this.errormessage.setAttribute('hidden','');
-          this.dispatchEvent(new UserRefresh(true))
+          this.dispatchEvent(new CustomEvent('user-refresh',{bubbles:true,composed:true,detail:true}));
           break;
         case 'parallel':
           this.message = 'Someone else has updated your profile in Parallel.  Try Again';
           this.errormessage.removeAttribute('hidden');
-          this.dispatchEvent(new UserRefresh(false));
+          this.dispatchEvent(new CustomEvent('user-refresh',{bubbles:true,composed:true,detail:false}));
           break;
         case 'name':
           this.message = 'Name already taken';
