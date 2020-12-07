@@ -19,7 +19,6 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
-import {classMap} from '../libs/class-map.js';
 import { domHost } from '../libs/utils.js';
 import './material-icon.js';
 import './dialog-box.js';
@@ -27,30 +26,22 @@ import './dialog-box.js';
 import list from '../styles/list.js';
 
 /*
-     <accounts-dialog>
+     <currencies-dialog>
 */
-class AccountsDialog extends LitElement {
+class RepeatsDialog extends LitElement {
   static get styles() {
-    return [list,css`
-      .accounts-icon {
-        color: var(--accounts-icon-color);
-      }
-    `];
+    return [list,css``];
   }
   static get properties() {
     return {
-      side: {type: Boolean},
-      unset: {type: String}, //if a non zero length string then all an option with null value with this string
-      accounts: {type: Array},
-      account: {type: String}
+      repeats: {type: Array},
+      repeat: {type: Number}
     };
   }
   constructor() {
     super();
-    this.side = false;
-    this.unset = '';
-    this.accounts = [];
-    this.account = '';
+    this.repeats = [];
+    this.repeat = '';
     this._gotRequest = this._gotRequest.bind(this);
     this.eventLocked = true;
 
@@ -58,17 +49,17 @@ class AccountsDialog extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.domHost = domHost(this);
-    this.domHost.addEventListener('accounts-request', this._gotRequest);
+    this.domHost.addEventListener('currencies-request', this._gotRequest);
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.domHost.removeEventListener('accounts-request', this._gotRequest);
+    this.domHost.removeEventListener('currencies-request', this._gotRequest);
   }
   update(changed) {
     super.update(changed);
   }
   firstUpdated() {
-    this.dialog = this.shadowRoot.querySelector('#accountsmenu');
+    this.dialog = this.shadowRoot.querySelector('#currenciesmenu');
     this.eventLocked = false;
   }
   updated(changed) {
@@ -76,21 +67,14 @@ class AccountsDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="accountsmenu" position="${this.side ? 'right' : 'target'}" @overlay-closed=${this._closing}>
-        <div class="listcontainer ${classMap({reverse: this.side})}">
-          ${this.unset.length > 0 ? html`
-              <button type="button" role="menuitem"
-                @click=${this._noAccountSelected}>
-                <span>${this.unset}</span>
-              </button>
-              <hr class="sep"/>
-          ` : ''}
-          ${cache(this.accounts.map((account, i) => html`
+      <dialog-box id="currenciesmenu" @overlay-closed=${this._closing}>
+        <div class="listcontainer">
+          ${cache(this.currencies.map((currency, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
             <button type="button" role="menuitem"
-              data-index="${i}" @click=${this._accountSelected}>
-              <span>${account.name} (${account.domain})</span>
-              ${account.name === this.account ? html`<span><material-icon class="accounts-icon">check_box</material-icon></span>` : ''}
+              data-index="${i}" @click=${this._currencySelected}>
+              <span>${currency}</span>
+              ${currency === this.currency ? html`<span><material-icon class="currency-icon">check_box</material-icon></span>` : ''}
             </button>
           `))}
         </div>
@@ -98,15 +82,15 @@ class AccountsDialog extends LitElement {
 
     `;
   }
-  _accountSelected(e) {
+  _currencySelected(e) {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
-    this.account = this.accounts[index].name;
+    this.currency = this.currencies[index];
     this.dialog.close();
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.account })); //tell the outside world we have a value
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.currency })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {
@@ -114,14 +98,10 @@ class AccountsDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.account = e.detail;
+    this.repeat= e.detail;
     this.dialog.show();
 
   }
-  _noAccountSelected(e){
-    e.stopPropagation();
-    this.account = '';
 
-  }
 }
-customElements.define('accounts-dialog', AccountsDialog);
+customElements.define('repeats-dialog', RepeatssDialog);

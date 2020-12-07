@@ -26,13 +26,13 @@
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const getCurrency = db.prepare('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC');
+    const getCurrencies= db.prepare('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC');
     const getCodes = db.prepare('SELECT * FROM code ORDER BY type DESC, description COLLATE NOCASE ASC');
     const getRepeats = db.prepare('SELECT rkey,description FROM repeat ORDER BY priority');
 
     db.transaction(() => {
       debug('add currency and codes');
-      responder.addSection('currency', getCurrency.all());
+      responder.addSection('currencies', getCurrencies.all());
       responder.addSection('codes', getCodes.all());
       responder.addSection('repeats', getRepeats.all());
     })();

@@ -30,16 +30,16 @@ class ListSelector extends LitElement {
   }
   static get properties() {
     return {
-      value:{type: String},
-      list: {type: String},
-      name: {type: String}
+      visual:{type: String}, //value shown in the selector as currently selected
+      value: {type: String}, //key of selected item - so item can be selected from list
+      list: {type: String} //name of the type of dialog to send a message to
     };
   }
   constructor() {
     super();
     this.value = '';
+    this.visual = '';
     this.list = '';
-    this.name = '';
     this._reply = this._reply.bind(this);
   }
   connectedCallback() {
@@ -56,22 +56,17 @@ class ListSelector extends LitElement {
   }
   update(changed) {
     if(changed.has('list')) {
+      const oldlist = changed.get('list')
+      if (oldlist !== undefined && oldlist.length > 0) {
+        this.removeEventListener(`${oldlist}-reply`, this._reply);
+      }
       if (this.list.length > 0) {
         this.addEventListener(`${this.list}-reply`, this._reply);
-      } else {
-        this.removeEventListener(`${changed.get('list')}-reply`, this._reply);
       }
-    }
-    if (changed.has('value') && changed.get('value') !== undefined) {
-      this.dispatchEvent(new CustomEvent('value-changed',{bubbles:true,composed: true, detail: this.value }))
     }
     super.update(changed);
   }
-  firstUpdated() {
-  }
-  updated(changed) {
-    super.updated(changed);
-  }
+
   render() {
     return html`
       <style>
@@ -90,18 +85,22 @@ class ListSelector extends LitElement {
         }
       </style>
       <div id="container" @click=${this._displayDialog}>
-        <div id="list">${this.value}</div>
+        <div id="list">${this.visual}</div>
         <material-icon>arrow_drop_down</material-icon>
       </div>
     `;
   }
   _displayDialog(e) {
     e.stopPropagation();
-    this.dispatchEvent(new CustomEvent(`${this.list}-request`,{bubbles: true, composed: true, detail: this.value}));
+    this.dispatchEvent(new CustomEvent(`${this.list}-request`,{
+      bubbles: true,
+      composed: true,
+      detail: this.value
+    }));
   }
   _reply(e) {
     e.stopPropagation();
-    this.value = e.detail;
+    this.visual = e.detail;
   }
 }
 customElements.define('list-selector', ListSelector);

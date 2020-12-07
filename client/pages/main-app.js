@@ -53,6 +53,9 @@ class MainApp extends LitElement {
       domains: {type: Array}, //array of domain names
       domain: {type: Array}, //currently selected
       offsheet: {type: Array}, //array of offsheet count types
+      currencies: {type: Array}, //Valid Currencies
+      repeats: {type: Array}, //Repeat types
+      codes: {type: Array}, //Accounting COdes
       serverError: {type: Boolean} //Set if server error happening
     };
   }
@@ -124,7 +127,7 @@ class MainApp extends LitElement {
     const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
     this.style.setProperty('--scrollbar-width', `-${scrollbarWidth}px`);
 
-    // Delete the DIV 
+    // Delete the DIV
     this.shadowRoot.removeChild(scrollDiv);
   }
   updated(changed) {
@@ -133,6 +136,11 @@ class MainApp extends LitElement {
         this.user = JSON.parse(sessionStorage.getItem('user'));
         this.account = this.user.account;
         this.domain = this.user.domain;
+        api('/standing').then(response => {
+          this.codes = response.codes;
+          this.repeats = response.repeats;
+          this.currencies = response.currencies;
+        })
       } else {
         this.user = {uid: 0};
       }
@@ -155,7 +163,7 @@ class MainApp extends LitElement {
     super.updated(changed);
   }
   render() {
-    
+
     return html`
       <style>
         :host {
@@ -223,9 +231,9 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
           margin: 2px;
           max-height: 70vh;
           overflow-y:auto;
-          overflow-x: hidden;          
+          overflow-x: hidden;
           scroll-snap-type: y mandatory;
-       
+
         }
         #mainmenu .menucontainer {
           min-width: 160px;
@@ -272,11 +280,11 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
         summary, button {
           cursor: pointer;
         }
-        
+
         .menu-separator {
           align-self: center;
           margin:0;
-        } 
+        }
 
         #logo {
           height:32px;
@@ -296,7 +304,7 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
           width: 32px;
           background-size: 32px 32px;
           background-image: url("/images/money-logo-32x32.png");
-        }   
+        }
         #appinfo {
           display:flex;
           flex-direction: column;
@@ -383,9 +391,12 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
 
 
       </style>
-      
+
       <waiting-indicator></waiting-indicator>
       ${cache(this.authorised?html`
+        <currencies-dialog .currencies=${this.currencies}></currencies-dialog>
+        <repeats-dialog .repeats=${this.repeats}></repeats-dialog>
+        <codes-dialog .codes=${this.codes}></codes-dialog>
         <domains-dialog .domains=${this.domains}></domains-dialog>
         <accounts-dialog id="accountsmenu" .accounts=${this.accounts}></accounts-dialog>
         <dialog-box id="mainmenu">
@@ -397,25 +408,25 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
               <hr class="sep"/>
             `:``}
             ${this.accounts.length > 0 ? html`
-              <button type="button" id="am" role="menuitem" @click=${this._accountsMenu} @value-changed=${this._accountSelected}>
+              <button type="button" id="am" role="menuitem" @click=${this._accountsMenu} @item-selected=${this._accountSelected}>
                 <material-icon class="accounts-icon">topic</material-icon>
                 <span>Accounts</span>
                 <span><material-icon>navigate_next</material-icon></span>
               </button>
-            `: ''}     
+            `: ''}
             ${this.domains.length > 0 || this.offsheet.length > 0 ? html`
               <button type="button" id="dm" role="menuitem" @click=${this._domainsMenu}>
                 <material-icon class="domains-icon">domain</material-icon>
                 <span>Domains</span>
                 <span><material-icon>navigate_next</material-icon></span>
               </button>
-            `: ''}       
+            `: ''}
             <hr class="sep"/>
             <button type="button" id="profile" role="menuitem" @click=${this._editProfile}>
               <material-icon class="profile-icon">account_box</material-icon><span>Edit Profile</span> <span>F12</span>
             </button>
             <button type="button" id="sorter" role="menuitem" @click=${this._editSorter}>
-              <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Account</span> 
+              <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Account</span>
             </button>
             <button type="button" role="menuitem" @click=${this._logoff}>
               <material-icon class="logoff-icon">exit_to_app</material-icon><span>Log Off</span>
@@ -432,7 +443,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         <dialog-box id="domainsmenu" position="right">
           <div class="menucontainer">
             ${this.domains.map((domain, i) => html`
-              <button type="button" role="menuitem" 
+              <button type="button" role="menuitem"
                 data-index=${i} @click=${this._domainSelected}>
                 <span>${domain}</span>
                 ${domain === this.domain ? html`<span><material-icon class="domains-icon">check_box</material-icon></span>` : ''}
@@ -442,8 +453,8 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             ${this.offsheet.map((sheet, i) => html`
               <button type="button" role="menuitem"
                 data-index=${i} @click=${this._offsheetSelected}><span>${sheet}</span></button>
-            `)}  
-          </div>          
+            `)}
+          </div>
         </dialog-box>
         ${this.user.isAdmin === 1 ? html`
           <dialog-box id="adminmenu" position="right">
@@ -453,7 +464,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
                 </button>
                 <button id="domains" type="button" role="menuitem" @click=${this._selectPage}>
                   <material-icon class="domains-icon">domain</material-icon><span>Domains</span>
-                </button>                
+                </button>
                 <button id="currency" type="button" role="menuitem" @click=${this._selectPage}>
                   <material-icon class="currency-icon">local_atm</material-icon><span>Currency</span></button>
 
@@ -462,20 +473,20 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
                 </button>
                 <button id="users" type="button" role="menuitem" @click=${this._selectPage}>
                   <material-icon class="users-icon">people</material-icon><span>Users</span>
-                </button>          
+                </button>
             </div>
           </dialog-box>
-        `:''}        
+        `:''}
       `:'')}
       <header>
         ${cache(this.authorised  && !this.serverError ? html`
           <button id="menuicon"  class="right" @click=${this._menu} data-tooltip="Main Menu">
             <material-icon>menu</material-icon>
-          </button>      
+          </button>
         `: html`<div class="iconreplace"></div>`)}
         <div id="logocontainer" data-tooltip="AKCMoney">
           ${cache(this.domain.length > 0 ? html`<div id="currentdomain">Domain: ${this.domain}</div>`:html`<div id="logo"></div>`)}
-        </div>        
+        </div>
         <div id="appinfo">
           <div id="version">${this.version}</div>
           <div id="copy">
@@ -488,11 +499,11 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       <section>
         <error-manager
           ?hidden=${!this.serverError}
-          @error-status=${this._errorChanged}; 
-          @auth-changed=${this._authChanged}></error-manager>    
-        <session-manager 
-          ?hidden=${this.authorised || this.serverError} 
-          id="session" 
+          @error-status=${this._errorChanged};
+          @auth-changed=${this._authChanged}></error-manager>
+        <session-manager
+          ?hidden=${this.authorised || this.serverError}
+          id="session"
           @auth-changed=${this._authChanged}></session-manager>
         ${cache(this.authorised ? html`
           <page-manager
@@ -506,7 +517,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             @user-refresh=${this._userRefresh}
             @ad-reread=${this._fetchAccDom}
             @of-reread=${this._fetchOff}></page-manager>
-   
+
         `: '')}
       </section>
     `;
@@ -546,7 +557,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     const index = parseInt(e.dataset.index, 10);
     this.domain = this.domains[index];
     this.mainMenu.close();
-    switchPath('/domain', { domain: this.domain });    
+    switchPath('/domain', { domain: this.domain });
   }
   _domainsMenu(e) {
     e.stopPropagation();
@@ -573,7 +584,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     } else if (e.status === 'reset') {
       this.serverError = false;
       this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'reset'}));
-    }   
+    }
   }
   async _fetchAccDom() {
     const response = await api('account_domain_lists',{domain: this.domain});
@@ -613,13 +624,13 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         switchPath('/profile');
         break;
     }
-  } 
+  }
   _logoff(e) {
     e.stopPropagation();
     this.authorised = false;
     this.user = { uid: 0, isAdmin: false, account: '', domain: '' };
     this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'logoff'}));
-  } 
+  }
   _menu(e) {
     e.stopPropagation();
     if(this.mainMenu) {
