@@ -90,7 +90,7 @@ class AccountsDialog extends LitElement {
             <button type="button" role="menuitem"
               data-index="${i}" @click=${this._accountSelected}>
               <span>${account.name} (${account.domain})</span>
-              ${account.name === this.account ? html`<span><material-icon class="accounts-icon">check_box</material-icon></span>` : ''}
+              ${this.side && account.name === this.account ? html`<span><material-icon class="accounts-icon">check_box</material-icon></span>` : ''}
             </button>
           `))}
         </div>
@@ -102,11 +102,21 @@ class AccountsDialog extends LitElement {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.account = this.accounts[index].name;
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('accounts-reply', {
+      detail: {
+        key: this.account,
+        visual: this.account
+      }
+    }));
     this.dialog.close();
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.account })); //tell the outside world we have a value
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
+      bubbles: true, 
+      composed: true, 
+      detail: this.account 
+    })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {
@@ -114,14 +124,20 @@ class AccountsDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.account = e.detail;
+    this.account = e.detail.key;
     this.dialog.show();
 
   }
   _noAccountSelected(e){
     e.stopPropagation();
     this.account = '';
-
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('accounts-reply', {
+      detail: {
+        key: '',
+        visual: this.unset
+      }
+    }));
+    this.dialog.close
   }
 }
 customElements.define('accounts-dialog', AccountsDialog);

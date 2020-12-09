@@ -31,13 +31,13 @@ class ListSelector extends LitElement {
   static get properties() {
     return {
       visual:{type: String}, //value shown in the selector as currently selected
-      value: {type: String}, //key of selected item - so item can be selected from list
+      key: {type: String}, //key of selected item - so item can be selected from list
       list: {type: String} //name of the type of dialog to send a message to
     };
   }
   constructor() {
     super();
-    this.value = '';
+    this.key = '';
     this.visual = '';
     this.list = '';
     this._reply = this._reply.bind(this);
@@ -95,12 +95,19 @@ class ListSelector extends LitElement {
     this.dispatchEvent(new CustomEvent(`${this.list}-request`,{
       bubbles: true,
       composed: true,
-      detail: this.value
+      detail: {visual: this.value, key: this.key}
     }));
   }
   _reply(e) {
     e.stopPropagation();
-    this.visual = e.detail;
+    if (typeof e.detail === 'string') {
+      this.visual = e.detail;
+      this.key = this.visual
+    } else {
+      this.visual = e.detail.visual;
+      this.key = e.detail.key;
+    }
+    
   }
 }
 customElements.define('list-selector', ListSelector);

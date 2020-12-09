@@ -78,7 +78,6 @@ class DomainsDialog extends LitElement {
             <button type="button" role="menuitem" 
               data-index="${i}" @click=${this._domainSelected}>
               <span>${domain}</span>
-              ${domain === this.domain ? html`<span><material-icon class="domains-icon">check_box</material-icon></span>` : ''}
             </button>
           `))}        
         </div>
@@ -90,11 +89,12 @@ class DomainsDialog extends LitElement {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.domain = this.domains[index];
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('domains-reply', {detail: {key: this.domain, visual: this.domain}}));
     this.dialog.close();
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('value-changed', { bubbles: true, composed: true, detail: this.domain })); //tell the outside world we have a value
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.domain })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {
@@ -106,10 +106,6 @@ class DomainsDialog extends LitElement {
     this.dialog.show();
 
   }
-  _nodomainSelected(e){
-    e.stopPropagation();
-    this.domain = '';
 
-  }
 }
 customElements.define('domains-dialog', DomainsDialog);

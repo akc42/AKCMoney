@@ -26,26 +26,22 @@ import './dialog-box.js';
 import list from '../styles/list.js';
 
 /*
-     <codes-dialog>
+     <currencies-dialog>
 */
-class CodesDialog extends LitElement {
+class RepeatsDialog extends LitElement {
   static get styles() {
-    return [list,css`
-      .codes-icon {
-        color: var(--codes-icon-color)
-      }
-    `];
+    return [list,css``];
   }
   static get properties() {
     return {
-      codes: {type: Array},
-      code: {type: String}
+      repeats: {type: Array},
+      repeat: {type: Number}
     };
   }
   constructor() {
     super();
-    this.codes = [];
-    this.code = '';
+    this.repeats = [];
+    this.repeat = 0;
     this._gotRequest = this._gotRequest.bind(this);
     this.eventLocked = true;
 
@@ -53,17 +49,17 @@ class CodesDialog extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.domHost = domHost(this);
-    this.domHost.addEventListener('codes-request', this._gotRequest);
+    this.domHost.addEventListener('currencies-request', this._gotRequest);
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.domHost.removeEventListener('codes-request', this._gotRequest);
+    this.domHost.removeEventListener('currencies-request', this._gotRequest);
   }
   update(changed) {
     super.update(changed);
   }
   firstUpdated() {
-    this.dialog = this.shadowRoot.querySelector('#codesmenu');
+    this.dialog = this.shadowRoot.querySelector('#currenciesmenu');
     this.eventLocked = false;
   }
   updated(changed) {
@@ -71,35 +67,32 @@ class CodesDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="codesmenu" @overlay-closed=${this._closing}>
+      <dialog-box id="currenciesmenu" @overlay-closed=${this._closing}>
         <div class="listcontainer">
-          <button type="button" role="menuitem" @click=${this._nocodeSelected}>
-            <span>-- Select (optional) Accounting Code --</span>
-          </button>
-          ${cache(this.codes.map((code, i) => html`
+          ${cache(this.repeats.map((repeat, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
-            <button type="button" role="menuitem" 
-              data-index="${i}" @click=${this._codeSelected}>
-              <span>${code.description}</span>
+            <button type="button" role="menuitem"
+              data-index="${i}" @click=${this._repeatSelected}>
+              <span>${repeat.desription}</span>
             </button>
-          `))}        
+          `))}
         </div>
       </dialog-box>
 
     `;
   }
-  _codeSelected(e) {
+  _repeatSelected(e) {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
-    this.code = this.codes[index];
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', { 
-      detail: { key: this.code.id, visual: this.code.description }
+    this.repeat = this.repeats[index].rkey;
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('domains-reply', { 
+      detail: { key: this.repeat, visual: this.repeats[index].description } 
     }));
     this.dialog.close();
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.code })); //tell the outside world we have a value
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.repeat })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {
@@ -107,18 +100,10 @@ class CodesDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.code = e.detail;
+    this.repeat= e.detail.key;
     this.dialog.show();
 
   }
-  _nocodeSelected(e){
-    e.stopPropagation();
-    this.code = {id: 0, type: ''};
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', {
-      detail: { key: 0, visual: '-- Select (optional) Accounting Code --' }
-    }));
-    this.dialog.close();
 
-  }
 }
-customElements.define('codes-dialog', CodesDialog);
+customElements.define('repeats-dialog', RepeatsDialog);
