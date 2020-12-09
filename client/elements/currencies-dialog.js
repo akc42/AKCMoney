@@ -78,7 +78,6 @@ class CurrenciesDialog extends LitElement {
             <button type="button" role="menuitem" 
               data-index="${i}" @click=${this._currencySelected}>
               <span>${currency}</span>
-              ${currency === this.currency ? html`<span><material-icon class="currency-icon">check_box</material-icon></span>` : ''}
             </button>
           `))}        
         </div>
@@ -90,11 +89,16 @@ class CurrenciesDialog extends LitElement {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.currency = this.currencies[index];
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('currencies-reply', {detail: {
+      key: this.currency,
+      visual: this.currency
+    }}))
     this.dialog.close();
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('value-changed', { bubbles: true, composed: true, detail: this.currency })); //tell the outside world we have a value
+    const currency = this.currencies.find(c => c.name === this.currency);
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: currency })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {
@@ -102,7 +106,7 @@ class CurrenciesDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.currency = e.detail;
+    this.currency = e.detail.key;
     this.dialog.show();
 
   }
