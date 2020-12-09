@@ -173,23 +173,18 @@ class AccountPage extends LitElement {
           display: grid;
           grid-gap: 1px;
           color: var(--table-text-color);
-          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width));
+          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
           grid-template-areas:
-            "date ref . amount balance"
-            "description description description description description";
+            "date ref . amount balance ."
+            "description description description description description description";
         }
         .header {
           margin: 0px 5px;
           background-color: var(--table-heading-background);
           font-weight: bold;
-          grid-template-areas:
-            "date ref . amount balance"
-            "description description description description description";
+
         }
-        .panel {
-          grid-template-areas:
-            "date description description description balance"
-        }
+
         .header > *, .panel > * {
           border: 1px solid white;
         }
@@ -278,9 +273,9 @@ class AccountPage extends LitElement {
             margin-right: 0px;
           }
           .header, .panel {
-            grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width));
+            grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
             grid-template-areas:
-              "date ref description amount balance";
+              "date ref description amount balance .";
           }
           .header {
             margin-top: 20px;
@@ -361,7 +356,7 @@ class AccountPage extends LitElement {
                   .acurrency=${this.account.currency}
                   .arate=${this.account.rate}
                   .accounts=${this.accounts}
-                  .currencies=${this.currency}
+                  .currency=${this.currency}
                   .codes=${this.codes}
                   @amount-changed=${this._amountChanged}
                   @balance-changed=${this._balanceChanged}  
@@ -434,6 +429,8 @@ class AccountPage extends LitElement {
     e.dataTransfer.setDragImage(this.dragImage,0,0);
   }
   async _fetchAccountData(name) {
+    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
+    this.transactions = [];
     const response = await api('/account', { account: name })
     this.account = response.account;
     if (this.account.name.length > 0) {
@@ -488,9 +485,12 @@ class AccountPage extends LitElement {
             (transaction.dst === this.account.name && transaction.dstclear === 1);
         }
         this.transactions = response.transactions;
+      } else {
+        this.transactions = []; 
       }
       this._rebalance();
     }
+    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
   }
   async _insertTransaction(dst,transaction, up) {
     this._printTime('Current source time', transaction.date);

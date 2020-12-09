@@ -60,10 +60,7 @@ class AccountTransaction extends LitElement {
       account: {type: String}, //Name of account (should match src or dst of transaction)
       acurrency: {type: String},
       arate: {type: Number},
-      accounts: { type: Array }, //list of accounts to display for destination
       codes: {type: Array},
-      currencies: {type: Array},
-      repeats: {type:Array},
       inputError: {type: Boolean}
     };
   }
@@ -97,10 +94,9 @@ class AccountTransaction extends LitElement {
     this.account = '';
     this.acurrency = '';
     this.arate = 1;
-    this.accounts = [];
+
     this.codes = [];
-    this.currencies = [];
-    this.repeats = [];
+
     this.inputError = false;
   }
   connectedCallback() {
@@ -148,7 +144,8 @@ class AccountTransaction extends LitElement {
       }
 
     }
-    if (changed.has('amount') && changed.get('amount') !== undefined && !this.edit) {
+    if (changed.has('amount') && changed.get('amount') !== undefined && !this.edit && !changed.has('id')) {
+      //only do this if its the same transaction that the amount has changed in.
       this.dispatchEvent(new CustomEvent('amount-changed', {bubbles: true, composed: true}));
       api('/xaction_amount',{
         id: this.id,
@@ -183,10 +180,10 @@ class AccountTransaction extends LitElement {
           padding: 2px;
           display: grid;
           grid-gap: 1px;
-          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width));
+          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
           grid-template-areas:
-            "date ref . amount balance"
-            "description description description description description";
+            "date ref . amount balance code"
+            "description description description description description description";
 
         }
 
@@ -220,10 +217,34 @@ class AccountTransaction extends LitElement {
           text-align: right;
           grid-area: balance;
         }
+        div.code {
+          margin: 0;
+          padding: 0;
+          width: 20px;
+          height: 20px;
+          background:transparent url(codes.png) no-repeat 0 0;
+        }
+
+        div.code.C {
+            background:transparent url(/images/codes.png) no-repeat 0 -20px;
+        }
+        div.code.R {
+            background:transparent url(/images/codes.png) no-repeat 0 -40px;
+        }
+        div.code.A {
+            background:transparent url(/images/codes.png) no-repeat 0 -60px;
+        }
+        div.code.B {
+            background:transparent url(/images/codes.png) no-repeat 0 -80px;
+        }
+        div.code.O {
+            background:transparent url(/images/codes.png) no-repeat 0 -100px;
+        }
+
         @media (min-width: 500px) {
           .wrapper {
             grid-template-areas:
-              "date ref description amount balance";
+              "date ref description amount balance code";
           }
         }
 
@@ -275,6 +296,7 @@ class AccountTransaction extends LitElement {
             <div class="amount" @click=${this._startAmountEdit}>${(this.src === this.account ? '-':'') + (this.amount / 100).toFixed(2)}</div>
           `)}
           <div class="balance">${cleared ? '0.00' : (this.cumulative/100).toFixed(2)}</div>
+          <div class="code ${this.ctype}"></div>
         </div>
       `)}
       
@@ -342,7 +364,10 @@ class AccountTransaction extends LitElement {
       this.inputError = true;
     }
   }
-
+  _codeType(code) {
+    const c = this.codes.find(cd => cd.id === code)
+    return c.type;
+  }
   _dateChange(e) {
     e.stopPropagation();
     this.date = e.detail;

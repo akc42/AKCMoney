@@ -26,6 +26,9 @@ import '../elements/material-icon.js';
 import '../elements/dialog-box.js';
 import '../elements/accounts-dialog.js';
 import '../elements/domains-dialog.js';
+import '../elements/currencies-dialog.js';
+import '../elements/codes-dialog.js';
+import '../elements/repeats-dialog.js';
 import './error-manager.js';
 
 
@@ -70,7 +73,10 @@ class MainApp extends LitElement {
     this.domains = [];
     this.domain = '';
     this.offsheet =[];
-    this.serverError
+    this.currencies = [];
+    this.codes = [];
+    this.repeats = [];
+    this.serverError = false;
     configPromise.then(() => {
       this.version = sessionStorage.getItem('version');
       this.copyrightYear = sessionStorage.getItem('copyrightYear');
@@ -534,7 +540,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     if (this.accountsMenu) {
       this.accountsMenu.side = true;
       const menu = this.shadowRoot.querySelector('#am');
-      menu.dispatchEvent(new CustomEvent('accounts-request', {bubbles:true, composed:true, detail:this.account}));
+      menu.dispatchEvent(new CustomEvent('accounts-request', {bubbles:true, composed:true, detail:{key:this.account}}));
     }
   }
   _adminMenu(e) {
