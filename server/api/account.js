@@ -38,12 +38,18 @@
     const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
     const xactionsByDate =  db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd
       FROM account a JOIN xaction t ON (t.src = a.name OR t.dst = a.name) 
-      LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
+      LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
+      LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN 
+        CASE WHEN t.srccode IS NOT NULL THEN t.srccode WHEN a.domain = aa.domain THEN t.dstcode END 
+        ELSE CASE WHEN t.dstcode IS NOT NULL THEN t.dstcode WHEN a.domain = aa.domain THEN t.dstcode END END
       LEFT JOIN currency tc ON tc.name = t.currency 
       WHERE a.name = ? AND t.date >= ? ORDER BY t.date`)
     const xactionsUnReconciled = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd
       FROM account a JOIN xaction t ON (t.src = a.name OR t.dst = a.name) 
-      LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
+      LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
+      LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN 
+        CASE WHEN t.srccode IS NOT NULL THEN t.srccode WHEN a.domain = aa.domain THEN t.dstcode END 
+        ELSE CASE WHEN t.dstcode IS NOT NULL THEN t.dstcode WHEN a.domain = aa.domain THEN t.dstcode END END
       LEFT JOIN currency tc ON tc.name = t.currency  
       WHERE a.name = ? AND CASE WHEN t.src = a.name THEN t.srcclear ELSE t.dstclear END = 0 ORDER BY t.date`)
 
@@ -100,7 +106,7 @@
             case 6:
               //in a year
               const nextYear = new Date(xactionDate);
-              nextYear.setYear(xactionDate.getYear() + 1);
+              nextYear.setFullYear(xactionDate.getFullYear() + 1);
               debug('Yearly Repeat', nextYear.toLocaleString());
               nextDate = Math.round(nextYear.getTime() / 1000);
               break;
