@@ -74,7 +74,7 @@ class CodesDialog extends LitElement {
       <dialog-box id="codesmenu" @overlay-closed=${this._closing}>
         <div class="listcontainer">
           <button type="button" role="menuitem" @click=${this._nocodeSelected}>
-            <span>-- Select (optional) Accounting Code --</span>
+            <span>${sessionStorage.getItem('nullCode')}</span>
           </button>
           ${cache(this.codes.map((code, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
@@ -115,7 +115,7 @@ class CodesDialog extends LitElement {
     e.stopPropagation();
     this.code = {id: 0, type: ''};
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', {
-      detail: { key: 0, visual: '-- Select (optional) Accounting Code --' }
+      detail: { key: 0, visual: sessionStorage.getItem('nullCode') }
     }));
     this.dialog.close();
 

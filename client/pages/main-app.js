@@ -458,7 +458,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             ${this.offsheet.length > 0 ? html`<hr class="sep"/>`:''}
             ${this.offsheet.map((sheet, i) => html`
               <button type="button" role="menuitem"
-                data-index=${i} @click=${this._offsheetSelected}><span>${sheet}</span></button>
+                data-index=${i} @click=${this._offsheetSelected}><span>${sheet.description}</span></button>
             `)}
           </div>
         </dialog-box>
@@ -517,7 +517,8 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             .account=${this.account}
             .domain=${this.domain}
             .accounts=${this.accounts}
-            .domains=${this.domains}
+            .codes=${this.codes}
+            .repeats=${this.repeats}
             ?hidden=${this.serverError}
             @domain-changed=${this._domainChanged}
             @user-refresh=${this._userRefresh}
@@ -560,8 +561,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _domainSelected(e) {
     e.stopPropagation();
-    const index = parseInt(e.dataset.index, 10);
+    const index = parseInt(e.currentTarget.dataset.index, 10);
     this.domain = this.domains[index];
+    this.domainsMenu.close();
     this.mainMenu.close();
     switchPath('/domain', { domain: this.domain });
   }
@@ -646,7 +648,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _offsheetSelected(e) {
     e.stopPropagation();
-    console.log('offsheet menu selected');
+    const index = parseInt(e.currentTarget.dataset.index, 10);
+    const account = this.offsheet[index];
+    console.log('offsheet menu selected', account.description);
+    this.domainsMenu.close();
     this.mainMenu.close();
   }
   _userRefresh(e) {

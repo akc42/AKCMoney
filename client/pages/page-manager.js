@@ -37,16 +37,16 @@ export class PageManager extends RouteManager {
   }
   static get properties() {
     return {
-      accounts: {type: Array}, //Sorted list of accounts
-      domains: {type: Array}, //List of domains
-      codes: {type: Array} //list of codes
+      codes: {type: Array}, //list of codes
+      repeats: {type: Array}, //list of repeats
+      accounts: {type: Array}, //list of accounts
     };
   }
   constructor() {
     super();
-    this.accounts = [];
-    this.domains = [];
     this.codes = [];
+    this.repeats = [];
+    this.accounts = [];
   }
 
   connectedCallback() {
@@ -62,12 +62,17 @@ export class PageManager extends RouteManager {
       <delete-dialog ></delete-dialog>
       ${cache({
         home: html`<home-page managed-page></home-page>`,
-        account: html`<account-page managed-page .codes=${this.codes} .route=${this.subRoute}></account-page>`,
+        account: html`<account-page 
+                        managed-page
+                        .accounts=${this.accounts} 
+                        .codes=${this.codes} 
+                        .repeats=${this.repeats} 
+                        .route=${this.subRoute}></account-page>`,
         domain: html`<domain-page managed-page .route=${this.subRoute}></domain-page>`,
         offsheet: html`<offsheet-page managed-page .route=${this.subRoute}></offsheet-page>`,
-        profile: html`<profile-page managed-page .accounts=${this.accounts} .domains=${this.domains} .route=${this.subRoute}></profile-page>`,
+        profile: html`<profile-page managed-page .route=${this.subRoute}></profile-page>`,
         sorter: html`<sorter-page managed-page  .domain=${this.domain}></sorter-page>`,
-        admin: html`<admin-page managed-page .domains=${this.domains} .route=${this.subRoute}></admin-page>`
+        admin: html`<admin-page managed-page .route=${this.subRoute}></admin-page>`
       }[this.page])}
     `;
   }

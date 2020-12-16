@@ -26,7 +26,7 @@ import './dialog-box.js';
 import list from '../styles/list.js';
 
 /*
-     <currencies-dialog>
+     <repeats-dialog>
 */
 class RepeatsDialog extends LitElement {
   static get styles() {
@@ -49,17 +49,17 @@ class RepeatsDialog extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.domHost = domHost(this);
-    this.domHost.addEventListener('currencies-request', this._gotRequest);
+    this.domHost.addEventListener('repeats-request', this._gotRequest);
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.domHost.removeEventListener('currencies-request', this._gotRequest);
+    this.domHost.removeEventListener('repeats-request', this._gotRequest);
   }
   update(changed) {
     super.update(changed);
   }
   firstUpdated() {
-    this.dialog = this.shadowRoot.querySelector('#currenciesmenu');
+    this.dialog = this.shadowRoot.querySelector('#repeatsmenu');
     this.eventLocked = false;
   }
   updated(changed) {
@@ -67,13 +67,13 @@ class RepeatsDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="currenciesmenu" @overlay-closed=${this._closing}>
+      <dialog-box id="repeatsmenu" @overlay-closed=${this._closing}>
         <div class="listcontainer">
           ${cache(this.repeats.map((repeat, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
             <button type="button" role="menuitem"
               data-index="${i}" @click=${this._repeatSelected}>
-              <span>${repeat.desription}</span>
+              <span>${repeat.description}</span>
             </button>
           `))}
         </div>

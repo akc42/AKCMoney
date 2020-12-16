@@ -95,7 +95,7 @@ class ListSelector extends LitElement {
     this.dispatchEvent(new CustomEvent(`${this.list}-request`,{
       bubbles: true,
       composed: true,
-      detail: {visual: this.value, key: this.key}
+      detail: {visual: this.visual, key: this.key}
     }));
   }
   _reply(e) {

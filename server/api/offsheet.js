@@ -26,11 +26,10 @@
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const offsheets = db.prepare(`SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
-            SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
-            OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid 
-            AND p.domain = a.domain WHERE a.domain = ? AND u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1)
-        WHERE c.type = 'O'`).get(params.domain, user.uid);
+    const offsheets = db.prepare(`SELECT c.id,c.description FROM code c WHERE c.type = 'O'
+      AND EXISTS (SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
+      OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid AND p.domain = a.domain 
+      WHERE a.domain = ? AND u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL))`).all(params.domain, user.uid);
     responder.addSection('offsheet', offsheets);
     debug('request complete');
   };

@@ -229,7 +229,6 @@ class DialogBox extends LitElement  {
     let left;
     let width;
     let height;
-
     //reset existing maxHeight and widthStyles before measuring again
     this.sizingTarget.style.height = null;
     this.sizingTarget.style.width = null;

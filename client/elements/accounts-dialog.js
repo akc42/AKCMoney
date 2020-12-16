@@ -39,16 +39,14 @@ class AccountsDialog extends LitElement {
   }
   static get properties() {
     return {
-      side: {type: Boolean},
-      unset: {type: String}, //if a non zero length string then all an option with null value with this string
+      mainMenu: {type: Boolean},
       accounts: {type: Array},
       account: {type: String}
     };
   }
   constructor() {
     super();
-    this.side = false;
-    this.unset = '';
+    this.mainMenu = false;
     this.accounts = [];
     this.account = '';
     this._gotRequest = this._gotRequest.bind(this);
@@ -76,12 +74,12 @@ class AccountsDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="accountsmenu" position="${this.side ? 'right' : 'target'}" @overlay-closed=${this._closing}>
-        <div class="listcontainer ${classMap({reverse: this.side})}">
-          ${this.unset.length > 0 ? html`
+      <dialog-box id="accountsmenu" position="${this.mainMenu ? 'right' : 'target'}" @overlay-closed=${this._closing}>
+        <div class="listcontainer ${classMap({reverse: this.mainMenu})}">
+          ${!this.mainMenu ? html`
               <button type="button" role="menuitem"
                 @click=${this._noAccountSelected}>
-                <span>${this.unset}</span>
+                <span>${sessionStorage.getItem('nullAccount')}</span>
               </button>
               <hr class="sep"/>
           ` : ''}
@@ -90,7 +88,7 @@ class AccountsDialog extends LitElement {
             <button type="button" role="menuitem"
               data-index="${i}" @click=${this._accountSelected}>
               <span>${account.name} (${account.domain})</span>
-              ${this.side && account.name === this.account ? html`<span><material-icon class="accounts-icon">check_box</material-icon></span>` : ''}
+              ${this.mainMenu && account.name === this.account ? html`<span><material-icon class="accounts-icon">check_box</material-icon></span>` : ''}
             </button>
           `))}
         </div>
@@ -124,7 +122,7 @@ class AccountsDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.account = e.detail.key;
+    this.account = e.detail.key === null ? '': e.detail.key;
     this.dialog.show();
 
   }
@@ -133,8 +131,8 @@ class AccountsDialog extends LitElement {
     this.account = '';
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('accounts-reply', {
       detail: {
-        key: '',
-        visual: this.unset
+        key: null,
+        visual: sessionStorage.get('nullAccount')
       }
     }));
     this.dialog.close

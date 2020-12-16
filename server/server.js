@@ -174,6 +174,8 @@
           clientConfig.webmaster = s.get('webmaster');
           clientConfig.repeatDays = s.get('repeat_days');
           clientConfig.yearEnd = s.get('year_end');
+          clientConfig.nullAccount = s.get('null_account');
+          clientConfig.nullCode = s.get('null_code');
         })();
 //        const payload = { uid: 1, name: 'alan', password: false, isAdmin: 1, account: 'Bank - Current', domain: 'Personal' }; //TEMP
 //        res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //TEMP

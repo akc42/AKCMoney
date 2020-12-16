@@ -77,7 +77,7 @@ class CurrenciesDialog extends LitElement {
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
             <button type="button" role="menuitem" 
               data-index="${i}" @click=${this._currencySelected}>
-              <span>${currency}</span>
+              <span>${currency.name}, ${currency.description}</span>
             </button>
           `))}        
         </div>
@@ -88,7 +88,7 @@ class CurrenciesDialog extends LitElement {
   _currencySelected(e) {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
-    this.currency = this.currencies[index];
+    this.currency = this.currencies[index].name;
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('currencies-reply', {detail: {
       key: this.currency,
       visual: this.currency
@@ -101,6 +101,7 @@ class CurrenciesDialog extends LitElement {
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: currency })); //tell the outside world we have a value
     this.eventLocked = false;
   }
+
   _gotRequest(e) {
     e.stopPropagation();
     if (this.eventLocked) return;

@@ -382,6 +382,8 @@ INSERT INTO settings (name,value) VALUES('webmaster', 'developer@example.com'); 
 INSERT INTO settings (name,value) VALUES('server_port', 2010); --api server port (needs to match what nginx conf says);
 INSERT INTO settings (name,value) VALUES('track_cookie', 'm_user'); --cookie name for tracking cookie
 INSERT INTO settings (name,value) VALUES('auth_cookie', 'm_auth'); --authcookie name
+INSERT INTO settings (name,value) VALUES('null_account', '-- Select (Optional) Other Account --'); --NUll account text (dst or src)
+INSERT INTO settings (name,value) VALUES('null_code', '-- Select (Optional) Account Code --'); --NULL code text
 
 
 

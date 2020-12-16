@@ -58,7 +58,6 @@ class AccountPage extends LitElement {
     this.account = {name:''};
     this.transactions = [];
     this.codes = [];
-    this.currency = [];
     this.repeats = [];
     this.route = {active: false};
     this.reconciledBalance = 0;
@@ -68,12 +67,6 @@ class AccountPage extends LitElement {
   }
   connectedCallback() {
     super.connectedCallback();
-    
-    api('/standing').then(response => {
-      this.codes = response.codes;
-      this.currency = response.currency;
-      this.repeats = response.repeats;
-    }); 
   }
   disconnectedCallback() {
     super.disconnectedCallback();
@@ -84,7 +77,7 @@ class AccountPage extends LitElement {
   }
   firstUpdated() {
     this.dragImage = this.shadowRoot.querySelector('#dragim');
-    this.dialog = this.shadowRoot.querySelector('#parallel')
+    this.dialog = this.shadowRoot.querySelector('#parallel');
   }
   updated(changed) {
     if (changed.has('route') && this.route.active) {
@@ -355,11 +348,13 @@ class AccountPage extends LitElement {
                   .account=${this.account.name}
                   .acurrency=${this.account.currency}
                   .arate=${this.account.rate}
-                  .accounts=${this.accounts}
-                  .currency=${this.currency}
                   .codes=${this.codes}
+                  .repeats=${this.repeats}
+                  .accounts=${this.accounts}
+                  @amount-edit=${this._amountEdit}
                   @amount-changed=${this._amountChanged}
-                  @balance-changed=${this._balanceChanged}  
+                  @balance-changed=${this._balanceChanged} 
+                  @clear-changed=${this._clearChanged} 
                   @transaction-changed=${this._transactionChanged}
                   @versionError=${this._versionError};
                   ></account-transaction>
@@ -383,6 +378,10 @@ class AccountPage extends LitElement {
     const index = e.currentTarget.index;
     const amount = e.currentTarget.amount;
     this.transactions[index].amount = amount;  //Just store the value - no need to force an update
+  }
+  _amountEdit(e) {
+    e.stopPropagation();
+    this.shadowRoot.querySelectorAll('account-transaction').forEach(xt => xt.amountEdit = false);
   }
   _balanceChanged(e) {
     e.stopPropagation();
@@ -589,9 +588,12 @@ class AccountPage extends LitElement {
   }
   _transactionChanged(e) {
     e.stopPropagation();
-    const index = e.currentTarget.index;
-    const transaction = e.currentTarget.transaction;
-    this.transactions[index] = transaction;
+    const index = parseInt(e.currentTarget.index,10);
+    if (e.detail === null) {
+      e.currentTarget.transaction = this.transactions[index];  //cancel so reset
+    } else {
+      this.transactions[index] = e.detail;
+    }
     this._rebalance();
 
   }
