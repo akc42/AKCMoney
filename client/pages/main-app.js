@@ -33,6 +33,7 @@ import './error-manager.js';
 
 
 import tooltip from '../styles/tooltip.js';
+import menu from '../styles/menu.js';
 import './session-manager.js';
 
 
@@ -43,7 +44,7 @@ import './session-manager.js';
 */
 class MainApp extends LitElement {
   static get styles() {
-    return [tooltip, css``];
+    return [tooltip, menu, css``];
   }
   static get properties() {
     return {
@@ -252,34 +253,6 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
           max-width: 300px;
         }
 
-        button[role="menuitem"] {
-          --icon-size: 32px;
-          min-height: 38px;
-          display:flex;
-          background-color: transparent;
-          border: none;
-          flex-direction:row;
-          align-items: center;
-          justify-content: flex-start;
-          cursor: pointer;
-        }
-        button[role="menuitem"]:hover {
-          background-color: var(--menu-hover-color);
-        }
-        button[role="menuitem"]:focus {
-          outline: none;
-        }
-        button[role="menuitem"] span:nth-of-type(1) {
-          max-width: 70vw;
-          text-align: left;
-          flex:1
-        }
-        button[role="menuitem"] span:nth-of-type(2) {
-          margin-left:auto;
-        }
-        button[role="menuitem"]>material-icon {
-          margin-right: 4px;
-        }
         details {
           position: relative;
         }

@@ -357,10 +357,10 @@ class CalendarDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.overlay.positionTarget = e.composedPath()[0];
-    this.original = e.date.date;
-    this.value = e.date.date;
+    this.original = e.detail.date;
+    this.value = e.detail.date;
     if(this.noUnset) this.savedValue = this.value;
-    this.withTime = e.date.time;
+    this.withTime = e.detail.time;
     this.overlay.show();
   }
   _nextMonth(e) {

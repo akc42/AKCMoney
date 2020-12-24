@@ -43,8 +43,8 @@ class AccountTransaction extends LitElement {
       dstamount: { type: Number },
       dstclear: { type: Boolean },
       dstcode: { type: String },
-      id: {type: Number},
-      reconcilled: { type: Boolean },
+      tid: {type: Number},
+      reconciled: { type: Boolean },
       repeat: { type: Number },
       rno: { type: String },
       src: {type: String},
@@ -78,8 +78,8 @@ class AccountTransaction extends LitElement {
     this.dstamount = 0;
     this.dstclear = false;
     this.dstcode = '';
-    this.id =  0;
-    this.reconcilled = false;
+    this.tid =  0;
+    this.reconciled = false;
     this.repeat = 0;
     this.rno = '';
     this.src = ''
@@ -119,50 +119,57 @@ class AccountTransaction extends LitElement {
     }
 
   }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-  update(changed) {
 
-    if (changed.has('cumulative') && changed.get('cumulative') !== undefined) {
-      this.dispatchEvent(new CustomEvent('balance-changed', {bubbles: true, composed: true, detail:this.cumulative}));
-    }
-    super.update(changed);
-  }
-  firstUpdated() {
-    
-  }
+
   updated(changed) {
     if (changed.has('amount') || changed.has('balance') || changed.has('src') || changed.has('currency') || changed.has('acurrency') ||
      changed.has('trate') || changed.has('arate') || changed.has('srcclear') || changed.has('dstclear')) {
+      const cumulative = this.cumulative;
       this.cumulative = this.balance; 
       let amount;
       if (this.currency === this.acurrency) {
         amount = this.amount;
       } else {
-        amount = Math.round(this.amount * this.arate / this.trate)
+          amount = this.account === this.src ? this.srcamount : this.dstamount 
       }
+      if (changed.has('srcclear') && changed.get('srcclear') !== undefined && this.account === this.src) {
+        this.dispatchEvent(new CustomEvent('clear-changed', {
+          bubbles: true,
+          composed: true,
+          detail: {amount:this.srcclear ? -amount : amount, isSrc: true, set: this.srcclear, index: this.index}
+        }));
+      }
+      if (changed.has('dstclear') && changed.get('dstclear') !== undefined && this.account === this.dst) {
+        this.dispatchEvent(new CustomEvent('clear-changed', {
+          bubbles: true,
+          composed: true,
+          detail: { amount: this.dstclear ? amount : -amount, isSrc: false, set: this.dstclear, index: this.index }
+        }));
+      }
+
       if (this.src === this.account && !this.srcclear) {
         this.cumulative -= amount;
       } else if (this.dst === this.account && !this.dstclear) {
         this.cumulative += amount;
       }
-
+      if (this.cumulative !== cumulative) this.dispatchEvent(new CustomEvent('balance-changed', { 
+        bubbles: true, 
+        composed: true, 
+        detail: this.cumulative 
+      }));
     }
-    if (!this.edit) {
-      if (changed.has('amount') && changed.get('amount') !== undefined && !changed.has('id')) {
+    if (this.amountEdit) {
+      if (changed.has('amount') && changed.get('amount') !== undefined && !changed.has('tid')) {
+        this.amountEdit = false;
         //only do this if its the same transaction that the amount has changed in.
-        this.dispatchEvent(new CustomEvent('amount-changed', {bubbles: true, composed: true}));
         api('/xaction_amount',{
-          id: this.id,
+          id: this.tid,
           version: this.version,
           amount: this.amount
         }).then(response => {
           if (response.status === 'OK') {
-            response.transaction.reconcilled = (response.transaction.src === this.account && response.transaction.srcclear === 1) ||
-              (response.transaction.dst === this.account.name && response.transaction.dstclear === 1);
-            this.transaction = response.transaction;
-            this.dispatchEvent(new CustomEvent('transaction-changed', { bubbles: true, composed: true }));
+            this.transaction = response.transaction
+            this.dispatchEvent(new CustomEvent('transaction-changed', { bubbles: true, composed: true, detail: response.transaction }));
           } else {
             this.dispatchEvent(new CustomEvent('version-error', {bubbles: true, composed: true}));
           }
@@ -170,9 +177,10 @@ class AccountTransaction extends LitElement {
       }
     
       if (changed.has('srcclear')) {
-        this.dispatchEvent(new CustomEvent('clear-changed', {bubbles: true, composed: true, details: {
-          amount:this.srcclear ? -this.amount: this.amount,
-          clear: this.srcclear
+        this.dispatchEvent(new CustomEvent('clear-changed', {
+          bubbles: true, composed: true, details: {
+            amount:this.srcclear ? -this.amount: this.amount,
+            clear: this.srcclear
         }}));
       }
       if (changed.has('dstclear')) {
@@ -184,7 +192,7 @@ class AccountTransaction extends LitElement {
         }));
       }
     } else {
-      if (changed.has('edit')) {
+      if (changed.has('edit') && this.edit) {
         this.amountInput = this.shadowRoot.querySelector('#amount');
         this.inputError = !this.amountInput.reportValidity()
         this.descriptionInput = this.shadowRoot.querySelector('#description');
@@ -271,7 +279,7 @@ class AccountTransaction extends LitElement {
           grid-area: date;
           cursor: pointer;
         }
-        date.reconcilled {
+        .date.reconciled {
           text-decoration: line-through;
         }
         .date.passed {
@@ -279,6 +287,9 @@ class AccountTransaction extends LitElement {
         }
         .date.cleared {
           background-color: var(--cleared-transaction);
+        }
+        .date.repeating {
+          background-color: var(--repeating-transaction);
         }
         .lref {
           grid-area: lref;
@@ -387,7 +398,7 @@ class AccountTransaction extends LitElement {
             grid-template-areas:
               "date date dstsrc description description description description amount currency ."
               ". . . . setrate setrate rate accamount acurrency ."
-              "cleared ref ref repeat . accode accode accode accode code"
+              "cleared ref ref repeat accode accode accode accode accode code"
               "switch switch srcdst account account account move . balance ."
               "cancel . save save . . lref . delete delete";
           }
@@ -398,17 +409,17 @@ class AccountTransaction extends LitElement {
 
       </style>
       ${cache(this.edit ? html`
-        <form id="login" action="/xaction_update" @submit=${submit} @form-response=${this._update}>
+        <form id="login" action="xaction_update" @submit=${submit} @form-response=${this._update}>
           <input type="hidden" name="account" .value=${this.account} />
-          <input type="hidden" name="id" .value=${this.id} />
+          <input type="hidden" name="id" .value=${this.tid} />
           <input type="hidden" name="version" .value=${this.version} />
-          <input type="hidden" name="src" .value=${this.src} />
-          <input type="hidden" name="dst" .value=${this.dst} />
           <input type="hidden" name="date" .value=${this.date} />
           <input type="hidden" name="currency" .value=${this.currency} />
           <input type="hidden" name="repeat" .value=${this.repeat} />
           <input type="hidden" name="code" .value=${this.account === this.src ? this.srccode: this.dstcode} />
-          <div class="container">
+          <input type="hidden" name="type" .value=${this.account === this.src ? 'src' : 'dst'} />
+          <input type="hidden" name="alt" .value=${this.account === this.src ? this.dst : this.src} />
+          <div class="container" @dragstart=${this._noDrag} draggable="true">
             <calendar-input .value=${this.date} @value-changed=${this._dateChange}></calendar-input>
             <label class="lref" fore="ref">Ref:</label>
             <input id="ref" type="text" name="rno" .value=${this.rno} />
@@ -420,7 +431,8 @@ class AccountTransaction extends LitElement {
               type="text"
               pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
               class="amount ${classMap({ error: this.inputError })}" 
-              .value=${(this.amount / 100).toFixed(2)} /> 
+              .value=${(this.amount / 100).toFixed(2)} 
+              @input=${this._amount}/> 
             <list-selector 
               class="currency"
               .list=${'currencies'} 
@@ -471,7 +483,7 @@ class AccountTransaction extends LitElement {
             <button class="switch" @click=${this._switch}><material-icon>swap_horiz</material-icon><span>Switch (S<->D)</span></button>
             <div class="balance">${cleared ? '0.00' : (this.cumulative / 100).toFixed(2)}</div>
             <button class="cancel" @click=${this._cancel}><material-icon>backspace</material-icon><span>Cancel</span></button>
-            <button class="save" @click=${this._save}><material-icon>save</material-icon><span>Save and Close</span></button>
+            <button class="save" type="submit" @click=${this._save}><material-icon>save</material-icon><span>Save and Close</span></button>
             <button class="move" @click=${this._move}>
               <material-icon>arrow_forward</material-icon>
               <span>Move To ${this.account === this.src ? 'Dst' : 'Src'}</span>
@@ -483,10 +495,11 @@ class AccountTransaction extends LitElement {
       `:html`
         <div class="wrapper" @dblclick=${this._startEdit} @click=${this._startTouch}>
           <date-format class="date ${classMap({
-            reconcilled: this.reconcilled,
+            reconciled: this.reconciled,
             passed: Date.now()/1000 > this.date,
-            cleared:  cleared
-          })}" .date=${this.date}></date-format>
+            cleared:  cleared,
+            repeating: this.repeat !== this.repeats[0].rkey
+          })}" .date=${this.date} @click=${this._clearedChanged}></date-format>
           <div class="ref">${this.rno}</div>
           <div class="description">${this.description}</div>
           ${cache(this.amountEdit ? (this.src === this.account ? html`
@@ -498,7 +511,10 @@ class AccountTransaction extends LitElement {
               .value=${
                 (-this.amount / 100).toFixed(2)}
               @input="${this._amountChanged}"
-              @blur=${this._amountUpdate}/>
+              @blur=${this._amountUpdate}
+              @contextmenu=${this._zeroRequest} 
+               @dragstart=${this._noDrag} 
+               draggable="true" />
           `:html`
             <input
               id="amount"
@@ -507,9 +523,15 @@ class AccountTransaction extends LitElement {
               class="amount ${classMap({ error: this.inputError })}" 
               .value=${(this.amount / 100).toFixed(2)}
               @input="${this._amountChanged}"
-              @blur=${this._amountUpdate}/>          
+              @blur=${this._amountUpdate}
+              @contextmenu=${this._zeroRequest}  
+              @dragstart=${this._noDrag} 
+              draggable="true" />          
           `):html`
-            <div class="amount" @dblclick=${this._startAmountEdit} @click=${this._touchAmountEdit}>${(this.src === this.account ? '-':'') + (this.amount / 100).toFixed(2)}</div>
+            <div class="amount" 
+              @dblclick=${this._startAmountEdit} 
+              @click=${this._touchAmountEdit}
+              @contextmenu=${this._zeroRequest}>${(this.src === this.account ? '-':'') + (this.amount / 100).toFixed(2)}</div>
           `)}
           <div class="balance">${cleared ? '0.00' : (this.cumulative/100).toFixed(2)}</div>
           <div class="code ${codeType}"></div>
@@ -528,8 +550,8 @@ class AccountTransaction extends LitElement {
       dstamount: this.dstamount,
       dstclear: this.dstclear ? 1 : 0,
       dstcode: this.dstcode,
-      id: this.id,
-      reconcilled: this.reconcilled,
+      id: this.tid,
+      reconciled: this.reconciled ? 1: 0,
       repeat: this.repeat,
       rno: this.rno,
       src: this.src,
@@ -550,8 +572,8 @@ class AccountTransaction extends LitElement {
       this.dstamount = value.dstamount;
       this.dstclear = value.dstclear !== 0;
       this.dstcode = value.dstcode;
-      this.id = value.id;
-      this.reconcilled = value.reconcilled;
+      this.tid = value.id;
+      this.reconciled = value.reconciled !== 0;
       this.repeat = value.repeat;
       this.rno = value.rno
       this.src = value.src;
@@ -559,6 +581,16 @@ class AccountTransaction extends LitElement {
       this.srcamount = value.srcamount;
       this.srccode = value.srccode;
       this.version = value.version;
+    } else {
+      console.log('transaction', value.id, 'not updated');
+    }
+  }
+  _altAccountChanged(e) {
+    e.stopPropagation();
+    if (this.account === this.src) {
+      this.dst = e.detail;
+    } else {
+      this.src = e.detail;
     }
   }
   _amountChanged(e) {
@@ -573,8 +605,8 @@ class AccountTransaction extends LitElement {
     e.stopPropagation();
     if (this.amountInput.reportValidity()) {
       this.inputError = false;
-      this.amount = Math.abs(parseFloat(this.amountInput.value) * 100);
-      this.amountEdit = false;
+      const newAmount = Math.round(Math.abs(parseFloat(this.amountInput.value) * 100));
+      if (newAmount === this.amount) this.amountEdit = false; else this.amount = newAmount; 
     } else {
       this.inputError = true;
     }
@@ -588,21 +620,30 @@ class AccountTransaction extends LitElement {
   }
   _clearedChanged(e) {
     e.stopPropagation();
+    if (this.reconciled) return;
     if (this.src === this.account) {
-
-      this.srccode = !this.srcclear;
+      this.srcclear = !this.srcclear;
     } else if (this.dst === this.account) {
-      this.dstcode = !this.dstclear;
+      this.dstclear = !this.dstclear;
     }
   }
-  _codeType(code) {
-    const c = this.codes.find(cd => cd.id === code)
-    return c.type;
+  _codeChanged(e) {
+    e.stopPropagation();
+    if (this.account === this.src) {
+      this.srccode = e.detail.id === 0 ? null : e.detail.id;
+    } else {
+      this.dstcode = e.detail.id === 0 ? null : e.detail.id;
+    }
   }
   _currencyChanged(e) {
     e.stopPropagation();
     this.currency = e.detail.name;
     this.trate = e.detail.rate;
+    if (this.account === this.src) {
+      this.srcamount = Math.round(this.amount * this.arate / this.trate);
+    } else {
+      this.dstamount = Math.round(this.amount * this.arate / this.trate);
+    }
   }
   _dateChange(e) {
     e.stopPropagation();
@@ -612,7 +653,25 @@ class AccountTransaction extends LitElement {
     e.stopPropagation();
     this.description = e.currentTarget.value;
   }
+  _noDrag(e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  _repeatChanged(e) {
+    e.stopPropagation();
+    this.repeat = e.detail
+  }
+  _save(e) {
+//    e.stopPropagation();
+//    this.edit = false; //this allows the form to be submitted
+  }
   _setCurrencyRate(e) {
+    e.stopPropagation();
+    this.trate = this.amount * this.arate / (this.account === this.src ? this.srcamount : this.dstamount); 
+    api('set_currency', {
+      currency: this.currency, 
+      rate: this.trate 
+    });
 
   }
   _startAmountEdit(e) {
@@ -648,6 +707,27 @@ class AccountTransaction extends LitElement {
   _touchAmountEdit(e) {
     //only respond to a click if its a touch device
     if (!!('ontouchstart' in window || navigator.maxTouchPoints)) this._startAmountEdit(e);
+  }
+  _update(e) {
+    //we have got a response from our form save
+    const response = e.detail;
+    if (response.status === 'OK') {
+      this.edit = false;
+      this.transaction = response.transaction;
+      this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
+
+    } else {
+      this.dispatchEvent(new CustomEvent('version-error',{bubbles: true, composed: true}));
+    }
+  }
+  _zeroRequest(e) {
+    e.stopPropagation();
+    //can't do if transaction is cleared or is a repeated one.
+    if (this.repeat !== this.repeats[0].rkey || this.reconcilled || (this.srcclear && this.src === this.account) ||
+      (this.dstclear && this.dst === this.account)) return;
+
+    e.preventDefault();
+    this.dispatchEvent(new CustomEvent('zero-adjust', {bubbles: true, composed: true, detail: e.currentTarget}));
   }
 }
 customElements.define('account-transaction', AccountTransaction);

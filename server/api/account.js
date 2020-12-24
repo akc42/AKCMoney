@@ -32,11 +32,11 @@
       user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
       WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)`);
     const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
-    const repeatCount = db.prepare('SELECT COUNT(*) FROM xaction WHERE(src = ? OR dst = ? ) AND repeat <> 0 AND date < ?').pluck();
     const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
       repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
     const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
-    const xactionsByDate =  db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd
+    const xactionsByDate =  db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
+      CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
       FROM account a JOIN xaction t ON (t.src = a.name OR t.dst = a.name) 
       LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
       LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN 
@@ -81,7 +81,7 @@
 
               const nextMonth = new Date(xactionDate);
               nextMonth.setMonth(xactionDate.getMonth() + 1);
-              debug('monthly repeat', nextMonth.toUTC);
+              debug('monthly repeat', nextMonth.toUTC());
               //In an additional Month (relative to start of month)
               nextDate = Math.round(nextMonth.getTime() / 1000);
               break;
@@ -159,7 +159,7 @@
           startDate.setHours(0,0,0,0);
           if (account.startdate === 0) {
             responder.addSection('starttype', 'F');
-            const yearEnd = s.get('yearEnd');
+            const yearEnd = s.get('year_end');
             const monthEnd = Math.floor(yearEnd / 100) - 1; //Range 0 to 11 for Dates
             const dayEnd = yearEnd % 100;
             if (startDate.getMonth() > monthEnd) {
@@ -180,7 +180,7 @@
           }
           responder.addSection('startdate', start);  
           debug('add transactions from startdate', startDate.toLocaleString());
-          responder.addSection('transactions', xactions.all(params.account, start));
+          responder.addSection('transactions', xactionsByDate.all(params.account, start));
         }
 
       } else {

@@ -21,27 +21,34 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:xactiondate');
+  const debug = require('debug')('money:xactionamount');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const getXactionVersion = db.prepare(`SELECT t.version AS version, tc.rate AS trate, sc.rate AS srate, dc.rate AS drate
+    const getXactionVersion = db.prepare(`SELECT t.version, t.currency, tc.rate AS trate, sa.currency AS scurrency, 
+      sc.rate AS srate, da.currency AS dcurrency, dc.rate AS drate
       FROM xaction AS t JOIN currency AS tc ON t.currency = tc.name
       LEFT JOIN account AS sa ON t.src = sa.name LEFT JOIN currency AS sc ON sa.currency = sc.name
       LEFT JOIN account AS da ON t.dst = da.name LEFT JOIN currency AS dc ON da.currency = dc.name
       WHERE id = ?`);
     const updateXaction = db.prepare(`UPDATE xaction SET version = version + 1 ,
         srcamount = ?, dstamount = ?, amount = ? WHERE id = ?`);
-    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd
+    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
+    CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
     FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
     LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
     LEFT JOIN currency tc ON tc.name = t.currency
     WHERE t.id = ?`)
     db.transaction(() => {
-      const {version, trate, srate, drate} = getXactionVersion.get(params.id);
+      const {version, currency, trate, scurrency, srate, dcurrency, drate} = getXactionVersion.get(params.id);
       if (version === params.version) {
-        updateXaction.run(Math.round(params.amount * srate/trate), Math.round(params.amount * drate/trate), params.amount, params.id);
+        updateXaction.run(
+          scurrency !== null && scurrency !== currency ? Math.round(params.amount * srate/trate) : null, 
+          dcurrency !== null && dcurrency !== currency ? Math.round(params.amount * drate/trate) : null, 
+          params.amount, 
+          params.id
+        );
         responder.addSection('status', 'OK');
         responder.addSection('transaction', getUpdatedXaction.get(params.id));
       } else {

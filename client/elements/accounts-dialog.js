@@ -132,7 +132,7 @@ class AccountsDialog extends LitElement {
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('accounts-reply', {
       detail: {
         key: null,
-        visual: sessionStorage.get('nullAccount')
+        visual: sessionStorage.getItem('nullAccount')
       }
     }));
     this.dialog.close

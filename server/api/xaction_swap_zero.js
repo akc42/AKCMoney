@@ -21,26 +21,33 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:xactiondate');
+  const debug = require('debug')('money:xactionswap');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
-    const updateXaction = db.prepare('UPDATE xaction SET version = version + 1, date = ? WHERE id = ?');
+    const getXactionVersion = db.prepare(`SELECT version, srcamount, dstamount, amount FROM xaction WHERE id = ?`);
+    const updateXaction = db.prepare(`UPDATE xaction SET version = version + 1 , src = dst, dst = src, srcclear = dstclear, dstclear = srcclear,
+        srccode = dstcode, dstcode = srccode, srcamount = ?, dstamount = ?, amount = ?   WHERE id = ?`);
     const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
     CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
     FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
     LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
     LEFT JOIN currency tc ON tc.name = t.currency
-    WHERE t.id = ?`);
+    WHERE t.id = ?`)
     db.transaction(() => {
-      const version = getXactionVersion.get(params.id);
+      const {version, srcamount, dstamount, amount} = getXactionVersion.get(params.id);
       if (version === params.version) {
-        updateXaction.run(params.date, params.id);
+        updateXaction.run(
+          dstamount !== null ? Math.round(dstamount * params.ratio) : null, 
+          srcamount !== null ? Math.round(srcamount * params.ratio) : null, 
+          Math.round(amount * params.ratio), 
+          params.id);
         responder.addSection('status', 'OK');
         responder.addSection('transaction', getUpdatedXaction.get(params.id));
+        responder.addSection('index', params.index);//reflect back
       } else {
+        debug('params version', params.version, 'database version', version);
         responder.addSection('status', 'Fail');
       }
     })();

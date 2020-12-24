@@ -21,30 +21,24 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:xactiondate');
+  const debug = require('debug')('money:accountstartdate');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
-    debug('new request from', user.name );
-    const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
-    const updateXaction = db.prepare('UPDATE xaction SET version = version + 1, date = ? WHERE id = ?');
-    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
-    CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
-    FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
-    LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
-    LEFT JOIN currency tc ON tc.name = t.currency
-    WHERE t.id = ?`);
+    debug('new request from', user.name, 'account', params.account, 'startdate', params.startdate);
+    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+    const updateSD = db.prepare('UPDATE account SET dversion = dversion + 1, startdate = ? WHERE name = ?');
     db.transaction(() => {
-      const version = getXactionVersion.get(params.id);
-      if (version === params.version) {
-        updateXaction.run(params.date, params.id);
+      const dversion = getVersion.get(params.account);
+      if (dversion === params.dversion) {
+        debug('correct version, do update');
+        updateSD.run(params.startdate, params.account);
         responder.addSection('status', 'OK');
-        responder.addSection('transaction', getUpdatedXaction.get(params.id));
       } else {
+        debug('versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
         responder.addSection('status', 'Fail');
       }
     })();
-    debug('request complete');
-    
+    debug('Request Complete');
   };
 })();

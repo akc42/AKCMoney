@@ -27,7 +27,8 @@
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
     const getCurrencies= db.prepare('SELECT name, rate, display, priority, description FROM currency WHERE display = 1 ORDER BY priority ASC');
-    const getCodes = db.prepare('SELECT * FROM code ORDER BY type DESC, description COLLATE NOCASE ASC');
+    const getCodes = db.prepare(`SELECT * FROM code 
+      ORDER BY CASE type WHEN 'C' THEN 0 WHEN 'O' THEN 2 ELSE 1 END, type, description COLLATE NOCASE ASC`);
     const getRepeats = db.prepare('SELECT rkey,description FROM repeat ORDER BY priority');
 
     db.transaction(() => {
