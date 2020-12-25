@@ -175,8 +175,8 @@
             start = Math.floor(startDate.getTime()/1000)
           } else {
             responder.addSection('starttype', 'D');
-            startDate.setTime(account.start * 1000);
-            start = account.start;
+            startDate.setTime(account.startdate * 1000);
+            start = account.startdate;
           }
           responder.addSection('startdate', start);  
           debug('add transactions from startdate', startDate.toLocaleString());

@@ -607,7 +607,7 @@ class AccountPage extends LitElement {
     api('account_startdate', {
       account: this.account.name,
       dversion: this.account.dversion,
-      startdate: this.startType === 'D' ? this.startdate : (this.startType === 'F' ? 0 : null)
+      startdate: this.startType === 'D' ? this.startDate : (this.startType === 'F' ? 0 : null)
     }).then(response => {
       if (response.status === 'OK') {
         this._fetchAccountData(this.account.name);
