@@ -35,4 +35,7 @@ export default css`
         --icon-size: 10pt;
         margin: 0 10px;
       }
+      input.error {
+        background-color: var(--input-error-color);
+      }
 `;

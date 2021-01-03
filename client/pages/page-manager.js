@@ -59,7 +59,7 @@ export class PageManager extends RouteManager {
   }
   render() {
     return html`
-      <delete-dialog ></delete-dialog>
+      <delete-dialog></delete-dialog>
       ${cache({
         home: html`<home-page managed-page></home-page>`,
         account: html`<account-page 

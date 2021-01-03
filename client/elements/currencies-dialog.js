@@ -19,7 +19,7 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
-import { domHost } from '../libs/utils.js';
+import { api, domHost } from '../libs/utils.js';
 import './material-icon.js';
 import './dialog-box.js';
 
@@ -47,6 +47,7 @@ class CurrenciesDialog extends LitElement {
     this.currencies = [];
     this.currency = '';
     this._gotRequest = this._gotRequest.bind(this);
+    this._setRate = this._setRate.bind(this);
     this.eventLocked = true;
 
   }
@@ -54,10 +55,12 @@ class CurrenciesDialog extends LitElement {
     super.connectedCallback();
     this.domHost = domHost(this);
     this.domHost.addEventListener('currencies-request', this._gotRequest);
+    this.domHost.addEventListener('currency-rate', this._setRate);
   }
   disconnectedCallback() {
     super.disconnectedCallback();
     this.domHost.removeEventListener('currencies-request', this._gotRequest);
+    this.domHost.removeEventListener('currency-rate', this._setRate);
   }
   update(changed) {
     super.update(changed);
@@ -94,11 +97,18 @@ class CurrenciesDialog extends LitElement {
       visual: this.currency
     }}))
     this.dialog.close();
+    this.apiPromise = api('get_currency_rate',{name:this.currency});
+    
   }
-  _closing(e) {
+  async _closing(e) {
     e.stopPropagation();
     const currency = this.currencies.find(c => c.name === this.currency);
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: currency })); //tell the outside world we have a value
+    const response = await this.apiPromise; //await the updated value we just received.
+    currency.version = response.version;
+    currency.rate = response.rate;
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
+      bubbles: true, composed: true, detail: currency 
+    })); //tell the outside world we have a value
     this.eventLocked = false;
   }
 
@@ -109,6 +119,22 @@ class CurrenciesDialog extends LitElement {
     this.dialog.positionTarget = e.composedPath()[0];
     this.currency = e.detail.key;
     this.dialog.show();
+
+  }
+  _setRate(e) {
+    e.stopPropagation();
+    const currency = e.detail;
+    const {version} = this.currencies.find(c => c.name === currency.name);
+    currency.version = version;
+    api('set_currency_rate', currency).then(response => {
+      if(response.status === 'OK') {
+        const currency = this.currencies.find(c => c.name === response.name);
+        currency.version = response.version;
+        currency.rate = response.rate;
+      } else {
+        throw new Error('Currency Version Error');
+      }
+    });
 
   }
 

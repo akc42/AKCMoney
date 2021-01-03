@@ -44,7 +44,8 @@
         ELSE CASE WHEN t.dstcode IS NOT NULL THEN t.dstcode WHEN a.domain = aa.domain THEN t.dstcode END END
       LEFT JOIN currency tc ON tc.name = t.currency 
       WHERE a.name = ? AND t.date >= ? ORDER BY t.date`)
-    const xactionsUnReconciled = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd
+    const xactionsUnReconciled = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
+      CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
       FROM account a JOIN xaction t ON (t.src = a.name OR t.dst = a.name) 
       LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
       LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN 
@@ -81,7 +82,7 @@
 
               const nextMonth = new Date(xactionDate);
               nextMonth.setMonth(xactionDate.getMonth() + 1);
-              debug('monthly repeat', nextMonth.toUTC());
+              debug('monthly repeat', nextMonth.toLocaleString());
               //In an additional Month (relative to start of month)
               nextDate = Math.round(nextMonth.getTime() / 1000);
               break;
@@ -156,7 +157,7 @@
         } else {
           let start;
           const startDate = new Date();
-          startDate.setHours(0,0,0,0);
+          startDate.setHours(3,0,0,0);
           if (account.startdate === 0) {
             responder.addSection('starttype', 'F');
             const yearEnd = s.get('year_end');

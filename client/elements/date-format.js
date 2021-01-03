@@ -39,7 +39,6 @@ class DateFormat extends LitElement {
       :host {
         display: inline-block;
         font-size: 12px;
-        font-weight: bold;
       }
       .date {
         display: flex;

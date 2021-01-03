@@ -38,7 +38,7 @@
   const Router = require('router');
   const jwt = require('jwt-simple');
   const http = require('http');
-  const {v4:uuidV4} = require('uuid');
+  
   const chalk = require('chalk');
 
   const serverDestroy = require('server-destroy');
@@ -393,7 +393,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           serverConfig.serverPort} using node ${process.version}`));
 
     } catch(e) {
-      logger('error', 'Initialisation Failed with error ' + e.toString());
+      logger('error', 'Initialisation Failed with error ' + e.message + '\n' + e.stack);
       close();
     }
   }

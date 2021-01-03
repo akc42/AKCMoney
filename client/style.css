@@ -36,6 +36,7 @@
   --form-background-color: khaki;
   --form-text-color: rgb(40,40,40);
   --currency-designator-color: crimson;
+  --currency-difference-color: lightgreen;
   --shadow-color: rgba(255,255,255,0.8);
   --cleared-transaction: paleturquoise;
   --old-transaction: darkkhaki;
@@ -49,6 +50,7 @@
   --menu-text-color: rgb(5,5,5);
   --drag-over-color: blue;
   --error-color: red;
+  --input-error-color: lightpink;
   --waiting-color:orange;
 
   --home-icon-color: blue;
@@ -62,6 +64,7 @@
   --codes-icon-color: burlywood;
   --users-icon-color: navy;
   --radio-button-color: navy;
+  
 
 
 

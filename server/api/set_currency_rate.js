@@ -21,22 +21,26 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:standing');
+  const debug = require('debug')('money:setcurrency');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
-    debug('new request from', user.name );
-    const getCurrencies= db.prepare('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC');
-    const getCodes = db.prepare(`SELECT * FROM code 
-      ORDER BY CASE type WHEN 'C' THEN 0 WHEN 'O' THEN 2 ELSE 1 END, type, description COLLATE NOCASE ASC`);
-    const getRepeats = db.prepare('SELECT rkey,description FROM repeat ORDER BY priority');
-
+    debug('new request from', user.name , 'with params', params);
+    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
+    const updateRate = db.prepare('UPDATE currency SET version = version + 1, rate = ? WHERE name = ?');
     db.transaction(() => {
-      debug('add currency and codes');
-      responder.addSection('currencies', getCurrencies.all());
-      responder.addSection('codes', getCodes.all());
-      responder.addSection('repeats', getRepeats.all());
-    })();
-    debug('request complete');
+      const version = getVersion.get(params.name);
+      if (version === params.version) {
+        updateRate.run(params.rate, params.name);
+        responder.addSection('status', 'OK');
+        responder.addSection('name', params.name)
+        responder.addSection('rate', params.rate);
+        responder.addSection('versions', version + 1 );
+      } else {
+        debug('db version', version, 'api version', params.version);
+        responder.addSection('status', 'fail');
+      }
+    })()
+    
   };
 })();

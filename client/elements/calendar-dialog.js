@@ -300,7 +300,7 @@ class CalendarDialog extends LitElement {
     width: 70px;
   }     
     </style>
-    <dialog-box id="picker" @overlay-closed=${this._closing}>
+    <dialog-box id="picker" @overlay-closed=${this._closing} closeOnClick>
       <div class="container">
         <div class="datepanel">
           <material-icon class="prev" @click=${this._previousMonth}>navigate_before</material-icon>

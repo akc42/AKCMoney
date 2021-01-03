@@ -25,35 +25,8 @@ import button from '../styles/button.js';
 import './material-icon.js';
 import './dialog-box.js';
 
-export class DeleteRequest extends Event {
 
 
-  /*
-     The following are the fields provided by this event
-
-     item: The name of the item being requested to delete.
-
-  */
-
-  constructor(item) {
-    super('delete-request', { composed: true, bubbles: true });
-    this.item = item;
-  }
-};
-
-
-class DeleteReply extends Event {
-  /*
-     The following are the fields provided by this event
-
-     none: A reply is a confirmation, no reply is a reject  
-
-  */
-
-  constructor() {
-    super('delete-reply', { composed: true, bubbles: true });
-  }
-};
 
 /*
      <comment-dialog>
@@ -115,7 +88,7 @@ class DeleteDialog extends LitElement {
   render() {
     return html`
 
-      <dialog-box id="diag" position="top" @overlay-closed=${this._dialogClosed}>
+      <dialog-box id="diag" @overlay-closed=${this._dialogClosed}>
         <div class="container">
           <div class="explain">Please confirm that you wish to delete ${this.item}</div>
           <div class="buttons">
@@ -141,12 +114,12 @@ class DeleteDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.item = e.item;
+    this.item = e.detail;
     this.dialog.show();
   }
   _replyToCaller(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new DeleteReply());
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('delete-reply', {bubbles: true, composed: true}));
     this.dialog.close();
 
   }

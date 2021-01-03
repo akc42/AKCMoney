@@ -21,8 +21,9 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 import {classMap} from '../libs/class-map.js';
 import button from '../styles/button.js';
+import error from '../styles/error.js';
 
-import { api, submit } from '../libs/utils.js';
+import { api, submit, switchPath } from '../libs/utils.js';
 
 import './list-selector.js';
 
@@ -31,7 +32,7 @@ import './list-selector.js';
 */
 class AccountTransaction extends LitElement {
   static get styles() {
-    return [button,css``];
+    return [button,error, css``];
   }
   static get properties() {
     return {
@@ -152,7 +153,7 @@ class AccountTransaction extends LitElement {
       } else if (this.dst === this.account && !this.dstclear) {
         this.cumulative += amount;
       }
-      if (this.cumulative !== cumulative) this.dispatchEvent(new CustomEvent('balance-changed', { 
+      if (this.cumulative !== cumulative) this.dispatchEvent(new CustomEvent('cleared-changed', { 
         bubbles: true, 
         composed: true, 
         detail: this.cumulative 
@@ -196,6 +197,8 @@ class AccountTransaction extends LitElement {
         this.amountInput = this.shadowRoot.querySelector('#amount');
         this.inputError = !this.amountInput.reportValidity()
         this.descriptionInput = this.shadowRoot.querySelector('#description');
+        this.accountAmountInput = this.shadowRoot.querySelector('#accountamount');
+        this.accountAmountError = !this.accountAmountInput.reportValidity();
         if (this.inputError) {
           this.amountInput.focus();
         } else {
@@ -314,9 +317,10 @@ class AccountTransaction extends LitElement {
           text-align: right;
           grid-area: amount;
         }
-        .amount.error {
-          background-color: lightpink;
+        .amount.currency {
+          background-color: var(--currency-difference-color);
         }
+
         .setrate {
           grid-area: setrate;
         }
@@ -350,6 +354,9 @@ class AccountTransaction extends LitElement {
         }
         .acurrency {
           grid-area: acurrency;
+        }
+        .dual {
+          font-weight: bold;
         }
         #accountamount {
           grid-area: accamount;
@@ -411,14 +418,16 @@ class AccountTransaction extends LitElement {
       ${cache(this.edit ? html`
         <form id="login" action="xaction_update" @submit=${submit} @form-response=${this._update}>
           <input type="hidden" name="account" .value=${this.account} />
-          <input type="hidden" name="id" .value=${this.tid} />
-          <input type="hidden" name="version" .value=${this.version} />
-          <input type="hidden" name="date" .value=${this.date} />
+          <input type="hidden" name="tid" .value=${this.tid.toString()} />
+          <input type="hidden" name="version" .value=${this.version.toString()} />
+          <input type="hidden" name="date" .value=${this.date.toString()} />
           <input type="hidden" name="currency" .value=${this.currency} />
-          <input type="hidden" name="repeat" .value=${this.repeat} />
+          <input type="hidden" name="repeat" .value=${this.repeat.toString()} />
           <input type="hidden" name="code" .value=${this.account === this.src ? this.srccode: this.dstcode} />
-          <input type="hidden" name="type" .value=${this.account === this.src ? 'src' : 'dst'} />
-          <input type="hidden" name="alt" .value=${this.account === this.src ? this.dst : this.src} />
+          <input type="hidden" name="src" .value=${this.src} />
+          <input type="hidden" name="dst" .value=${this.dst} />
+          <input type="hidden" name="reconciled" .value=${this.reconciled ? '1' : '0'} />
+          <input id="saver" type="hidden" name="type" value="save" />
           <div class="container" @dragstart=${this._noDrag} draggable="true">
             <calendar-input .value=${this.date} @value-changed=${this._dateChange}></calendar-input>
             <label class="lref" fore="ref">Ref:</label>
@@ -430,9 +439,11 @@ class AccountTransaction extends LitElement {
               name="amount"
               type="text"
               pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
-              class="amount ${classMap({ error: this.inputError })}" 
+              class="amount ${classMap({ error: this.inputError, currency: this.acurrency !== this.currency })}" 
               .value=${(this.amount / 100).toFixed(2)} 
-              @input=${this._amount}/> 
+              @input="${this._amountChanged}"
+              @blur=${this._amountUpdate}
+              /> 
             <list-selector 
               class="currency"
               .list=${'currencies'} 
@@ -467,8 +478,10 @@ class AccountTransaction extends LitElement {
                 name="accountamount"
                 type="text"
                 pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
-                class="amount ${classMap({ error: this.inputError })}" 
-                .value=${((this.account === this.src ? this.srcamount : this.dstamount) / 100).toFixed(2)} />
+                class="amount ${classMap({ error: this.accountAmountError })}" 
+                .value=${((this.account === this.src ? this.srcamount : this.dstamount) / 100).toFixed(2)} 
+                @input=${this._accountAmountChanged}
+                @blur=${this._accountAmountUpdated} />
             <div class="acurrency">${this.acurrency}</div>
             `:'' )}
             
@@ -484,11 +497,13 @@ class AccountTransaction extends LitElement {
             <div class="balance">${cleared ? '0.00' : (this.cumulative / 100).toFixed(2)}</div>
             <button class="cancel" @click=${this._cancel}><material-icon>backspace</material-icon><span>Cancel</span></button>
             <button class="save" type="submit" @click=${this._save}><material-icon>save</material-icon><span>Save and Close</span></button>
-            <button class="move" @click=${this._move}>
+            <button class="move" type="submit" @click=${this._move}>
               <material-icon>arrow_forward</material-icon>
               <span>Move To ${this.account === this.src ? 'Dst' : 'Src'}</span>
             </button>
-            <button class="delete" @click=${this._delete}><material-icon>delete_forever</material-icon><span>Delete</span></button>
+            <button class="delete" 
+              @click=${this._delete} 
+              @delete-reply=${this._deleteConfirm}><material-icon>delete_forever</material-icon><span>Delete</span></button>
 
           </div>
         </form>
@@ -498,18 +513,19 @@ class AccountTransaction extends LitElement {
             reconciled: this.reconciled,
             passed: Date.now()/1000 > this.date,
             cleared:  cleared,
-            repeating: this.repeat !== this.repeats[0].rkey
+            repeating: this.repeat !== this.repeats[0].rkey,
+            dual: this.src !== null && this.dst !== null 
           })}" .date=${this.date} @click=${this._clearedChanged}></date-format>
-          <div class="ref">${this.rno}</div>
-          <div class="description">${this.description}</div>
+          <div class="ref ${classMap({ dual: this.src !== null && this.dst !== null })}">${this.rno}</div>
+          <div class="description ${classMap({dual: this.src !== null && this.dst !==null})}">${this.description}</div>
           ${cache(this.amountEdit ? (this.src === this.account ? html`
             <input
               id="amount"
               type="text"
               pattern="^-(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
-              class="amount ${classMap({error: this.inputError})}" 
+              class="amount ${classMap({error: this.inputError, currency: this.acurrency !== this.currency})}" 
               .value=${
-                (-this.amount / 100).toFixed(2)}
+            (-(this.currency === this.acurrency ? this.amount : this.srcamount) / 100).toFixed(2)}
               @input="${this._amountChanged}"
               @blur=${this._amountUpdate}
               @contextmenu=${this._zeroRequest} 
@@ -520,20 +536,23 @@ class AccountTransaction extends LitElement {
               id="amount"
               type="text"
               pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
-              class="amount ${classMap({ error: this.inputError })}" 
-              .value=${(this.amount / 100).toFixed(2)}
+              class="amount ${classMap({ error: this.inputError, currency: this.acurrency !== this.currency })}" 
+              .value=${((this.currency === this.acurrency ? this.amount : this.dstamount) / 100).toFixed(2)}
               @input="${this._amountChanged}"
               @blur=${this._amountUpdate}
               @contextmenu=${this._zeroRequest}  
               @dragstart=${this._noDrag} 
               draggable="true" />          
           `):html`
-            <div class="amount" 
+            <div class="amount ${classMap({ currency: this.currency !== this.acurrency, dual: this.src !== null && this.dst !== null})}" 
               @dblclick=${this._startAmountEdit} 
               @click=${this._touchAmountEdit}
-              @contextmenu=${this._zeroRequest}>${(this.src === this.account ? '-':'') + (this.amount / 100).toFixed(2)}</div>
+              @contextmenu=${this._zeroRequest}>${
+                (this.src === this.account ? '-':'') + ((
+                  this.currency === this.acurrency ? this.amount : (this.account === this.src ? this.srcamount: this.dstamount)
+                ) / 100).toFixed(2)}</div>
           `)}
-          <div class="balance">${cleared ? '0.00' : (this.cumulative/100).toFixed(2)}</div>
+          <div class="balance ${classMap({ dual: this.src !== null && this.dst !== null })}">${cleared ? '0.00' : (this.cumulative/100).toFixed(2)}</div>
           <div class="code ${codeType}"></div>
         </div>
       `)}
@@ -558,6 +577,7 @@ class AccountTransaction extends LitElement {
       srcamount: this.srcamount,
       srcclear: this.srcclear? 1:0,
       srccode: this.srccode,
+      trate: this.trate,
       version: this.version
     };
   }
@@ -580,9 +600,34 @@ class AccountTransaction extends LitElement {
       this.srcclear = value.srcclear !== 0;
       this.srcamount = value.srcamount;
       this.srccode = value.srccode;
+      this.trate = value.trate;
       this.version = value.version;
+      if (this.tid === 0) this.edit = true;
     } else {
       console.log('transaction', value.id, 'not updated');
+    }
+    
+  }
+  _accountAmountChanged(e) {
+    e.stopPropagation();
+    if (this.accountAmountInput.reportValidity()) {
+      this.accountAmountError = false;
+    } else {
+      this.accountAmountError = true;
+    }
+  }
+  _accountAmountUpdated(e) {
+    e.stopPropagation();
+    if (this.accountAmountInput.reportValidity()) {
+      this.accountAmountError = false;
+      const newAmount = Math.round(Math.abs(parseFloat(this.amountAmountInput.value) * 100));
+      if (newAmount !== this.amount) {
+        if (this.account === this.src) {
+          this.srcamount = newAmount;
+        } else {
+          this.dstamount = newAmount;
+        }
+      };       
     }
   }
   _altAccountChanged(e) {
@@ -606,7 +651,13 @@ class AccountTransaction extends LitElement {
     if (this.amountInput.reportValidity()) {
       this.inputError = false;
       const newAmount = Math.round(Math.abs(parseFloat(this.amountInput.value) * 100));
-      if (newAmount === this.amount) this.amountEdit = false; else this.amount = newAmount; 
+      if (this.currency === this.acurrency) {
+        if (newAmount === this.amount) this.amountEdit = false; else this.amount = newAmount;
+      } else if (this.account === this.src) {
+        if (newAmount === this.srcamount) this.amountEdit = false; else this.srcamount = newAmount;
+      } else {
+        if (newAmount === this.dstamount) this.amountEdit = false; else this.dstamount = newAmount;
+      }
     } else {
       this.inputError = true;
     }
@@ -649,9 +700,25 @@ class AccountTransaction extends LitElement {
     e.stopPropagation();
     this.date = e.detail;
   }
+  _delete(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    e.currentTarget.dispatchEvent(new CustomEvent('delete-request', {bubbles: true, composed: true, detail: 'this transaction'}));
+  }
+  _deleteConfirm(e) {
+    e.stopPropagation();
+    this.edit = false;
+    this.amountEdit = false;
+    this.dispatchEvent(new CustomEvent('delete-transaction', {bubbles: true, composed: true, detail: {tid:this.tid, index: this.index}}));
+
+  }
   _descriptionChanged(e) {
     e.stopPropagation();
     this.description = e.currentTarget.value;
+  }
+  _move(e) {
+      const saver = this.shadowRoot.querySelector('#saver');
+      saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
   }
   _noDrag(e) {
     e.stopPropagation();
@@ -662,16 +729,17 @@ class AccountTransaction extends LitElement {
     this.repeat = e.detail
   }
   _save(e) {
-//    e.stopPropagation();
-//    this.edit = false; //this allows the form to be submitted
+    const saver = this.shadowRoot.querySelector('#saver');
+    saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
   }
   _setCurrencyRate(e) {
     e.stopPropagation();
+    e.preventDefault(); //do not submit form
     this.trate = this.amount * this.arate / (this.account === this.src ? this.srcamount : this.dstamount); 
-    api('set_currency', {
-      currency: this.currency, 
-      rate: this.trate 
-    });
+    this.dispatchEvent(new CustomEvent('currency-rate', {bubbles: true, composed: true, detail: {
+      name: this.currency,
+      rate: this.trate
+    }}));
 
   }
   _startAmountEdit(e) {
@@ -712,10 +780,24 @@ class AccountTransaction extends LitElement {
     //we have got a response from our form save
     const response = e.detail;
     if (response.status === 'OK') {
-      this.edit = false;
-      this.transaction = response.transaction;
-      this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
-
+      const saver = this.shadowRoot.querySelector('#saver');
+      const mover = saver.getAttribute('value');
+      if (mover === 'save') {
+        //was a save update to transaction, and account
+        this.edit = false;
+        this.transaction = response.transaction;
+        this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
+        if (response.balance !== undefined) {
+          this.dispatchEvent(new CustomEvent('balance-changed', {
+            bubbles: true, composed: true, detail: {
+              balance: response.balance,
+              bversion: response.bversion
+            }
+          }));
+        }
+      } else {
+        switchPath('account', {account: response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src, tid: response.transaction.id});
+      }
     } else {
       this.dispatchEvent(new CustomEvent('version-error',{bubbles: true, composed: true}));
     }

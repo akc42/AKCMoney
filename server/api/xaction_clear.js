@@ -21,13 +21,16 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:xactiondate');
+  const debug = require('debug')('money:xactionclear');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
     const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
-    const updateXaction = db.prepare('UPDATE xaction SET version = version + 1, date = ? WHERE id = ?');
+    const updateXaction = db.prepare(`UPDATE xaction AS x SET version = t.version + 1, 
+      srcclear = CASE WHEN a.name = t.src THEN ? ELSE t.srcclear END,
+      dstclear = CASE WHEN a.name = t.dst THEN ? ELSE t.dstclear END   
+      FROM xaction t JOIN account a ON (a.name = t.src OR a.name = t.dst) WHERE x.id = ? AND t.id = ? AND a.name = ?`);
     const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
     CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
     FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
@@ -36,10 +39,12 @@
     WHERE t.id = ? and a.name = ?`);
     db.transaction(() => {
       const version = getXactionVersion.get(params.id);
+      debug('db version', version, 'params version', params.version, 'xaction', params.id);
       if (version === params.version) {
-        updateXaction.run(params.date, params.id);
-        responder.addSection('status', 'OK');
-        responder.addSection('transaction', getUpdatedXaction.get(params.id, params.account));
+        debug('do update; clear =', params.clear);
+        const infor = updateXaction.run(params.clear ? 1: 0, params.clear ? 1: 0, params.id, params.id, params.account);
+        responder.addSection('status', 'OK'); 
+        responder.addSection('transaction', getUpdatedXaction.get(params.id, params.account))
       } else {
         responder.addSection('status', 'Fail');
       }

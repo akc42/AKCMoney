@@ -194,9 +194,9 @@ class DialogBox extends LitElement  {
     */
     if(e.target !== this.sizingTarget) {
       //click inside the dialog
-      if (!this.closeOnClick) needsClose = false;
       this.clickPosition = null;
     } else {
+      if (!this.closeOnClick) needsClose = false;
       //We clicked outside the dialog, so record where it was
       this.clickPosition = {x: e.clientX, y: e.clientY};
     }

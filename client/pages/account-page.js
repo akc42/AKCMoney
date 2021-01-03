@@ -18,7 +18,9 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
+import {classMap} from '../libs/class-map.js';
 import {cache} from '../libs/cache.js';
+
 import Route from '../libs/route.js';
 import { api } from '../libs/utils.js';
 import '../elements/material-icon.js'
@@ -29,6 +31,7 @@ import '../elements/date-format.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import menu from '../styles/menu.js';
+import error from '../styles/error.js';
 
 
 /*
@@ -36,7 +39,7 @@ import menu from '../styles/menu.js';
 */
 class AccountPage extends LitElement {
   static get styles() {
-    return [page, button, menu, css``];
+    return [page, button, menu, error, css``];
   }
   static get properties() {
     return {
@@ -52,7 +55,8 @@ class AccountPage extends LitElement {
       clearedBalance: {type: Number},
       minimumBalance: {type: Number},
       startDate: {type: Number}, //same values as account.startDate.
-      startType: {type: String} //values U (unreconciled), F (financial year end), D (explicit date)
+      startType: {type: String}, //values U (unreconciled), F (financial year end), D (explicit date)
+      balanceError: {type: Boolean}
     };
   }
   constructor() {
@@ -67,6 +71,7 @@ class AccountPage extends LitElement {
     this.reconciledBalance = 0;
     this.clearedBalance = 0;
     this.minimumBalance = 0;
+    this.balanceError = false;
     this.router = new Route('/','page:account');
     this.zeroLocked = true;
   }
@@ -90,8 +95,11 @@ class AccountPage extends LitElement {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        this._fetchAccountData(route.query.account);
+        this._fetchAccountData(route.query.account, route.query.tid);
       }
+    }
+    if (changed.has('account') && this.account.name.length > 0) {
+      this.recbalInput = this.shadowRoot.querySelector('#recbal');
     }
     super.updated(changed);
   }
@@ -295,7 +303,7 @@ class AccountPage extends LitElement {
       </dialog-box>
       <calendar-dialog noUnset></calendar-dialog>
       <section class="page">
-        ${this.account.name.length > 0 ? html`
+        ${cache(this.account.name.length > 0 ? html`
           <h1>${this.account.name}</h1>
           <div class="info">
             <div class="domain"><strong>Domain:</strong> ${this.account.domain}</div>
@@ -305,8 +313,8 @@ class AccountPage extends LitElement {
             </div>
           </div>
           <div class="action">
-            <button id="newt"><material-icon>post_add</material-icon>New Transaction</button>
-            <button id="recon"><material-icon>account_balance_wallet</material-icon>Set Reconciled Balance</button>
+            <button id="newt" @click=${this._newTransaction}><material-icon>post_add</material-icon>New Transaction</button>
+            <button id="recon" @click=${this._reconcile}><material-icon>account_balance_wallet</material-icon>Set Reconciled Balance</button>
             <button id="makecsv"><material-icon>insert_chart_outlined</material-icon>Make CSV</button>
             <button id="makepdf"><material-icon>picture_as_pdf</material-icon>Make PDF</button>
             <label id="U" class="radio" @click=${this._selectStart}>
@@ -334,15 +342,22 @@ class AccountPage extends LitElement {
           <div class="panel">
             <date-format class="date" .date=${this.account.date}></date-format>
             <label for="recbal" class="description">Reconciled Balance</label>
-            <input id="recbal" class="balance" value="${(this.reconciledBalance/100).toFixed(2)}"/>
+            <input 
+              id="recbal" 
+              class="balance ${classMap({error: this.balanceError})}"
+              pattern="^[-+]?(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
+              value="${(this.reconciledBalance/100).toFixed(2)}"
+              @input=${this._balanceChanged}
+              @blur=${this._balanceUpdated}/>
           </div>
           <div class="panel">
             <label for="clearb" class="description">Cleared Balance</label>
             <div id="clearb" class="balance">${(this.clearedBalance/100).toFixed(2)}</div>
           </div>
           <section id="transactions" class="scrollable" @contextmenu=${this._zeroEndBalance}>
-            ${this.transactions.map((transaction,i) => html`
-              <div 
+            ${cache(this.transactions.map((transaction,i) => html`
+              <div
+                id="w${transaction.id}" 
                 draggable="true" 
                 data-index="${i}" 
                 @dragstart=${this._dragStart} 
@@ -354,7 +369,8 @@ class AccountPage extends LitElement {
                 <account-transaction 
                   id="t${transaction.id}"
                   .index=${i}
-                  .balance=${this.balances[i]} 
+                  .balance=${this.balances[i]}
+                  .bversion=${this.account.bversion}
                   .transaction=${transaction}
                   .account=${this.account.name}
                   .acurrency=${this.account.currency}
@@ -363,14 +379,16 @@ class AccountPage extends LitElement {
                   .repeats=${this.repeats}
                   .accounts=${this.accounts}
                   @amount-edit=${this._amountEdit}
-                  @balance-changed=${this._balanceChanged} 
+                  @balance-changed=${this._balanceChangedXaction} 
                   @clear-changed=${this._clearChanged} 
+                  @cleared-changed=${this._clearedChanged}
+                  @delete-transaction=${this._deleteTransaction}
                   @transaction-changed=${this._transactionChanged}
                   @version-error=${this._versionError};
                   @zero-adjust=${this._zeroMenuRequest}
                   ></account-transaction>
               </div>
-            `)}
+            `))}
           </section>
 
         `:html`
@@ -380,7 +398,7 @@ class AccountPage extends LitElement {
               selecting another account from the menu above, but if that still fails then you should report the fault to
               an adminstrator${this.route.active ? html`<span>, informing them that you had a problem with account name 
               <strong>${this.route.query.account}</strong> not being in the database</span>`:''}.</p>
-        `}
+        `)}
       </section>
     `;
   }
@@ -390,15 +408,41 @@ class AccountPage extends LitElement {
   }
   _balanceChanged(e) {
     e.stopPropagation();
-    const index = e.currentTarget.index + 1;
-    if (index < this.balances.length) {
-      this.balances[index] = e.detail;
-      if (index < this.transactions.length) { //transactions length is one less than balances.
-        //avoid a redraw of entire set of transactions - just update the one transaction (which will propagate)
-        const t = this.shadowRoot.querySelector(`#t${this.transactions[index].id}`);
-        t.balance = e.detail;
-      }
+    if (this.recbalInput.reportValidity()) {
+      this.balanceError = false;
+    } else {
+      this.balanceError = true;
     }
+
+  }
+  _balanceChangedXaction(e) {
+    e.stopPropagation();
+    this.clearedBalance += e.details.balance - this.reconciledBalance;
+    this.reconciledBalance = this.account.balance = e.details.balance;
+    this._rebalance();
+  }
+  async _balanceUpdated(e) {
+    e.stopPropagation();
+    if (this.recbalInput.reportValidity()) {
+      this.balanceError = false;
+      const newAmount = Math.round(parseFloat(this.recbalInput.value) * 100);
+      if (newAmount !== this.reconciledBalance) {
+        const response = await api('account_balance', {
+          balance: newAmount,
+          bversion: this.account.bversion,
+          account: this.account.name
+        });
+        if (response.status = 'OK') {
+          this.account.bversion = response.bversion;
+          this.clearedBalance += newAmount - this.reconciledBalance
+          this.reconciledBalance = this.account.balance = newAmount;
+        } else {
+          this.dialog.show();
+        }
+      }
+    } else {
+      this.balanceError = true;
+    }   
   }
   _clearChanged(e) {
     e.stopPropagation();
@@ -410,6 +454,31 @@ class AccountPage extends LitElement {
       this.transactions[e.detail.index].dstclear = e.detail.set ? 1 : 0;
     }
     this.clearedBalance += e.detail.amount;
+  }
+  _clearedChanged(e) {
+    e.stopPropagation();
+    const index = e.currentTarget.index + 1;
+    if (index < this.balances.length) {
+      this.balances[index] = e.detail;
+      if (index < this.transactions.length) { //transactions length is one less than balances.
+        //avoid a redraw of entire set of transactions - just update the one transaction (which will propagate)
+        const t = this.shadowRoot.querySelector(`#t${this.transactions[index].id}`);
+        t.balance = e.detail;
+      }
+    }
+  }
+  _deleteTransaction(e) {
+    e.stopPropagation();
+    const {tid, index} = e.detail;
+    api('xaction_delete', {tid: tid, version: this.transactions[index].version}).then(response => {
+      if (response.status = 'OK') {
+        this.transactions.splice(index,1);  //remove deleted transaction
+//        this.transactions = [...this.transactions];
+        this._rebalance();        
+      } else {
+        this.dialog.show();
+      }
+    });
   }
   _dragDrop(e) {
     e.preventDefault();
@@ -445,7 +514,8 @@ class AccountPage extends LitElement {
     e.dataTransfer.setData('text/plain', e.currentTarget.dataset.index);
     e.dataTransfer.setDragImage(this.dragImage,0,0);
   }
-  async _fetchAccountData(name) {
+  async _fetchAccountData(name, tid) {
+    const openid = tid ?? 0;
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     this.transactions = [];
     const response = await api('/account', { account: name })
@@ -461,18 +531,22 @@ class AccountPage extends LitElement {
           let previousTime = previousTransaction.date;
           let transaction = response.transactions[i];
           if (transaction.date - previousTime < 60) {
-            let currentDayEnd = ((Math.floor(transaction.date / 86400) + 1) * 86400) - 1 ;
+            const transactionDate = new Date()
+            transactionDate.setTime(transaction.date * 1000);
+            const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
+            let currentDayEnd = ((Math.floor(transaction.date / 86400) + 1) * 86400) - 1 - TZOffset;
             transaction.date = Math.min(previousTime + 60, currentDayEnd); //force it to spread, but not past current day.
             //if we are doing this also move the previous transaction back a little bit if we need to
             if (transaction.date - previousTime < 60) {
               //keep it in the same day, but otherwise a minute away      
-              previousTime = Math.max(transaction.date - 60, Math.floor(previousTime/86400) * 86400);
+              previousTime = Math.max(transaction.date - 60, Math.floor(previousTime/86400) * 86400 - TZOffset);
               if( previousTransaction.date !== previousTime) {
                 previousTransaction.date = previousTime;
                 const reply = await api('/xaction_date', {
                   id: previousTransaction.id,
                   version: previousTransaction.version,
-                  date: previousTransaction.date
+                  date: previousTransaction.date,
+                  account: this.account.name
                 });
                 if (reply.status === 'OK') {
                   response.transactions[i -1] = reply.transaction;
@@ -485,7 +559,8 @@ class AccountPage extends LitElement {
             const reply = await api('/xaction_date', {
               id: transaction.id,
               version: transaction.version,
-              date: transaction.date
+              date: transaction.date,
+              account: this.account.name
             });
             if (reply.status === 'OK') {
               response.transactions[i] = reply.transaction;
@@ -501,61 +576,111 @@ class AccountPage extends LitElement {
         this.transactions = []; 
       }
       this._rebalance();
+      await this.updateComplete;
+      if (openid > 0) {
+        const xaction = this.shadowRoot.querySelector(`#t${openid}`);
+        xaction.edit = true;
+      }
     }
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
   }
   async _insertTransaction(dst,transaction, up) {
+    const transactionDate = new Date()
+    transactionDate.setTime(transaction.date * 1000);
+    const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
     this._printTime('Current source time', transaction.date);
-    let newdate = Math.floor(this.transactions[dst].date/86400) * 86400 + 43200; //midday
-    this._printTime('Midday on destination', newdate);
-    const dstDay = Math.floor(this.transactions[dst].date / 86400);
-    const srcDay = Math.floor(transaction.date / 86400);
+    const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400) ;
+    const srcDay = Math.floor((transaction.date - TZOffset) / 86400);
+    let lowerLimit = srcDay * 86400;
+    let upperLimit = ((srcDay + 1) * 86400) - 1; 
+    this._printTime('Initial Lower Limit', lowerLimit);
+    this._printTime('Initial Upper Limit', upperLimit);
     if (up) {
-      if (srcDay === dstDay) {
-        this._printTime('Moving up on same day - destination time', this.transactions[dst].date);
-        newdate = Math.ceil(((srcDay * 86400) + this.transactions[dst].date) / 2); //midway from start of day to date of relevant xaction
-        this._printTime('midway between destination and previous midnight', newdate);
-      } else {
-        newdate -= 86400; //mid day the day before
-        this._printTime('Midday day before destination date', newdate);
+     if (dst > 0 ) {
+        //there is a prior transaction so we limit our selves to it
+        const preDay = Math.floor((this.transactions[dst-1].date - TZOffset) / 86400);
+        if (preDay === srcDay) {
+          lowerLimit = this.transactions[dst - 1];
+          this._printTime('Adjusted Lower Limit', lowerLimit)
+        }
       }
-      if (dst > 0) {
-        //if previous transaction date is too close we may need to adjust
-        this._printTime('check if date need adjusting from dest -1', this.transactions[dst -1].date);
-        newdate = Math.max(newdate, Math.ceil((this.transactions[dst -1].date + this.transactions[dst].date)/2))
-        this._printTime('revised time', newdate);
-      } 
+      if (srcDay === dstDay) {
+        upperLimit = this.transactions[dst].date;
+        this._printTime('Adjusted Upper Limit', upperLimit);
+      }
     } else {
-      if (srcDay === dstDay) {
-        this._printTime('Moving down on same day - destination time', this.transactions[dst].date);
-        //days the same, so use half way between the dst transaction time and the end of the day
-        newdate = Math.floor(((srcDay + 1) * 86400 - 1 + this.transactions[dst].date)/2);
-        this._printTime('midway between destination and next midnight', newdate);
-      } else {
-        newdate += 86400; //mid day the day after
-        this._printTime('Midday day after destination date');
+      if (dst < (this.transactions.length - 1)) {
+        const postDay = Math.floor((this.transactions[dst + 1].date - TZOffset) / 86400);
+        if (postDay === srcDay) {
+          upperLimit = this.transactions[dst + 1].date;
+          this._printTime('Adjusted Upper Limit', upperLimit);
+        }
       }
-      if (dst < (this.transactions.length -1)) {
-        //If next transaction date is too close we may need to adjust
-        this._printTime('check if date need adjusting from dest + 1', this.transactions[dst + 1].date);
-        newdate = Math.min(newdate, Math.floor((this.transactions[dst + 1].date + this.transactions[dst].date) / 2))
-        this._printTime('revised time', newdate);
+      if (srcDay === dstDay) {
+        lowerLimit = this.transactions[dst].date;
+        this._printTime('Adjusted Lower Limit', lowerLimit);
       }
     }
-    transaction.date = newdate;
+    if (transaction.date < lowerLimit + 60 || transaction.date > upperLimit - 60) {
+      transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
+      this._printTime('Adjsted transaction Time', transaction.date);
+    }
     this.transactions.splice(up? dst: dst + 1, 0, transaction);  //add our new transaction into place    
     if (transaction.id !== 0) { //only update date if transaction is in db
       const response = await api('/xaction_date', {
         id: transaction.id, 
         version: transaction.version, 
-        date: transaction.date
+        date: transaction.date,
+        account: this.account.name
       });
       if (response.status === 'OK') {
         transaction = response.transaction;
-        this.transactions = [...this.transactions];
         this._rebalance();
       } else {
         this.dialog.show();
+      }
+    } else {
+      this.requestUpdate().then(() => {
+        const wrap = this.shadowRoot.querySelector('#w0');
+        wrap.scrollIntoView({behavior: 'smooth', block: 'center'});
+      });
+    }
+  }
+  _newTransaction(e) {
+    const wrap = this.shadowRoot.querySelector('#w0');
+    if (wrap === null) {
+      const transactionDate = new Date();
+      const transaction = {
+        amount: 0,
+        cd: null,
+        ctype: null,
+        currency: this.account.currency,
+        date: Math.round(transactionDate.getTime()/1000),
+        description: '',
+        dst: null,
+        dstamount: null,
+        dstclear: 0,
+        dstcode: null,
+        id: 0,
+        reconciled: 0,
+        repeat: 0,
+        rno: '',
+        src: this.account.name,
+        srcamount: null,
+        srcclear: 0,
+        srccode: null,
+        trate: this.account.rate,
+        version: 1
+      }
+      let p;
+      for(let i = 0; i < this.transactions.length; i++) {
+        if (this.transactions[i].date > transaction.date) break;
+        p = i;
+      }
+      if (p === undefined) {
+        this._insertTransaction(0, transaction, true)
+      } else {
+        this._insertTransaction(p, transaction, false);
       }
     }
   }
@@ -587,6 +712,45 @@ class AccountPage extends LitElement {
       }
       this.balances.push(cumulative);
       this.minimumBalance = Math.min(cumulative, this.minimumBalance);
+    }
+  }
+  async _reconcile(e) {
+    e.stopPropagation();
+    const response = await api('account_balance',{
+      balance: this.clearedBalance, 
+      bversion: this.account.bversion, 
+      account: this.account.name
+    });
+    if (response.status = 'OK') {
+      this.account.bversion = response.bversion;
+      let updateNeeded = false;
+      for (let i = 0; i < this.transactions.length; i++) {
+        const xactionElement = this.shadowRoot.querySelector(`#t${this.transactions[i].id}`);
+        if ((this.transactions[i].reconciled === 1 && 
+          ((xactionElement.src === this.account.name && !xactionElement.srcclear) ||
+          (xactionElement.dst === this.account.name && !xactionElement.dstclear))) ||
+          (this.transactions[i].reconciled === 0 && 
+          ((xactionElement.src === this.account.name && xactionElement.srcclear) ||
+          (xactionElement.dst === this.account.name && xactionElement.dstclear)))){
+          const response = await api('xaction_clear', {
+            clear: this.transactions[i].reconciled === 0, //we are not clearing this if we already have it reconciled 
+            id: this.transactions[i].id, 
+            version: this.transactions[i].version,
+            account: this.account.name
+          });
+          if (response.status === 'OK') {
+            this.transactions[i] = response.transaction;
+            updateNeeded = true;
+          } else {
+            this.dialog.show();
+            break;
+          }
+        }
+      }
+      this.reconciledBalance = this.clearedBalance;
+      if (updateNeeded) this.requestUpdate();
+    } else {
+      this.dialog.show();
     }
   }
   _reload(e) {
@@ -626,9 +790,20 @@ class AccountPage extends LitElement {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.index,10);
     if (e.detail === null) {
-      e.currentTarget.transaction = this.transactions[index];  //cancel so reset
+      if (this.transactions[index].id === 0) {
+        this.transactions.splice(index, 1); //remove this transaction
+        this._rebalance();
+      } else {
+        e.currentTarget.transaction = this.transactions[index];  //cancel so reset
+      }
     } else {
+      const refreshNeeded = (this.transactions[index].id !== e.detail.id);
+      const resortNeeded = (this.transactions[index].date !== e.detail.date);
       this.transactions[index] = e.detail;
+      if (resortNeeded) {
+        this.transactions.sort((a, b) => a.date - b.date);
+        this.requestUpdate();
+      } else if (refreshNeeded) this.requestUpdate();
     }
   }
   _versionError(e) {
