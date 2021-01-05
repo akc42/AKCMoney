@@ -21,7 +21,7 @@
 		"body": [
 			"/**",
 			"@licence",
-			"    Copyright (c) ${1:2020} Alan Chandler, all rights reserved",
+			"    Copyright (c) 2021 Alan Chandler, all rights reserved",
 			"",
 			"    This file is part of AKCMoney.",
 			"",
@@ -42,12 +42,16 @@
 			"(function() {",
 			"  'use strict';",
 			"",
-			"  const debug = require('debug')('money:${2:xxxx}');",
+			"  const debug = require('debug')('money:${1:xxxx}');",
 			"  const db = require('@akc42/server-utils/database');",
 			"",
 			"  module.exports = async function(user, params, responder) {",
-			"    debug('new request from', user.name );",
+			"    debug('new request from', user.name, 'with params', params );",
 			"    $0",
+			"    db.transaction(() => {",
+			"      ",
+			"    })();",
+			"    debug('request complete')",
 			"  };",
 			"})();"
 		],
@@ -59,7 +63,7 @@
 		"body": [
 			"/**",
 			"@licence",
-			"    Copyright (c) ${1:2020} Alan Chandler, all rights reserved",
+			"    Copyright (c) 2021 Alan Chandler, all rights reserved",
 			"",
 			"    This file is part of AKCMoney.",
 			"",
@@ -81,9 +85,9 @@
 			"import page from '../styles/page.js';",
 			"",
 			"/*",
-			"     <${3:page}>: ${5:description}",
+			"     <${2:page}>: ${4:description}",
 			"*/",
-			"class ${2:class} extends LitElement {",
+			"class ${1:class} extends LitElement {",
 			"  static get styles() {",
 			"    return [page, css``];",
 			"  }",
@@ -116,7 +120,7 @@
 			"    `;",
 			"  }",
 			"}",
-			"customElements.define('${3:page}', ${2:class});"
+			"customElements.define('${2:page}', ${1:class});"
 		],
 		"description": "New Page Element"
 	},
@@ -126,7 +130,7 @@
 		"body": [
 			"/**",
 			"@licence",
-			"    Copyright (c) ${1:2020} Alan Chandler, all rights reserved",
+			"    Copyright (c) 2021 Alan Chandler, all rights reserved",
 			"",
 			"    This file is part of AKCMoney.",
 			"",
@@ -148,9 +152,9 @@
 
 			"",
 			"/*",
-			"     <${3:element}>: ${5:description}",
+			"     <${2:element}>: ${4:description}",
 			"*/",
-			"class ${2:class} extends LitElement {",
+			"class ${1:class} extends LitElement {",
 			"  static get styles() {",
 			"    return css``;",
 			"  }",
@@ -183,7 +187,7 @@
 			"    `;",
 			"  }",
 			"}",
-			"customElements.define('${3:element}', ${2:class});"
+			"customElements.define('${2:element}', ${1:class});"
 		],
 		"description": "New Component Element"
 	}
