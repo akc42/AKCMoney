@@ -102,7 +102,7 @@ class SessionManager extends LitElement {
           break;
         case 'reset':
           this.authorised = false;
-          configPromise.then(() => { //only using this to wait until globals has been read, since this is the first stat
+          configPromise.then(() => { //only using this to wait until globals has been read, since this is the first state
             const authTester = new RegExp(`^(.*; +)?${sessionStorage.getItem('authCookie')}=([^;]+)(.*)?$`);
             const matches = document.cookie.match(authTester);
             if (matches) {
