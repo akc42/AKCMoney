@@ -31,6 +31,9 @@ import '../elements/codes-dialog.js';
 import '../elements/repeats-dialog.js';
 import './error-manager.js';
 
+import csv from '../modules/csv.js';
+import pdf from '../modules/pdf.js';
+
 
 import tooltip from '../styles/tooltip.js';
 import menu from '../styles/menu.js';
@@ -159,12 +162,14 @@ class MainApp extends LitElement {
         this.accountsMenu = this.shadowRoot.querySelector('#accountsmenu');
         this.domainsMenu = this.shadowRoot.querySelector('#domainsmenu');
         this.adminMenu = this.shadowRoot.querySelector('#adminmenu');
+        this.extrasMenu = this.shadowRoot.querySelector('#extrasmenu')
       } else {
         this.menuicon = null;
         this.mainMenu = null;
         this.accountsMenu = null;
         this.domainsMenu = null;
-        this.adminMenu - null;
+        this.adminMenu = null;
+        this.extrasMenu = null;
       }
     }
     super.updated(changed);
@@ -331,6 +336,15 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
         .sort-icon {
           color: var(--sort-icon-color);
         }
+        .pdf-icon {
+          color: var(--pdf-icon-color);
+        }
+        .csv-icon {
+          color: var(--csv-icon-color);
+        }
+        .more-icon {
+          color: var(--more-icon-color);
+        }
         #copy {
           display: flex;
           flex-direction: column;
@@ -404,8 +418,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             <button type="button" id="profile" role="menuitem" @click=${this._editProfile}>
               <material-icon class="profile-icon">account_box</material-icon><span>Edit Profile</span> <span>F12</span>
             </button>
-            <button type="button" id="sorter" role="menuitem" @click=${this._editSorter}>
-              <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Account</span>
+            <button id="em" type="button" role="menuitem" @click=${this._extrasMenu}>
+              <material-icon class="more-icon">more_horiz</material-icon><span>Extras</span>
+              <span><material-icon>navigate_next</material-icon></span>
             </button>
             <button type="button" role="menuitem" @click=${this._logoff}>
               <material-icon class="logoff-icon">exit_to_app</material-icon><span>Log Off</span>
@@ -419,7 +434,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
           </div>
         </dialog-box>
 
-        <dialog-box id="domainsmenu" position="right">
+        <dialog-box id="domainsmenu" position="right" closeOnClick>
           <div class="menucontainer">
             ${this.domains.map((domain, i) => html`
               <button type="button" role="menuitem"
@@ -435,8 +450,21 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             `)}
           </div>
         </dialog-box>
+        <dialog-box id="extrasmenu" position="right" closeOnClick>
+          <div class="menucontainer">
+            <button id="pdf" type="button" role="menuitem" @click=${this._makePDF}>
+              <material-icon class="pdf-icon">picture_as_pdf</material-icon><span>Make Account PDF</span>
+            </button>
+            <button id="csv" type="button" role="menuitem" @click=${this._makeCSV}>
+              <material-icon class="csv-icon">insert_chart_outlined</material-icon><span>Make Account CSV</span>
+            </button>
+            <button type="button" id="sorter" role="menuitem" @click=${this._editSorter}>
+              <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Account</span>
+            </button>
+          </div>
+        </dialog-box>
         ${this.user.isAdmin === 1 ? html`
-          <dialog-box id="adminmenu" position="right">
+          <dialog-box id="adminmenu" position="right" closeOnClick>
             <div class="menucontainer">
                 <button id="accounts" type="button" role="menuitem" @click=${this._selectPage}>
                   <material-icon class="accounts-icon">topic</material-icon><span>Accounts</span>
@@ -567,6 +595,13 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'reset'}));
     }
   }
+  _extrasMenu(e) {
+    e.stopPropagation();
+    if (this.extrasMenu) {
+      this.extrasMenu.positionTarget = this.shadowRoot.querySelector('#em');
+      this.extrasMenu.show();
+    }
+  }
   async _fetchAccDom() {
     const response = await api('account_domain_lists',{domain: this.domain});
     this.accounts = response.accounts;
@@ -580,6 +615,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _goHome(e) {
     e.stopPropagation();
     this.account = this.user.account;
+    this.mainMenu.close();
     switchPath('/account', {account: this.account});
   }
   _keyPressed(e) {
@@ -611,6 +647,19 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.authorised = false;
     this.user = { uid: 0, isAdmin: false, account: '', domain: '' };
     this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'logoff'}));
+  }
+  _makeCSV(e) {
+    e.stopPropagation()
+    this.extrasMenu.close();
+    this.mainMenu.close();
+    csv('account_fy', {account: this.account});
+
+  }
+  _makePDF(e) {
+    e.stopPropagation();
+    this.extrasMenu.close();
+    this.mainMenu.close();
+    pdf('account', {account: this.account});
   }
   _menu(e) {
     e.stopPropagation();
