@@ -131,12 +131,6 @@ class AccountPage extends LitElement {
         #recon > material-icon {
           color: var(--balance-icon-color);
         }
-        #makecsv > material-icon {
-          color: var(--csv-icon-color);
-        }
-        #makepdf > material-icon {
-          color: var(--pdf-icon-color);
-        }
         .action {
           margin: 5px;
           display: grid;
@@ -146,7 +140,6 @@ class AccountPage extends LitElement {
           align-items: flex-start;
           grid-template-areas:
             "newt recon recon"
-            "makecsv makepdf makepdf"
             "U U U"
             "F F F"
             "D D cal";
@@ -157,12 +150,6 @@ class AccountPage extends LitElement {
         }
         #recon {
           grid-area: recon;
-        }
-        #makecsv {
-          grid-area: makecsv;
-        }
-        #makepdf {
-          grid-area: makepdf;
         }
         #U {
           grid-area: U;
@@ -273,11 +260,10 @@ class AccountPage extends LitElement {
           .action {
             grid-template-columns: 4fr 5fr 4fr 2fr;
             grid-template-areas:
-              "newt recon . ."
               "newt recon U U"
-              ". . F F"
+              "newt recon F F"
               ". . D ."
-              "makecsv makepdf D cal";
+              ". . D cal";
             margin-right: 0px;
           }
           .header, .panel {
@@ -315,8 +301,6 @@ class AccountPage extends LitElement {
           <div class="action">
             <button id="newt" @click=${this._newTransaction}><material-icon>post_add</material-icon>New Transaction</button>
             <button id="recon" @click=${this._reconcile}><material-icon>account_balance_wallet</material-icon>Set Reconciled Balance</button>
-            <button id="makecsv"><material-icon>insert_chart_outlined</material-icon>Make CSV</button>
-            <button id="makepdf"><material-icon>picture_as_pdf</material-icon>Make PDF</button>
             <label id="U" class="radio" @click=${this._selectStart}>
               <input type="radio" name="start" value="U" ?checked=${this.startType === 'U'}><span>Unreconciled Transactions Only</span>
             </label>

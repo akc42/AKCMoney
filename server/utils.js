@@ -21,26 +21,51 @@
 
 (function () {
   'use strict';
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jly',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
+  
+
   module.exports = {
-    nullIfZeroLength: function(str) {
+    nullIfZeroLength: (str) => {
       if (str === undefined) return null;
       return str.length > 0 ? str : null;
     },
-    booleanToDbValue: function(b) {
+    booleanToDbValue: (b) => {
       if (b === undefined) return 0;
       return b? 1:0;
     },
-    nullOrNumber(n) {
+    nullOrNumber: (n) => {
       if (n === undefined) return null
       const x = parseFloat(n);
       if (isNaN(x)) return null;
       return x;
     },
-    nullOrAmount(a) {
+    nullOrAmount: (a) => {
       if (a === undefined) return null
       const x = parseFloat(a);
       if (isNaN(x)) return null;
       return Math.round(x * 100);
+    },
+    dbDateToString: (d) => {
+      const date = new Date();
+      date.setTime(d * 1000);
+      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    },
+    blankIfNull: (str) => {
+      if (str === null) return '';
+      return str;
     }
   }
 })();

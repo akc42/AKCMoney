@@ -38,8 +38,9 @@
   const Router = require('router');
   const jwt = require('jwt-simple');
   const http = require('http');
-  
+  const { v4: uuidV4 } = require('uuid');
   const chalk = require('chalk');
+  const PDFDocument = require('pdfkit');
 
   const serverDestroy = require('server-destroy');
   const finalhandler = require('finalhandler');
@@ -155,6 +156,8 @@
       const routerOpts = {mergeParams: true};
       const router = Router(routerOpts);  //create a router
       const api = Router(routerOpts);  
+      const pdf = Router(routerOpts);
+      const csv = Router(routerOpts);
       
       debug('tell router to use api router for /api/ routes');
       router.use('/api/', api);
@@ -350,6 +353,12 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           forbidden(req, res, 'Invalid Cookie');
         }
       });
+
+      debug('tell router to use pdf router for /api/pdf/ routes');
+      api.use('/pdf/', pdf);
+      debug('tell router to use csv router for /api/csv/ routes');
+      api.use('/csv/', csv);
+
       
       debug('Setting Up Main API');
 
@@ -372,6 +381,48 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           } catch (e) {
             errored(req, res, e);
           }
+        });
+      }
+      const pdfs = loadServers(__dirname, 'pdf');
+      for (const p in pdfs) {
+        debugapi(`Setting up /api/pdf/${p} route`);
+        pdf.post(`/${p}`, async (req, res) => {
+          debugapi(`Received /api/pdf/${p}`);
+          let doc;
+          try {
+
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader(
+              'Link',
+              'rel="shortcut icon" sizes="32x32" href="/images/money-logo=32x32.png"'
+            );
+            res.statusCode = 200;
+            doc = new PDFDocument({
+              size: 'A4',
+              layout: 'portrait',
+              info: {
+                Author: 'Alan Chandler',
+                Subject: 'AKCMoney Report',
+                Title: `${p}`
+              },
+              margins: { top: 36, bottom: 36, left: 72, right: 72 }
+            });
+            doc.pipe(res);
+            doc.font('Helvetica', 11); //default initial font
+            await pdfs[p](
+              req.user,
+              req.body,
+              doc
+            );
+  
+          } catch (e) {
+            debugapi('error in pdf',e);
+            if (doc !== undefined) {
+              doc.fillColor('red').fontSize(14).font('Helvetica-Bold');
+              doc.text('SERVER ERROR - CANNOT COMPLETE PDF', {width: 172, align: 'center'});
+            }
+          }
+          if (doc !== undefined) doc.end();
         });
       }
 

@@ -64,7 +64,9 @@
   --codes-icon-color: burlywood;
   --users-icon-color: navy;
   --radio-button-color: navy;
-  
+  --csv-icon-color: skyblue;
+  --pdf-icon-color: darkred;
+  --more-icon-color: darkslategrey;
 
 
 
@@ -76,8 +78,7 @@
   --save-icon-color: black;
   --set-icon-color: darkgreen;
   --undo-icon-color: burlywood;
-  --csv-icon-color: skyblue;
-  --pdf-icon-color: darkred;
+
 
   --menu-separator-color: grey;
  
