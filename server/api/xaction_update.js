@@ -46,7 +46,8 @@
     LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
     LEFT JOIN currency tc ON tc.name = t.currency
     WHERE t.id = ? AND a.name = ?`);
-    const updateAccountBalance = db.prepare('UPDATE account SET bversion = bversion + 1, balance = ? WHERE name = ?');
+    const updateAccountBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
+      date = (strftime('%s','now')) WHERE name = ?`);
     db.transaction(() => {
       const tid = parseInt(params.tid, 10);
       if (tid === 0) {

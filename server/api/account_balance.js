@@ -27,7 +27,8 @@
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'account', params.account, 'balance', params.balance);
     const getVersion = db.prepare('SELECT bversion FROM account WHERE name = ?').pluck();
-    const updatebalance = db.prepare('UPDATE account SET bversion = bversion + 1, balance = ? WHERE name = ?');
+    const updatebalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
+      date = (strftime('%s','now')) WHERE name = ?`);
     db.transaction(() => {
       const bversion = getVersion.get(params.account);
       if (bversion === params.bversion) {
