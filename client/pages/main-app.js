@@ -652,7 +652,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     e.stopPropagation()
     this.extrasMenu.close();
     this.mainMenu.close();
-    csv('account_fy', {account: this.account});
+    csv('account', {account: this.account});
 
   }
   _makePDF(e) {

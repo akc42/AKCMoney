@@ -33,6 +33,7 @@
     "better-sqlite3": "^7.1.1",
     "body-parser": "^1.19.0",
     "chalk": "^4.1.0",
+    "content-disposition": "^0.5.3",
     "debug": "^4.3.1",
     "dotenv": "^8.2.0",
     "finalhandler": "^1.1.2",

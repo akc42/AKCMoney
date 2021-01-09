@@ -30,9 +30,10 @@
   require('dotenv').config({path: path.resolve(__dirname,'../','money.env')});
 
   const {logger, Responder, database:db, version:versionPromise} = require('@akc42/server-utils'); //this has to come after environment is set up
-  
-  const fs = require('fs');
+  const CSVResponder = require('./csvresponder');
 
+  const fs = require('fs');
+  const url = require('url');
   const requireAll = require('require-all');
   const bodyParser = require('body-parser');
   const Router = require('router');
@@ -423,6 +424,26 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
             }
           }
           if (doc !== undefined) doc.end();
+        });
+      }
+      const csvs = loadServers(__dirname, 'csv');
+      for (const c in csvs) {
+        debugapi(`Setting up /api/csv/${c} route`);s
+        csv.get(`/${c}`, async (req, res) => {
+          debugapi(`Received /api/csv/${c}`);
+          const urlObj = url.parse(req.url, true);
+          const responder = new CSVResponder(res);
+          try {
+
+            res.setHeader('Content-Type', 'text/csv');
+
+            await csvs[c](req.user, urlObj.query, responder);
+            responder.end();
+            
+          } catch (e) {
+            errored(req, res, e);
+          }
+     
         });
       }
 

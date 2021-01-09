@@ -22,6 +22,5 @@ const link = document.createElement('a');
 
 export default (url,params) => {
   link.setAttribute('href', generateUri(`/api/csv/${url}`, params));
-  link.setAttribute('download',url + '.csv');
   link.click();
 }
