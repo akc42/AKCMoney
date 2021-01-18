@@ -74,7 +74,7 @@ class CurrenciesDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="currenciesmenu" @overlay-closed=${this._closing}>
+      <dialog-box id="currenciesmenu" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer">
           ${cache(this.currencies.map((currency, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
@@ -88,27 +88,27 @@ class CurrenciesDialog extends LitElement {
 
     `;
   }
-  _currencySelected(e) {
+  async _currencySelected(e) {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.currency = this.currencies[index].name;
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('currencies-reply', {detail: {
       key: this.currency,
       visual: this.currency
-    }}))
+    }}));
     this.dialog.close();
     this.apiPromise = api('get_currency_rate',{name:this.currency});
-    
-  }
-  async _closing(e) {
-    e.stopPropagation();
     const currency = this.currencies.find(c => c.name === this.currency);
     const response = await this.apiPromise; //await the updated value we just received.
     currency.version = response.version;
     currency.rate = response.rate;
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
-      bubbles: true, composed: true, detail: currency 
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', {
+      bubbles: true, composed: true, detail: currency
     })); //tell the outside world we have a value
+    
+  }
+  _closing(e) {
+    e.stopPropagation();
     this.eventLocked = false;
   }
 

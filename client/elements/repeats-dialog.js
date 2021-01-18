@@ -67,7 +67,7 @@ class RepeatsDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="repeatsmenu" @overlay-closed=${this._closing}>
+      <dialog-box id="repeatsmenu" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer">
           ${cache(this.repeats.map((repeat, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
@@ -78,7 +78,6 @@ class RepeatsDialog extends LitElement {
           `))}
         </div>
       </dialog-box>
-
     `;
   }
   _repeatSelected(e) {
@@ -89,10 +88,14 @@ class RepeatsDialog extends LitElement {
       detail: { key: this.repeat, visual: this.repeats[index].description } 
     }));
     this.dialog.close();
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
+      bubbles: true, 
+      composed: true, 
+      detail: this.repeat 
+    })); //tell the outside world we have a value
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.repeat })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {

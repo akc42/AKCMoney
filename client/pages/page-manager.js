@@ -57,6 +57,12 @@ export class PageManager extends RouteManager {
     super.disconnectedCallback();
     disconnectUrl();
   }
+  update(changed) {
+    if (changed.has('page') && this.page !== null && this.page.length > 0) {
+      this.dispatchEvent(new CustomEvent('page-changed',{bubbles: true, composed: true, detail:this.page}));
+    }
+    super.update(changed);
+  }
   render() {
     return html`
       <delete-dialog></delete-dialog>
@@ -68,7 +74,10 @@ export class PageManager extends RouteManager {
                         .codes=${this.codes} 
                         .repeats=${this.repeats} 
                         .route=${this.subRoute}></account-page>`,
-        domain: html`<domain-page managed-page .route=${this.subRoute}></domain-page>`,
+        domain: html`<domain-page 
+                        managed-page 
+                        .route=${this.subRoute} 
+                        .repeats=${this.repeats}></domain-page>`,
         offsheet: html`<offsheet-page managed-page .route=${this.subRoute}></offsheet-page>`,
         profile: html`<profile-page managed-page .route=${this.subRoute}></profile-page>`,
         sorter: html`<sorter-page managed-page  .domain=${this.domain}></sorter-page>`,
@@ -92,7 +101,12 @@ export class PageManager extends RouteManager {
         return false;
     }
     this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
-    import(`./${page}-page.js`).then(() => this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false})));
+    import(`./${page}-page.js`).then(() => this.dispatchEvent(new CustomEvent('wait-request',{
+      bubbles: true, 
+      composed: true, 
+      detail:false
+    })));
+    
     return true;
   }
 }

@@ -255,7 +255,8 @@ INSERT INTO currency VALUES ('SVC', 1, 0, NULL, 'El Salvador, Colones', 1);
 INSERT INTO currency VALUES ('SYP', 1, 0, NULL, 'Syria, Pounds', 1);
 INSERT INTO currency VALUES ('SZL', 1, 0, NULL, 'Swaziland, Emmoneygeni', 1);
 INSERT INTO currency VALUES ('CZK', 1, 0, NULL, 'Czech Republic, Koruny', 1);
-INSERT INTO currency VALUES ('GBP', 1, 1, 0, 'United Kingdom, Pounds',1); --this (displayable at priority 0) defines it to be the default currency
+--displayable at priority 0 defines GBP to be the default currency (see also the dfxaction view, if you wish to change it)
+INSERT INTO currency VALUES ('GBP', 1, 1, 0, 'United Kingdom, Pounds',1); 
 INSERT INTO currency VALUES ('SEK', 1, 0, NULL, 'Sweden, Kronor', 1);
 INSERT INTO currency VALUES ('AUD', 1, 0, NULL, 'Australia, Dollars', 1);
 INSERT INTO currency VALUES ('DKK', 1, 0, NULL, 'Denmark, Kroner', 1);

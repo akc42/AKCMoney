@@ -42,7 +42,7 @@
   --old-transaction: darkkhaki;
   --repeating-transaction: yellow;
   --transaction-form-background: khaki;
-  --tooltip-color: aliceblue;
+  --tooltip-color: khaki;
   --tooltip-text-color: black;
   --shadow-color: rgba(255,255,255,0.5);
   --menu-hover-color: steelblue;
@@ -87,7 +87,7 @@
   --name-input-length: 120px;
   --amount-width: 70px;
   --pw-input-length: 120px; 
-
+  --year-selector-width: 60px;
   --max-page-width: 1000px;
 }
   

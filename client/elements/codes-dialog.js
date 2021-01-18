@@ -71,7 +71,7 @@ class CodesDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="codesmenu" @overlay-closed=${this._closing}>
+      <dialog-box id="codesmenu" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer">
           <button type="button" role="menuitem" @click=${this._nocodeSelected}>
             <span>${sessionStorage.getItem('nullCode')}</span>
@@ -96,6 +96,11 @@ class CodesDialog extends LitElement {
       detail: { key: this.code.id, visual: this.code.description }
     }));
     this.dialog.close();
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
+      bubbles: true, 
+      composed: true, 
+      detail: this.code 
+    })); //tell the outside world we have a value
   }
   _closing(e) {
     e.stopPropagation();

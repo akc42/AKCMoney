@@ -71,7 +71,7 @@ class DomainsDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="domainsmenu" @overlay-closed=${this._closing}>
+      <dialog-box id="domainsmenu" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer">
           ${cache(this.domains.map((domain, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
@@ -91,10 +91,14 @@ class DomainsDialog extends LitElement {
     this.domain = this.domains[index];
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('domains-reply', {detail: {key: this.domain, visual: this.domain}}));
     this.dialog.close();
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
+      bubbles: true, 
+      composed: true, 
+      detail: this.domain 
+    })); //tell the outside world we have a value
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.domain })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {

@@ -22,17 +22,18 @@ import {cache} from '../libs/cache.js';
 import {classMap} from '../libs/class-map.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
+import tooltip from '../styles/tooltip.js';
 
 import { api, submit, switchPath } from '../libs/utils.js';
 
 import './list-selector.js';
-
+import './date-format.js';
 /*
      <account-transaction>
 */
 class AccountTransaction extends LitElement {
   static get styles() {
-    return [button,error, css``];
+    return [button,error, tooltip, css``];
   }
   static get properties() {
     return {
@@ -66,7 +67,9 @@ class AccountTransaction extends LitElement {
       repeats: {type: Array},
       accounts: {type: Array},
       inputError: {type: Boolean},
-      accountAmountError: {type: Boolean}
+      accountAmountError: {type: Boolean},
+      readonly: {type: Boolean}, //set if context (domain/offsheet) doesn't allow editing (also cleared/reconcilled ignored)
+      accounting: {type: Boolean} //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
     };
   }
   constructor() {
@@ -104,6 +107,8 @@ class AccountTransaction extends LitElement {
 
     this.inputError = false;
     this.accountAmountError = false;
+    this.readonly = false;
+    this.accounting = false;
   }
   connectedCallback() {
     super.connectedCallback();
@@ -119,6 +124,10 @@ class AccountTransaction extends LitElement {
       this.transaction = transaction;
     }
 
+  }
+  update(changed) {
+    if (changed.has('acounting') && this.accounting) this.readonly = true;
+    super.update(changed);
   }
 
 
@@ -148,10 +157,21 @@ class AccountTransaction extends LitElement {
         }));
       }
 
-      if (this.src === this.account && !this.srcclear) {
+      if (this.src === this.account && (!this.srcclear || this.readonly) && !this.accounting) {
         this.cumulative -= amount;
-      } else if (this.dst === this.account && !this.dstclear) {
-        this.cumulative += amount;
+      } else if ((this.dst === this.account && (!this.dstclear || this.readonly)) || this.accounting) {
+        let factor = 1;
+        if (this.accounting) {
+          let codeKey;
+          if (this.src === this.account) {
+            codeKey = this.srccode;
+          } else {
+            codeKey = this.dstcode
+          }
+          const code = this.codes.find(c => c.id === codeKey);
+          if (code.type === 'A') factor = 3;
+        }
+        this.cumulative += Math.round(amount/factor);
       }
       if (this.cumulative !== cumulative) this.dispatchEvent(new CustomEvent('cleared-changed', { 
         bubbles: true, 
@@ -211,30 +231,55 @@ class AccountTransaction extends LitElement {
       this.inputError = !this.amountInput.reportValidity()
       this.amountInput.focus();
     }
-   super.updated(changed);
+    if (changed.has('readonly')) {
+      const wrapper = this.shadowRoot.querySelector('#wrapper');
+      if (wrapper !== undefined) {
+        if (this.readonly) {
+          let tooltip;
+          if (this.dst !== null && this.src !== null) {
+            tooltip = `${this.src} -> ${this.dst}`;
+          } else if (this.src !== null) {
+            tooltip = this.src;
+          } else if (this.dst !== null) {
+            tooltip = this.dst;
+          } else {
+            tooltip = '--ERROR--';
+          }
+          wrapper.setAttribute('data-tooltip', tooltip);
+        } else {
+          wrapper.removeAttribute('data-tooltip');
+        }
+      }
+    }
+    super.updated(changed);
   }
   render() {
-    const cleared = this.reconcilled || (this.srcclear && this.src === this.account) ||
-      (this.dstclear && this.dst === this.account);
+    const cleared = (this.reconcilled || (this.srcclear && this.src === this.account) ||
+      (this.dstclear && this.dst === this.account)) && !this.readonly;
     let visual;
     let codeVisual;
     let codeKey;
-    let codeType;
+    let codeType = '';
+ 
     if (this.src === this.account) {
       codeKey = this.srccode;
-      if (this.dst === null) {
-        visual = sessionStorage.getItem('nullAccount');
-      } else {
-        const account = this.accounts.find(a => a.name === this.dst);
-        visual = `${account.name} (${account.domain})`;
+      if (!this.readonly) {
+        if (this.dst === null) {
+          visual = sessionStorage.getItem('nullAccount');
+        } else {
+          const account = this.accounts.find(a => a.name === this.dst);
+          visual = `${account.name} (${account.domain})`;
+        }
       }
     } else {
       codeKey = this.dstcode;
-      if (this.src === null) {
-        visual = sessionStorage.getItem('nullAccount');
-      } else {
-        const account = this.accounts.find(a => a.name === this.src);
-        visual = `${account.name} (${account.domain})`;
+      if (!this.readonly) {
+        if (this.src === null) {
+          visual = sessionStorage.getItem('nullAccount');
+        } else {
+          const account = this.accounts.find(a => a.name === this.src);
+          visual = `${account.name} (${account.domain})`;
+        }
       }
     }
     if (codeKey === null) {
@@ -245,6 +290,7 @@ class AccountTransaction extends LitElement {
       codeVisual = code.description;
       codeType = code.type;
     }
+  
     return html`
       <style>
         :host {
@@ -277,7 +323,10 @@ class AccountTransaction extends LitElement {
             "switch switch . . move move move move balance ."
             "cancel . . save save save save save delete delete";
         }
-
+        .wrapper[data-tooltip] {
+          display: grid;
+          cursor: pointer;
+        }
         .date, calendar-input {
           grid-area: date;
           cursor: pointer;
@@ -304,9 +353,7 @@ class AccountTransaction extends LitElement {
         .description, #description {
           grid-area: description;
         }
-        .description {
-          text-align: center;
-        }  
+
         .currency {
           grid-area: currency;
         }     
@@ -415,7 +462,7 @@ class AccountTransaction extends LitElement {
         }
 
       </style>
-      ${cache(this.edit ? html`
+      ${cache(this.edit && !this.readonly ? html`
         <form id="login" action="xaction_update" @submit=${submit} @form-response=${this._update}>
           <input type="hidden" name="account" .value=${this.account} />
           <input type="hidden" name="tid" .value=${this.tid.toString()} />
@@ -508,7 +555,7 @@ class AccountTransaction extends LitElement {
           </div>
         </form>
       `:html`
-        <div class="wrapper" @dblclick=${this._startEdit} @click=${this._startTouch}>
+        <div id="wrapper" class="wrapper" @dblclick=${this._startEdit} @click=${this._startTouch}>
           <date-format class="date ${classMap({
             reconciled: this.reconciled,
             passed: Date.now()/1000 > this.date,
@@ -518,7 +565,7 @@ class AccountTransaction extends LitElement {
           })}" .date=${this.date} @click=${this._clearedChanged}></date-format>
           <div class="ref ${classMap({ dual: this.src !== null && this.dst !== null })}">${this.rno}</div>
           <div class="description ${classMap({dual: this.src !== null && this.dst !==null})}">${this.description}</div>
-          ${cache(this.amountEdit ? (this.src === this.account ? html`
+          ${cache(this.amountEdit && !this.readonly ? (this.src === this.account ? html`
             <input
               id="amount"
               type="text"
@@ -548,11 +595,12 @@ class AccountTransaction extends LitElement {
               @dblclick=${this._startAmountEdit} 
               @click=${this._touchAmountEdit}
               @contextmenu=${this._zeroRequest}>${
-                (this.src === this.account ? '-':'') + ((
+                ((this.src === this.account && !this.accounting) ? '-':'') + ((
                   this.currency === this.acurrency ? this.amount : (this.account === this.src ? this.srcamount: this.dstamount)
                 ) / 100).toFixed(2)}</div>
           `)}
-          <div class="balance ${classMap({ dual: this.src !== null && this.dst !== null })}">${cleared ? '0.00' : (this.cumulative/100).toFixed(2)}</div>
+          <div class="balance ${classMap({ dual: this.src !== null && this.dst !== null })}">${cleared ? '0.00' : 
+            (this.cumulative/100).toFixed(2)}</div>
           <div class="code ${codeType}"></div>
         </div>
       `)}
@@ -744,17 +792,25 @@ class AccountTransaction extends LitElement {
   }
   _startAmountEdit(e) {
     e.stopPropagation();
-    this.dispatchEvent(new CustomEvent('amount-edit', {bubbles: true, composed: true}));
-    this.amountEdit = true;
+    if (!this.readonly) {
+      this.dispatchEvent(new CustomEvent('amount-edit', {bubbles: true, composed: true}));
+      this.amountEdit = true;
+    }
   }
   _startEdit(e) {
     e.stopPropagation();
-    this.edit = true;
+    if(!this.readonly) this.edit = true;
   }
   _startTouch(e) {
-    //only respond to a click if its a touch device
-    if (!!('ontouchstart' in window || navigator.maxTouchPoints) && !this.amountEdit) this._startEdit(e);
-    this.amountEdit = false;
+    if (this.readonly) {
+      e.stopPropagation();
+      e.preventDefault();
+      switchPath('account', { account: this.src !== null ? this.src: this.dst, tid: this.tid, open: 'no' });
+    } else {
+      //only respond to a click if its a touch device
+      if (!!('ontouchstart' in window || navigator.maxTouchPoints) && !this.amountEdit) this._startEdit(e);
+      this.amountEdit = false;
+    }
   }
   _switch(e) {
     e.stopPropagation();
@@ -796,7 +852,7 @@ class AccountTransaction extends LitElement {
           }));
         }
       } else {
-        switchPath('account', {account: response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src, tid: response.transaction.id});
+        switchPath('account', {account: response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src, tid: response.transaction.id, open: 'yes'});
       }
     } else {
       this.dispatchEvent(new CustomEvent('version-error',{bubbles: true, composed: true}));

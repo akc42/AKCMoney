@@ -75,16 +75,8 @@ class AccountPage extends LitElement {
     this.router = new Route('/','page:account');
     this.zeroLocked = true;
   }
-  connectedCallback() {
-    super.connectedCallback();
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-  update(changed) {
 
-    super.update(changed);
-  }
+
   firstUpdated() {
     this.dragImage = this.shadowRoot.querySelector('#dragim');
     this.dialog = this.shadowRoot.querySelector('#parallel');
@@ -95,7 +87,7 @@ class AccountPage extends LitElement {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        this._fetchAccountData(route.query.account, route.query.tid);
+        this._fetchAccountData(route.query.account, route.query.tid, route.query.open === 'yes');
       }
     }
     if (changed.has('account') && this.account.name.length > 0) {
@@ -498,11 +490,11 @@ class AccountPage extends LitElement {
     e.dataTransfer.setData('text/plain', e.currentTarget.dataset.index);
     e.dataTransfer.setDragImage(this.dragImage,0,0);
   }
-  async _fetchAccountData(name, tid) {
+  async _fetchAccountData(name, tid, edit) {
     const openid = tid ?? 0;
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     this.transactions = [];
-    const response = await api('/account', { account: name })
+    const response = await api('/account', { account: name , tid: openid})
     this.account = response.account;
     if (this.account.name.length > 0) {
       this.startDate = response.startdate;
@@ -562,8 +554,12 @@ class AccountPage extends LitElement {
       this._rebalance();
       await this.updateComplete;
       if (openid > 0) {
-        const xaction = this.shadowRoot.querySelector(`#t${openid}`);
-        xaction.edit = true;
+        const wrap = this.shadowRoot.querySelector(`#w${openid}`);
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (edit) {
+          const xaction = this.shadowRoot.querySelector(`#t${openid}`);
+          xaction.edit = true;
+        }        
       }
     }
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));

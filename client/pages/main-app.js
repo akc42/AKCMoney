@@ -1,6 +1,6 @@
 /**
 @licence
-    Copyright (c) 2020 Alan Chandler, all rights reserved
+    Copyright (c) 2021 Alan Chandler, all rights reserved
 
     This file is part of AKCMoney.
 
@@ -63,7 +63,8 @@ class MainApp extends LitElement {
       currencies: {type: Array}, //Valid Currencies
       repeats: {type: Array}, //Repeat types
       codes: {type: Array}, //Accounting COdes
-      serverError: {type: Boolean} //Set if server error happening
+      serverError: {type: Boolean}, //Set if server error happening
+      page: {type: String} //current subpage being displayed
     };
   }
   constructor() {
@@ -71,7 +72,7 @@ class MainApp extends LitElement {
     this.authorised = false;
     this.user = {uid: 0, isAdmin: false, account: '', domain: ''}
     this.version = 'v4.0.0'
-    this.copyrightYear = '2020';
+    this.copyrightYear = '2021';
     this.accounts = [];
     this.account = '';
     this.domains = [];
@@ -81,6 +82,8 @@ class MainApp extends LitElement {
     this.codes = [];
     this.repeats = [];
     this.serverError = false;
+    this.page = '';
+    this.domainYear = 0;
     configPromise.then(() => {
       this.version = sessionStorage.getItem('version');
       this.copyrightYear = sessionStorage.getItem('copyrightYear');
@@ -175,7 +178,6 @@ class MainApp extends LitElement {
     super.updated(changed);
   }
   render() {
-
     return html`
       <style>
         :host {
@@ -392,7 +394,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         <codes-dialog .codes=${this.codes}></codes-dialog>
         <domains-dialog .domains=${this.domains}></domains-dialog>
         <accounts-dialog id="accountsmenu" .accounts=${this.accounts}></accounts-dialog>
-        <dialog-box id="mainmenu">
+        <dialog-box id="mainmenu" closeOnClick>
           <div class="menucontainer">
             <button type="button" role="menuitem" @click=${this._goHome}>
               <material-icon class="home-icon">home</material-icon><span>Home</span> <span>F2</span>
@@ -452,12 +454,16 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         </dialog-box>
         <dialog-box id="extrasmenu" position="right" closeOnClick>
           <div class="menucontainer">
-            <button id="pdf" type="button" role="menuitem" @click=${this._makePDF}>
-              <material-icon class="pdf-icon">picture_as_pdf</material-icon><span>Make Account PDF</span>
-            </button>
-            <button id="csv" type="button" role="menuitem" @click=${this._makeCSV}>
-              <material-icon class="csv-icon">insert_chart_outlined</material-icon><span>Make Account CSV</span>
-            </button>
+            ${cache((this.page === 'account' || this.page === 'domain') ? html`
+              <button id="pdf" type="button" role="menuitem" @click=${this._makePDF}>
+                <material-icon class="pdf-icon">picture_as_pdf</material-icon><span>Make ${
+                  this.page.charAt(0).toUpperCase() + this.page.slice(1)} PDF</span>
+              </button>
+              <button id="csv" type="button" role="menuitem" @click=${this._makeCSV}>
+                <material-icon class="csv-icon">insert_chart_outlined</material-icon><span>Make ${
+              this.page.charAt(0).toUpperCase() + this.page.slice(1)} CSV</span>
+              </button>
+            `:'')}
             <button type="button" id="sorter" role="menuitem" @click=${this._editSorter}>
               <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Account</span>
             </button>
@@ -522,6 +528,8 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             .repeats=${this.repeats}
             ?hidden=${this.serverError}
             @domain-changed=${this._domainChanged}
+            @domain-year-changed=${this._domainYearChanged}
+            @page-changed=${this._pageChanged}
             @user-refresh=${this._userRefresh}
             @ad-reread=${this._fetchAccDom}
             @of-reread=${this._fetchOff}></page-manager>
@@ -533,14 +541,14 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _accountSelected(e) {
     e.stopPropagation();
     this.account = e.detail;
-    this.accountsMenu.side = false;
+    this.accountsMenu.mainMenu = false;
     this.mainMenu.close();
     switchPath('/account', {account: this.account});
   }
   _accountsMenu(e) {
     e.stopPropagation();
     if (this.accountsMenu) {
-      this.accountsMenu.side = true;
+      this.accountsMenu.mainMenu = true;
       const menu = this.shadowRoot.querySelector('#am');
       menu.dispatchEvent(new CustomEvent('accounts-request', {bubbles:true, composed:true, detail:{key:this.account}}));
     }
@@ -575,6 +583,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       this.domainsMenu.show();
     }
 
+  }
+  _domainYearChanged(e) {
+    e.stopPropagation();
+    this.domainYear = e.detail;
   }
   _editProfile(e) {
     e.stopPropagation();
@@ -615,6 +627,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _goHome(e) {
     e.stopPropagation();
     this.account = this.user.account;
+    this.domain = this.user.domain;
     this.mainMenu.close();
     switchPath('/account', {account: this.account});
   }
@@ -652,14 +665,29 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     e.stopPropagation()
     this.extrasMenu.close();
     this.mainMenu.close();
-    csv('account', {account: this.account});
+    switch (this.page) {
+      case 'account':
+        csv('account', { account: this.account });
+        break;
+      case 'domain':
+        csv('domain', { domain: this.domain, year: this.domainYear });
+        break;
+    }
 
   }
   _makePDF(e) {
     e.stopPropagation();
     this.extrasMenu.close();
     this.mainMenu.close();
-    pdf('account', {account: this.account});
+    switch (this.page) {
+      case 'account':
+        pdf('account', { account: this.account });
+        break;
+      case 'domain' :
+        pdf('domain',{domain: this.domain, year: this.domainYear});
+        break;
+    }
+    
   }
   _menu(e) {
     e.stopPropagation();
@@ -675,6 +703,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     console.log('offsheet menu selected', account.description);
     this.domainsMenu.close();
     this.mainMenu.close();
+  }
+  _pageChanged(e) {
+    e.stopPropagation();
+    this.page = e.detail.toLowerCase();  //useful to know for menu
   }
   _userRefresh(e) {
     e.stopPropagation();

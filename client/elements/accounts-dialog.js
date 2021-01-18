@@ -74,7 +74,7 @@ class AccountsDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="accountsmenu" position="${this.mainMenu ? 'right' : 'target'}" @overlay-closed=${this._closing}>
+      <dialog-box id="accountsmenu" position="${this.mainMenu ? 'right' : 'target'}" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer ${classMap({reverse: this.mainMenu})}">
           ${!this.mainMenu ? html`
               <button type="button" role="menuitem"
@@ -106,15 +106,15 @@ class AccountsDialog extends LitElement {
         visual: this.account
       }
     }));
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', {
+      bubbles: true,
+      composed: true,
+      detail: this.account
+    })); //tell the outside world we have a value
     this.dialog.close();
   }
   _closing(e) {
     e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
-      bubbles: true, 
-      composed: true, 
-      detail: this.account 
-    })); //tell the outside world we have a value
     this.eventLocked = false;
   }
   _gotRequest(e) {

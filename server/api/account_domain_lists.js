@@ -30,8 +30,8 @@
       LEFT JOIN capability c ON c.domain = a.domain AND c.uid = u.uid 
       LEFT JOIN priority p ON p.account = a.name AND p.uid = u.uid  AND p.domain = ? 
       WHERE a.archived = 0 AND u.uid = ? AND (u.isAdmin = 1 OR c.domain IS NOT NULL) 
-      ORDER BY CASE WHEN u.account = a.name THEN 0 ELSE 1 END, p.sort ASC NULLS LAST, 
-      CASE WHEN a.domain = ? THEN 0 ELSE 1 END, a.domain, a.name;`);
+      ORDER BY p.sort ASC NULLS LAST, CASE WHEN a.domain = ? THEN 0 ELSE 1 END, 
+      CASE WHEN u.account = a.name THEN 0 ELSE 1 END, a.domain, a.name;`);
     const getDomains = db.prepare(`SELECT d.name FROM domain d, user u 
       LEFT JOIN capability c ON c.domain = d.name WHERE u.uid = ? AND (u.isAdmin = 1 OR c.domain is NOT NULL) 
       ORDER BY CASE WHEN u.domain = d.name THEN 0 ELSE 1 END, d.name;`).pluck();
