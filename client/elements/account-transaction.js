@@ -601,7 +601,7 @@ class AccountTransaction extends LitElement {
           `)}
           <div class="balance ${classMap({ dual: this.src !== null && this.dst !== null })}">${cleared ? '0.00' : 
             (this.cumulative/100).toFixed(2)}</div>
-          <div class="code ${codeType}"></div>
+          <div class="code ${this.readonly ? '':codeType}"></div>
         </div>
       `)}
       
