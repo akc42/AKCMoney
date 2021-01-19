@@ -77,10 +77,8 @@
         let line = '';
         this.fields.forEach((field,index) => {
           if (index !== 0) line += ',';
-          const value = row[field];
-          if (value !== null) {
-            line += this._quotify(value.toString());
-          }
+          const value = row[field] ?? '';
+          line += this._quotify(value.toString());
         });
         line += '\r\n';
         const reply = this.response.write(line);
