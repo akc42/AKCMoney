@@ -96,8 +96,11 @@ class DomainPage extends LitElement {
           this.balances[i] = this.profit;
         }
 
-        this.dispatchEvent(new CustomEvent('domain-year-changed', {bubbles: true, composed: true, detail: this.year}));
+        
       });
+    }
+    if (changed.has('year')) {
+      this.dispatchEvent(new CustomEvent('domain-year-changed', { bubbles: true, composed: true, detail: this.year }));
     }
     super.update(changed);
   }
@@ -110,6 +113,7 @@ class DomainPage extends LitElement {
       const route = this.router.routeChange(this.route);
       if (route.active) {
         this.domain = route.query.domain
+        this.dispatchEvent(new CustomEvent('domain-changed',{bubbles:true,composed:true,detail:this.domain}));
         api('domain_range', {domain: this.domain}).then(response => {
           if (response.min !== null && response.min > 0) {
             this.years = [];
