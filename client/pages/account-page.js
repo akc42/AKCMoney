@@ -92,6 +92,7 @@ class AccountPage extends LitElement {
     }
     if (changed.has('account') && this.account.name.length > 0) {
       this.recbalInput = this.shadowRoot.querySelector('#recbal');
+      this.dispatchEvent(new CustomEvent('account-changed', {bubbles: true, composed: true, detail: this.account.name}));
     }
     super.updated(changed);
   }

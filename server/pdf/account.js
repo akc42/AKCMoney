@@ -24,6 +24,33 @@
   const db = require('@akc42/server-utils/database');
   const {dbDateToString, blankIfNull} = require('../utils.js');
   const path = require('path');
+  const LEFT_EDGE = 72;
+  const RIGHT_EDGE = 523;
+  const DATE_WIDTH = 58;
+  const REF_WIDTH = 39;
+  const AMOUNT_WIDTH = 45;
+  const CODE_SIZE = 12;
+  const LEFT_LINE = LEFT_EDGE - 1;
+  const RIGHT_LINE = RIGHT_EDGE + 1;
+  const TEXT_MARGIN = 3;
+  const DATE_POSITION = LEFT_LINE + TEXT_MARGIN;
+  const DATE_REF_LINE = DATE_POSITION + DATE_WIDTH + TEXT_MARGIN;
+  const REF_POSITION = DATE_REF_LINE + TEXT_MARGIN;
+  const REF_DESC_LINE = REF_POSITION + REF_WIDTH;
+  const DESC_POSITION = REF_DESC_LINE + TEXT_MARGIN;
+  const CODE_POSITION = RIGHT_LINE - CODE_SIZE;
+  const TOTAL_CODE_LINE = CODE_POSITION-1;
+  const TOTAL_POSITION = TOTAL_CODE_LINE - AMOUNT_WIDTH - TEXT_MARGIN;
+  const AMOUNT_TOTAL_LINE = TOTAL_POSITION - TEXT_MARGIN;
+  const AMOUNT_POSITION = AMOUNT_TOTAL_LINE - AMOUNT_WIDTH - TEXT_MARGIN;
+  const DESC_AMOUNT_LINE = AMOUNT_POSITION - TEXT_MARGIN;
+  const DESC_WIDTH = DESC_AMOUNT_LINE - TEXT_MARGIN - DESC_POSITION;
+  const PAGE_BOTTOM = 769;
+  const PAGE_POSITION = 793;
+  const DATE_AREA_WIDTH = DATE_REF_LINE - 1 - LEFT_EDGE;
+  const AMOUNT_AREA_WIDTH = AMOUNT_WIDTH + 2 * (TEXT_MARGIN-1);
+  debug('DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
+
 
   module.exports = async function(user, params, doc) {
     debug('new request from', user.name, 'with params', params );
@@ -39,7 +66,7 @@
       const {startdate, currency, balance, date: balanceDate} = getAccount.get(params.account);
       const now = new Date();
       doc.fontSize(14).text(`Account: ${params.account}`, {align: 'center'});
-      doc.fontSize(8).text(`Created: ${now.toLocaleDateString()}`, {align: 'center'});
+      doc.fontSize(8).text(`Created: ${dbDateToString(Math.floor(now.getTime()/1000))}`, {align: 'center'});
       doc.fontSize(11).text(`Currency: ${currency}`, { align: 'center' });
       doc.moveDown(1);
       doc.font('Helvetica-Bold');
@@ -82,34 +109,34 @@
         transactions = xactionsByDate.bind(params.account,params.account, start);
       }
       doc.font('Helvetica').fontSize(10).moveDown();
-      debug('amount width', doc.widthOfString('-9999.99'));
+      debug('amount width', doc.widthOfString('-99999.99'));
       let y = doc.y
       //make grey header panel at top
-      doc.rect(72,y,451, 24).fillAndStroke('gainsboro');
+      doc.rect(LEFT_EDGE,y,RIGHT_EDGE-LEFT_EDGE, 24).fillAndStroke('gainsboro');
       y += 2;
-      doc.rect(71, y, 453, 18).stroke('white');
-      doc.moveTo(135, y).lineTo(135, y + 18).stroke();
-      doc.moveTo(180, y).lineTo(180, y + 18).stroke();
-      doc.moveTo(419, y).lineTo(419, y + 18).stroke();
-      doc.moveTo(465, y).lineTo(465, y + 18).stroke();
-      doc.moveTo(511, y).lineTo(511, y + 18).stroke();     
+      doc.rect(LEFT_LINE, y, RIGHT_LINE-LEFT_LINE, 18).stroke('white');
+      doc.moveTo(DATE_REF_LINE, y).lineTo(DATE_REF_LINE, y + 18).stroke();
+      doc.moveTo(REF_DESC_LINE, y).lineTo(REF_DESC_LINE, y + 18).stroke();
+      doc.moveTo(DESC_AMOUNT_LINE, y).lineTo(DESC_AMOUNT_LINE, y + 18).stroke();
+      doc.moveTo(AMOUNT_TOTAL_LINE, y).lineTo(AMOUNT_TOTAL_LINE, y + 18).stroke();
+      doc.moveTo(TOTAL_CODE_LINE, y).lineTo(TOTAL_CODE_LINE, y + 18).stroke();     
       y += 2;
       doc.fillColor('black').strokeColor('black');
 
       doc.font('Helvetica');
       doc.text(dbDateToString(balanceDate), 74, y, {width: 58});
      
-      doc.text('Reconciled Balance', 183,y,{width: 239});
-      doc.text((balance/100).toFixed(2),471,y,{align: 'right', width: 37});
+      doc.text('Reconciled Balance', DESC_POSITION,y,{width: DESC_WIDTH});
+      doc.text((balance/100).toFixed(2),TOTAL_POSITION,y,{align: 'right', width: AMOUNT_WIDTH});
       y +=20;
-      doc.x = 72;
+      doc.x = LEFT_EDGE;
       doc.y = y;
       let even = false;
       let cumulative = balance;
       for (const transaction of transactions.iterate()) {
-        doc.x = 72;
-        if (y > 769) {
-          doc.y = 793
+        doc.x = LEFT_EDGE;
+        if (y > PAGE_BOTTOM) {
+          doc.y = PAGE_POSITION;
           doc.text(`Page: ${pageNo}`, {align: 'center'});
           pageNo++;
           doc.addPage();
@@ -121,17 +148,17 @@
         if (transaction.src !== null && transaction.dst !== null) {
           doc.font('Helvetica-Bold');
         }
-        const ht = doc.heightOfString(transaction.description, { width: 233 })
+        const ht = doc.heightOfString(transaction.description, { width: DESC_WIDTH })
         const h = Math.max(Math.ceil(ht), 12) + 4;
         const dy = (h - ht)/2;
         if (h !== 16) debug('height of transaction', ht, 'Desc', transaction.description.substring(0,20));
         if (even) {
-          doc.rect(72, y, 451, h).fillAndStroke('aliceblue')
-          doc.moveTo(135, y).lineTo(135, y + h).stroke('white');
-          doc.moveTo(180, y).lineTo(180, y + h).stroke();
-          doc.moveTo(419, y).lineTo(419, y + h).stroke()
-          doc.moveTo(465, y).lineTo(465, y + h).stroke();
-          doc.moveTo(511, y).lineTo(511, y + h).stroke(); 
+          doc.rect(LEFT_EDGE, y, RIGHT_EDGE-LEFT_EDGE, h).fillAndStroke('aliceblue')
+          doc.moveTo(DATE_REF_LINE, y).lineTo(DATE_REF_LINE, y + h).stroke('white');
+          doc.moveTo(REF_DESC_LINE, y).lineTo(REF_DESC_LINE, y + h).stroke();
+          doc.moveTo(DESC_AMOUNT_LINE, y).lineTo(DESC_AMOUNT_LINE, y + h).stroke()
+          doc.moveTo(AMOUNT_TOTAL_LINE, y).lineTo(AMOUNT_TOTAL_LINE, y + h).stroke();
+          doc.moveTo(TOTAL_CODE_LINE, y).lineTo(TOTAL_CODE_LINE, y + h).stroke(); 
       
           doc.fillColor('black').strokeColor('black');
 
@@ -142,53 +169,53 @@
         let cleared = false;
         if ((transaction.src === params.account && transaction.srcclear === 1) ||
           (transaction.dst === params.account && transaction.dstclear === 1)) {
-          doc.rect(72, y - dy, 62, h).fillAndStroke('paleturquoise'); //date
+          doc.rect(LEFT_EDGE, y - dy,DATE_AREA_WIDTH , h).fillAndStroke('paleturquoise'); //date
           doc.fillColor('black').strokeColor('black');
           cleared = true;
         } else if (transaction.repeat !== 0) {
-          doc.rect(72, y - dy, 62, h).fillAndStroke('yellow'); //date
+          doc.rect(LEFT_EDGE, y - dy, DATE_AREA_WIDTH, h).fillAndStroke('yellow'); //date
           doc.fillColor('black').strokeColor('black');
         }
-        doc.text(dbDateToString(transaction.date),74,y,{width: 58});
+        doc.text(dbDateToString(transaction.date),DATE_POSITION,y,{width: DATE_WIDTH, align:'right'});
 
 
-        doc.text(blankIfNull(transaction.ref), 138, y, {width: 39, height: h-4});
-        doc.text(transaction.description, 183, y, {width: 233});
+        doc.text(blankIfNull(transaction.ref), REF_POSITION, y, {width: REF_WIDTH, height: h-4});
+        doc.text(transaction.description, DESC_POSITION, y, {width: DESC_WIDTH});
         if (currency === transaction.currency) {
           let amount = transaction.amount;
           if (transaction.src === params.account) amount = -amount;
           if (!cleared) cumulative += amount;
-          doc.text((amount/100).toFixed(2), 422, y, {width: 40, height: h -4,align: 'right'});
+          doc.text((amount/100).toFixed(2), AMOUNT_POSITION, y, {width: AMOUNT_WIDTH, height: h -4,align: 'right'});
         } else {
-          doc.rect(420, y-dy, 41, h).fillAndStroke('gainsboro'); //amount
+          doc.rect(DESC_AMOUNT_LINE + 1, y-dy, AMOUNT_AREA_WIDTH, h).fillAndStroke('gainsboro'); //amount
           doc.fillColor('black').strokeColor('black');
           let amount = param.account === transaction.src ? -transaction.srcamount : transaction.dstamount
           if (!cleared) cumulative += amount;
-          doc.text((amount / 100).toFixed(2), 422, y, { width: 40, height: h - 4,align: 'right' });
+          doc.text((amount / 100).toFixed(2), AMOUNT_POSITION, y, { width: AMOUNT_WIDTH, height: h - 4,align: 'right' });
         }
         if (!cleared) {
-          doc.text((cumulative / 100).toFixed(2), 468, y, { width: 40, height: h - 4, align: 'right'});
+          doc.text((cumulative / 100).toFixed(2), TOTAL_POSITION, y, { width: AMOUNT_WIDTH, height: h - 4, align: 'right'});
         }
         if (transaction.src === params.account && transaction.stype !== null) {
           doc.image(
             path.resolve(__dirname,'../assets/',`${transaction.stype}_codes.png`), 
-            512,y,
-            {width:16,height:16}
+            CODE_POSITION, y,
+            { width: CODE_SIZE, height: CODE_SIZE }
           );
 
         } else if (transaction.dst === params.account && transaction.dtype !== null) {
           doc.image(
             path.resolve(__dirname, '../assets/', `${transaction.dtype}_codes.png`), 
-            512, y, 
-            { width: 16, height: 16 }
+            CODE_POSITION, y, 
+            { width: CODE_SIZE, height: CODE_SIZE }
           );
         }
         y += (h - dy);
-        doc.x = 72;
+        doc.x = LEFT_EDGE;
         doc.y = y;
         doc.font('Helvetica');
       }
-      doc.y = 793;
+      doc.y = PAGE_POSITION;
       doc.text(`Page: ${pageNo}`, { align: 'center' });
      
     })();

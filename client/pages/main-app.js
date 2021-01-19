@@ -528,6 +528,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             .repeats=${this.repeats}
             ?hidden=${this.serverError}
             @domain-changed=${this._domainChanged}
+            @account-changed=${this._accountChanged}
             @domain-year-changed=${this._domainYearChanged}
             @page-changed=${this._pageChanged}
             @user-refresh=${this._userRefresh}
@@ -537,6 +538,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         `: '')}
       </section>
     `;
+  }
+  _accountChanged(e) {
+    e.stopPropagation();
+    this.account = e.detail;
   }
   _accountSelected(e) {
     e.stopPropagation();
