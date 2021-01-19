@@ -26,7 +26,7 @@
   const path = require('path');
   const LEFT_EDGE = 72;
   const RIGHT_EDGE = 523;
-  const DATE_WIDTH = 58;
+  const DATE_WIDTH = 63;
   const REF_WIDTH = 39;
   const AMOUNT_WIDTH = 45;
   const CODE_SIZE = 12;
@@ -124,7 +124,7 @@
       doc.fillColor('black').strokeColor('black');
 
       doc.font('Helvetica');
-      doc.text(dbDateToString(balanceDate), 74, y, {width: 58});
+      doc.text(dbDateToString(balanceDate), DATE_POSITION, y, {width: DATE_WIDTH});
      
       doc.text('Reconciled Balance', DESC_POSITION,y,{width: DESC_WIDTH});
       doc.text((balance/100).toFixed(2),TOTAL_POSITION,y,{align: 'right', width: AMOUNT_WIDTH});
