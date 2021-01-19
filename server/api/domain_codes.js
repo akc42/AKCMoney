@@ -18,13 +18,14 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-const { insertRepeats } = require('../utils');
+
 
 (function() {
   'use strict';
 
   const debug = require('debug')('money:domaincodes');
   const db = require('@akc42/server-utils/database');
+  const { insertRepeats } = require('../utils');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
