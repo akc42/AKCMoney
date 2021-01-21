@@ -1,6 +1,6 @@
 /**
 @licence
-    Copyright (c) 2020 Alan Chandler, all rights reserved
+    Copyright (c) 2021 Alan Chandler, all rights reserved
 
     This file is part of AKCMoney.
 
@@ -21,25 +21,20 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:accountdomainslist');
+  const debug = require('debug')('money:sorterdata');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
-    debug('new request from', user.name );
-    const getAccounts = db.prepare(`SELECT a.name, a.domain FROM account a, user u 
+    debug('new request from', user.name, 'with params', params );
+    const getAccounts = db.prepare(`SELECT a.name, a.domain, p.sort FROM account a, user u 
       LEFT JOIN capability c ON c.domain = a.domain AND c.uid = u.uid 
       LEFT JOIN priority p ON p.account = a.name AND p.uid = u.uid  AND p.domain = ? 
       WHERE a.archived = 0 AND u.uid = ? AND (u.isAdmin = 1 OR c.domain IS NOT NULL) 
       ORDER BY p.sort ASC NULLS LAST, CASE WHEN a.domain = ? THEN 0 ELSE 1 END, 
-      CASE WHEN u.account = a.name THEN 0 ELSE 1 END, a.domain, a.name`);
-    const getDomains = db.prepare(`SELECT d.name FROM domain d, user u 
-      LEFT JOIN capability c ON c.domain = d.name WHERE u.uid = ? AND (u.isAdmin = 1 OR c.domain is NOT NULL) 
-      ORDER BY CASE WHEN u.domain = d.name THEN 0 ELSE 1 END, d.name;`).pluck();
+      CASE WHEN u.account = a.name THEN 0 ELSE 1 END, a.domain, a.name`);    
     db.transaction(() => {
-      responder.addSection('accounts',getAccounts.all(params.domain, user.uid, params.domain));
-      responder.addSection('domains', getDomains.all(user.uid));
+      responder.addSection('accounts', getAccounts.all(params.domain, user.uid, params.domain));
     })();
-    debug('request complete');
-    
+    debug('request complete')
   };
 })();

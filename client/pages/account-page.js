@@ -199,7 +199,7 @@ class AccountPage extends LitElement {
           grid-area: balance;
         }
         #transactions {
-          background-color: white;
+          background-color: var(--table-odd-color);
           color: var(--table-text-color);
           margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
           display: flex;
@@ -270,7 +270,6 @@ class AccountPage extends LitElement {
           
         }
       </style>
-      <div id="dragim"><material-icon>topic</material-icon></div>
       <dialog-box id="parallel" position="top">
         <p>We have just noticed that an update to a transaction that you tried failed bacause
         someone else has been editing it in parallel.  Click "Reload" below to re-read the account

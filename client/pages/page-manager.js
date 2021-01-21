@@ -80,7 +80,7 @@ export class PageManager extends RouteManager {
                         .repeats=${this.repeats}></domain-page>`,
         offsheet: html`<offsheet-page managed-page .route=${this.subRoute}></offsheet-page>`,
         profile: html`<profile-page managed-page .route=${this.subRoute}></profile-page>`,
-        sorter: html`<sorter-page managed-page  .domain=${this.domain}></sorter-page>`,
+        sorter: html`<sorter-page managed-page  .route=${this.subRoute}></sorter-page>`,
         admin: html`<admin-page managed-page .route=${this.subRoute}></admin-page>`
       }[this.page])}
     `;

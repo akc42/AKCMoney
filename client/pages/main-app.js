@@ -465,7 +465,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
               </button>
             `:'')}
             <button type="button" id="sorter" role="menuitem" @click=${this._editSorter}>
-              <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Account</span>
+              <material-icon class="sort-icon">format_line_spacing</material-icon><span>Sort Accounts</span>
             </button>
           </div>
         </dialog-box>
@@ -600,8 +600,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _editSorter(e) {
     e.stopPropagation();
+    this.extrasMenu.close();
     this.mainMenu.close();
-    switchPath('/sorter');
+    switchPath('/sorter', {domain: this.domain});
   }
   _errorChanged(e) {
     e.stopPropagation();
