@@ -32,6 +32,7 @@ import page from '../styles/page.js';
 import button from '../styles/button.js';
 import menu from '../styles/menu.js';
 import error from '../styles/error.js';
+import { e } from '../libs/lit-html-fb016e47.js';
 
 
 /*
@@ -74,6 +75,8 @@ class AccountPage extends LitElement {
     this.balanceError = false;
     this.router = new Route('/','page:account');
     this.zeroLocked = true;
+    this.selectedIndex = null;
+    this.selectedClear = false;
   }
 
 
@@ -359,6 +362,7 @@ class AccountPage extends LitElement {
                   @clear-changed=${this._clearChanged} 
                   @cleared-changed=${this._clearedChanged}
                   @delete-transaction=${this._deleteTransaction}
+                  @selected-changed=${this._selectedChanged}
                   @transaction-changed=${this._transactionChanged}
                   @version-error=${this._versionError};
                   @zero-adjust=${this._zeroMenuRequest}
@@ -430,6 +434,24 @@ class AccountPage extends LitElement {
       this.transactions[e.detail.index].dstclear = e.detail.set ? 1 : 0;
     }
     this.clearedBalance += e.detail.amount;
+    if (this.selectedIndex !== null) {
+      /*
+        At this point we have received an event which implies the user clicked on clear whilst were selected
+        so we need to handle that
+      */
+      const selectedIndex = this.selectedIndex; //remember it to prevent possible infinite loop of events
+      this.selectedIndex = null;
+      const index = e.detail.index;
+      if (selectedIndex < index) {
+          for(let i = selectedIndex; i <= index; i++) {
+            this._clearSetTransaction(i);
+          }
+      } else if (selectedIndex > index) {
+          for(let i = index; i <= selectedIndex; i++) {
+            this._clearSetTransaction(i);
+          }
+      }
+    }
   }
   _clearedChanged(e) {
     e.stopPropagation();
@@ -443,6 +465,22 @@ class AccountPage extends LitElement {
       }
     }
   }
+  _clearSetTransaction(i) {
+    const transaction = this.transactions[i];
+    if (transaction.reconciled === 0) {    
+      if (transaction.src === this.account.name) {
+        transaction.srcclear = this.selectedClear ? 1 : 0;
+      } else {
+        transaction.dstclear = this.selectedClear ? 1: 0;
+      }
+    }
+    const xaction = this.shadowRoot.querySelector(`#t${transaction.id}`);
+    if (this.selectedClear) {
+      xaction.setClear();
+    } else {
+      xaction.resetClear();
+    }
+  } 
   _deleteTransaction(e) {
     e.stopPropagation();
     const {tid, index} = e.detail;
@@ -738,6 +776,24 @@ class AccountPage extends LitElement {
     this.dialog.close();
     this.transactions = [];
     this._fetchAccountData(this.account.name);  
+  }
+  _selectedChanged(e) {
+    e.stopPropagation();
+    const index = parseInt(e.currentTarget.index,10);
+    if (this.selectedIndex !== null) {
+      if (this.selectedIndex === index) {
+        //we just unselected ourself
+        this.selectedIndex = null;
+        return;
+      } else {
+        //we've moved the selection rather than just started a new on
+        const tid = this.transactions[this.selectedIndex].id
+        const transaction = this.shadowRoot.querySelector(`#t${tid}`);
+        transaction.selected = false;
+      } 
+    }
+    this.selectedIndex = index;
+    this.selectedClear = e.detail;   
   }
   _selectStart(e) {
     e.stopPropagation();

@@ -40,6 +40,8 @@
   --currency-difference-color: lightgreen;
   --shadow-color: rgba(255,255,255,0.8);
   --cleared-transaction: paleturquoise;
+  --selected-for-clear:royalblue;
+  --selected-for-unclear: darkgreen;
   --old-transaction: darkkhaki;
   --repeating-transaction: yellow;
   --transaction-form-background: khaki;

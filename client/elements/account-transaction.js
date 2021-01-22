@@ -69,7 +69,8 @@ class AccountTransaction extends LitElement {
       inputError: {type: Boolean},
       accountAmountError: {type: Boolean},
       readonly: {type: Boolean}, //set if context (domain/offsheet) doesn't allow editing (also cleared/reconcilled ignored)
-      accounting: {type: Boolean} //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
+      accounting: {type: Boolean}, //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
+      selected: {type: Boolean} //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
     };
   }
   constructor() {
@@ -109,6 +110,7 @@ class AccountTransaction extends LitElement {
     this.accountAmountError = false;
     this.readonly = false;
     this.accounting = false;
+    this.selected = false;
   }
   connectedCallback() {
     super.connectedCallback();
@@ -340,6 +342,12 @@ class AccountTransaction extends LitElement {
         .date.cleared {
           background-color: var(--cleared-transaction);
         }
+        .date.selected {
+          background-color: var(--selected-for-unclear);
+        }
+        .date.cleared.selected {
+          background-color: var(--selected-for-clear);
+        }
         .date.repeating {
           background-color: var(--repeating-transaction);
         }
@@ -561,7 +569,8 @@ class AccountTransaction extends LitElement {
             passed: Date.now()/1000 > this.date,
             cleared:  cleared,
             repeating: this.repeat !== this.repeats[0].rkey,
-            dual: this.src !== null && this.dst !== null 
+            dual: this.src !== null && this.dst !== null,
+            selected: this.selected 
           })}" .date=${this.date} @click=${this._clearedChanged}></date-format>
           <div class="ref ${classMap({ dual: this.src !== null && this.dst !== null })}">${this.rno}</div>
           <div class="description ${classMap({dual: this.src !== null && this.dst !==null})}">${this.description}</div>
@@ -719,6 +728,15 @@ class AccountTransaction extends LitElement {
   }
   _clearedChanged(e) {
     e.stopPropagation();
+    if (e.shiftKey || this.selected) {
+      this.selected = !this.selected;
+      this.dispatchEvent(new CustomEvent('selected-changed', {
+        bubbles: true,
+        composed: true,
+        detail: this.reconciled || (this.account === this.src ? this.srcclear : this.dstclear)
+      }));
+      return;
+    }
     if (this.reconciled) return;
     if (this.src === this.account) {
       this.srcclear = !this.srcclear;
@@ -776,9 +794,27 @@ class AccountTransaction extends LitElement {
     e.stopPropagation();
     this.repeat = e.detail
   }
+  resetClear() {
+    this.selected = false;
+    if (this.reconciled) return; //must not change previously reconcilled
+    if (this.src === this.account) {
+      this.srcclear = false;
+    } else if (this.dst === this.account) {
+      this.dstclear = false;
+    }
+  }
   _save(e) {
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
+  }
+  setClear() {
+    this.selected = false;
+    if (this.reconciled) return; //must not change previously reconcilled
+    if (this.src === this.account) {
+      this.srcclear = true;
+    } else if (this.dst === this.account) {
+      this.dstclear = true;
+    }
   }
   _setCurrencyRate(e) {
     e.stopPropagation();
