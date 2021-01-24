@@ -84,6 +84,7 @@ class MainApp extends LitElement {
     this.serverError = false;
     this.page = '';
     this.domainYear = 0;
+    this.code = 0;
     configPromise.then(() => {
       this.version = sessionStorage.getItem('version');
       this.copyrightYear = sessionStorage.getItem('copyrightYear');
@@ -399,7 +400,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             <button type="button" role="menuitem" @click=${this._goHome}>
               <material-icon class="home-icon">home</material-icon><span>Home</span> <span>F2</span>
             </button>
-            ${this.accounts.length > 0 || this.domains.length > 0 || this.offsheet > 0 ? html`
+            ${this.accounts.length > 0 || this.domains.length > 0 || this.offsheet.length > 0 ? html`
               <hr class="sep"/>
             `:``}
             ${this.accounts.length > 0 ? html`
@@ -454,11 +455,13 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         </dialog-box>
         <dialog-box id="extrasmenu" position="right" closeOnClick>
           <div class="menucontainer">
-            ${cache((this.page === 'account' || this.page === 'domain') ? html`
+            ${cache((this.page === 'account' || this.page === 'domain' || this.page === 'offsheet') ? html`
               <button id="pdf" type="button" role="menuitem" @click=${this._makePDF}>
                 <material-icon class="pdf-icon">picture_as_pdf</material-icon><span>Make ${
-                  this.page.charAt(0).toUpperCase() + this.page.slice(1)} PDF</span>
+                  this.page === 'domain' ? 'Domain' : 'Account'} PDF</span>
               </button>
+            `:'')}
+            ${cache((this.page === 'account' || this.page === 'domain') ? html`
               <button id="csv" type="button" role="menuitem" @click=${this._makeCSV}>
                 <material-icon class="csv-icon">insert_chart_outlined</material-icon><span>Make ${
               this.page.charAt(0).toUpperCase() + this.page.slice(1)} CSV</span>
@@ -527,6 +530,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             .codes=${this.codes}
             .repeats=${this.repeats}
             ?hidden=${this.serverError}
+            @code-changed=${this._codeChanged}
             @domain-changed=${this._domainChanged}
             @account-changed=${this._accountChanged}
             @domain-year-changed=${this._domainYearChanged}
@@ -568,6 +572,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _authChanged(e) {
     e.stopPropagation();
     this.authorised = e.detail;
+  }
+  _codeChanged(e) {
+    e.stopPropagation();
+    this.code = e.detail;
   }
   _domainChanged(e) {
     e.stopPropagation();
@@ -627,7 +635,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
 
   }
   async _fetchOff() {
-    const response = await api('offsheet', { domain: this.domain });
+    const response = await api('offsheet_list', { domain: this.domain });
     this.offsheet = response.offsheet
   }
   _goHome(e) {
@@ -692,6 +700,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       case 'domain' :
         pdf('domain',{domain: this.domain, year: this.domainYear});
         break;
+      case 'offsheet':
+        pdf('offsheet',{code: this.code});
+        break;
     }
     
   }
@@ -705,10 +716,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _offsheetSelected(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
-    const account = this.offsheet[index];
-    console.log('offsheet menu selected', account.description);
     this.domainsMenu.close();
     this.mainMenu.close();
+    switchPath('/offsheet', this.offsheet[index]);
   }
   _pageChanged(e) {
     e.stopPropagation();

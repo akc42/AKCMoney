@@ -143,6 +143,7 @@
       */
       const clientConfig= {};
       const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
+      const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
       db.transaction(() => {
         serverConfig.trackCookie = s.get('track_cookie');
         serverConfig.authCookie = s.get('auth_cookie');
@@ -150,6 +151,9 @@
         serverConfig.serverPort = s.get('server_port');
         serverConfig.tokenExpires = s.get('token_expires');
         clientConfig.authCookie = serverConfig.authCookie;
+        const {name, description} = dc.get();
+        clientConfig.defaultCurrency = name;
+        clientConfig.defaultCurrencyDescription = description;
       })();
 
       debug('read config variables');
