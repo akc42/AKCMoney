@@ -19,7 +19,7 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import {classMap} from '../libs/class-map.js';
+
 
 import './account-transaction.js';
 import './material-icon.js';
