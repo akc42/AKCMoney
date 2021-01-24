@@ -481,7 +481,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
                 <button id="domains" type="button" role="menuitem" @click=${this._selectPage}>
                   <material-icon class="domains-icon">domain</material-icon><span>Domains</span>
                 </button>
-                <button id="currency" type="button" role="menuitem" @click=${this._selectPage}>
+                <button id="currencies" type="button" role="menuitem" @click=${this._selectPage}>
                   <material-icon class="currency-icon">local_atm</material-icon><span>Currency</span></button>
 
                 <button id="codes" type="button" role="menuitem" @click=${this._selectPage}>
@@ -723,6 +723,13 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _pageChanged(e) {
     e.stopPropagation();
     this.page = e.detail.toLowerCase();  //useful to know for menu
+  }
+  _selectPage(e) {
+    e.stopPropagation();
+    const target = e.currentTarget.id;
+    this.adminMenu.close();
+    this.mainMenu.close();
+    switchPath(`/admin/${target}`);
   }
   _userRefresh(e) {
     e.stopPropagation();

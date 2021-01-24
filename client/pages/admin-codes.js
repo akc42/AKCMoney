@@ -57,7 +57,8 @@ class AdminCodes extends LitElement {
     return html`
       <style>
       </style>
-      <p>Page not implemented yet</p>
+      <h1>Accounting Codes Page</h1>
+      <p>Not implemented Yet</p>
     `;
   }
 }

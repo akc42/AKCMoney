@@ -54,6 +54,7 @@ class AdminDomains extends LitElement {
     return html`
       <style>
       </style>
+      <h1>Admin Domains Page</h1>
       <p>Page Not Implemented Yet</p>
     `;
   }

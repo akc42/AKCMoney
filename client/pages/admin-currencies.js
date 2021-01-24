@@ -55,6 +55,7 @@ class AdminCurrencies extends LitElement {
     return html`
       <style>
       </style>
+      <h1>Admin Currencies Page</h1>
       <p>Page Not Implemented Yet</p>
     `;
   }

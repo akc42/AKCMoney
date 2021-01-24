@@ -93,7 +93,7 @@ export class PageManager extends RouteManager {
   loadPage(page) {
     switch (page) {  
       case 'admin':
-        const user = sessionStorage.getItem('user')
+        const user = JSON.parse(sessionStorage.getItem('user'))
         if (user.isAdmin !== 1) return false;
       case 'account':
       case 'domain':

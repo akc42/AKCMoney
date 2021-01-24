@@ -56,6 +56,8 @@ class AdminAccounts extends LitElement {
     return html`
       <style>
       </style>
+      <h1>Admin Accounts Page</h1>
+      <p>Not implemented Yet</p>
     `;
   }
 }
