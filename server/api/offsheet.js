@@ -25,12 +25,35 @@
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
-    debug('new request from', user.name );
-    const offsheets = db.prepare(`SELECT c.id,c.description FROM code c WHERE c.type = 'O'
-      AND EXISTS (SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
-      OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid AND p.domain = a.domain 
-      WHERE a.domain = ? AND u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL))`).all(params.domain, user.uid);
-    responder.addSection('offsheet', offsheets);
+    debug('new request from', user.name, 'with codeid', params.code );
+
+    const getXactions = db.prepare(`SELECT
+            t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
+            CASE 
+                WHEN t.src = a.name THEN -dfamount
+                ELSE dfamount 
+            END AS amount,
+            t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
+        FROM  
+            user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
+            INNER JOIN account a ON 
+                (t.src = a.name AND t.srccode = c.id) 
+                OR (t.dst = a.name AND t.dstcode = c.id) 
+            LEFT JOIN capability p ON 
+                p.uid = u.uid 
+                AND p.domain = a.domain 
+        WHERE 
+            u.uid = ? 
+            AND (u.isAdmin = 1 OR p.uid IS NOT NULL) 
+            AND c.id = ?
+            AND cur.priority = 0
+        ORDER BY 
+            t.Date
+    `);
+    db.transaction(() => {
+      responder.addSection('transactions', getXactions.all(user.uid, params.code));
+    })();  
+
     debug('request complete');
   };
 })();
