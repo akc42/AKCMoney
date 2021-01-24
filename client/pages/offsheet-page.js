@@ -81,6 +81,69 @@ class OffsheetPage extends LitElement {
   render() {
     return html`
       <style>
+        section.page {
+          max-width: 800px;
+        }
+        .header {     
+          padding: 2px;
+          display: grid;
+          grid-gap: 1px;
+          color: var(--table-text-color);
+          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+          grid-template-areas:
+            "date ref . amount balance ."
+            "description description description description description description";
+    
+          margin: 0px 5px;
+          background-color: var(--table-heading-background);
+          font-weight: bold;
+
+        }
+
+        .header > * {
+          border: 1px solid white;
+        }
+        .info {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-around;
+          align-items: flex-start;
+        }
+        .currency > .name {
+          font-weight: bold;
+        }
+        .currency > .name > span {
+          color: var(--currency-designator-color)
+        }
+        .currency > .description {
+          font-style: italic;
+        }
+        #transactions {
+          background-color: var(--table-odd-color);
+          color: var(--table-text-color);
+          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
+          display: flex;
+          flex-direction: column;
+
+        }
+        #transactions > div {
+          margin:0;
+          padding: 0;
+        
+        }
+        #transactions > div:nth-child(even):not(.over){
+          background-color: var(--table-even-color);
+        }
+
+        @media (min-width: 500px) {
+
+          .header{
+            grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+            grid-template-areas:
+              "date ref description amount balance .";
+            margin-top: 20px;
+          }
+        }
       </style>
       <section class="page">
         <h1>Off Balance Sheet Transactions</h1>
@@ -99,7 +162,7 @@ class OffsheetPage extends LitElement {
           <div class="amount">Amount</div>
           <div class="balance">Balance</div>
         </div>
-        <section class="scrollable">
+        <section id="transactions" class="scrollable">
           ${this.transactions.map((transaction, i) => html`
             <account-transaction 
               .index=${i}
