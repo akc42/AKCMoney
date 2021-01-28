@@ -21,23 +21,28 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:accountadd');
+  const debug = require('debug')('money:domainname');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const insertAccount = db.prepare(`INSERT INTO account(currency,domain,name) VALUES(?,?,?)`);
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
+    const updateName = db.prepare('UPDATE domain SET version = version + 1, name = ? WHERE name = ?');
+    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
     db.transaction(() => {
-      const v = getVersion.get(params.name);
+      //first check new name does not exist
+      const v = getVersion.get(params.new);
       if (v === null) {
-        insertAccount.run(params.currency, params.domain, params.name);
-        responder.addSection('status','OK');
-        responder.addSection('accounts', getAccounts.all());
-
+        const v = getVersion.get(params.old);
+        if (v === params.version) {
+          updateName.run(params.new, params.old);
+          responder.addSection('status', 'OK');
+          responder.addSection('domains', getDomains.all());
+        } else {
+          responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
+        }
       } else {
-        responder.addSection('status', `Name alreadin in use ${params.name}`)
+        responder.addSection('status', 'Duplicate Name Error')
       }
     })();
     debug('request complete')

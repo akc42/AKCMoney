@@ -21,24 +21,24 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:accountadd');
+  const debug = require('debug')('money:domaindelete');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const insertAccount = db.prepare(`INSERT INTO account(currency,domain,name) VALUES(?,?,?)`);
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
+    const deleteDomain = db.prepare('DELETE FROM domain WHERE name = ?');
+    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
     db.transaction(() => {
       const v = getVersion.get(params.name);
-      if (v === null) {
-        insertAccount.run(params.currency, params.domain, params.name);
-        responder.addSection('status','OK');
-        responder.addSection('accounts', getAccounts.all());
-
+      if (v === params.version) {
+        deleteDomain.run(params.name);
+        responder.addSection('status', 'OK');
+        responder.addSection('domains', getDomains.all());
       } else {
-        responder.addSection('status', `Name alreadin in use ${params.name}`)
+        responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
       }
+      
     })();
     debug('request complete')
   };

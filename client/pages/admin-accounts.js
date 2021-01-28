@@ -54,17 +54,7 @@ class AdminAccounts extends LitElement {
     this.route = {active: false};
     this.router = new Route('/','page:accounts');
   }
-  connectedCallback() {
-    super.connectedCallback();
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-  update(changed) {
-    super.update(changed);
-  }
-  firstUpdated() {
-  }
+
   updated(changed) {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
@@ -211,7 +201,7 @@ class AdminAccounts extends LitElement {
         <section class="scrollable">
           ${this.accounts.map((account,i) => html`
             <div class="account">
-              <input class="name" .value=${account.name} @input=${this._accountNameChanged} data-index="${i}"/>
+              <input class="name" .value=${account.name} @input=${this._nameCheck} data-index="${i}" @blur=${this._accountNameChanged}/>
               <list-selector
                 class="domain"
                 list=${'domains'} 
@@ -259,6 +249,7 @@ class AdminAccounts extends LitElement {
       domainselect.classList.add('error');
     }
   }
+  
   _accountCurrencyChanged(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
@@ -284,6 +275,15 @@ class AdminAccounts extends LitElement {
       if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
       this.accounts = response.accounts;
     });
+  }
+  _accountNameChanged(e) {
+    e.stopPropagation();
+    if (!e.currentTarget.classList.has('error')) {
+      api('account_name', { old: this.accounts[index].name, new: e.currentTarget.value, dversion: this.accounts[index].dversion }).then(response => {
+        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+        this.accounts = response.accounts;
+      });
+    }
   }
   _archive(e) {
     e.stopPropagation();
@@ -355,12 +355,6 @@ class AdminAccounts extends LitElement {
     }
     if (found) {
       e.currentTarget.classList.add('error');
-    } else if (index >= 0) {
-      e.currentTarget.classList.remove('error');
-      api('account_name',{old: this.accounts[index].name, new: name, dversion: this.accounts[index].dversion}).then(response => {
-        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-        this.accounts = response.accounts;
-      });
     } else {
       e.currentTarget.classList.remove('error');
     }

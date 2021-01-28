@@ -21,23 +21,22 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:accountadd');
+  const debug = require('debug')('money:codeadd');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const insertAccount = db.prepare(`INSERT INTO account(currency,domain,name) VALUES(?,?,?)`);
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+    const insertCode = db.prepare(`INSERT INTO code(description, type) VALUES(?,?)`);
+    const getCodes = db.prepare(`SELECT * FROM code 
+      ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+      description COLLATE NOCASE ASC`);
     db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === null) {
-        insertAccount.run(params.currency, params.domain, params.name);
-        responder.addSection('status','OK');
-        responder.addSection('accounts', getAccounts.all());
-
+      if (params.description.length > 0) {
+        insertCode.run(params.description, params.type);
+        responder.addSection('status', 'OK');
+        responder.addSection('codes', getCodes.all());
       } else {
-        responder.addSection('status', `Name alreadin in use ${params.name}`)
+        responder.addSection('status', 'Description length must be greater than zero')
       }
     })();
     debug('request complete')
