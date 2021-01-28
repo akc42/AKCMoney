@@ -28,6 +28,7 @@ export default css`
     justify-content: flex-start;
     height: 100%;
     overflow:hidden;
+    max-width: 800px;
   }
   section.scrollable {
     overflow-y:scroll;

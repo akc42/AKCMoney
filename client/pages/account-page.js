@@ -32,8 +32,6 @@ import page from '../styles/page.js';
 import button from '../styles/button.js';
 import menu from '../styles/menu.js';
 import error from '../styles/error.js';
-import { e } from '../libs/lit-html-fb016e47.js';
-
 
 /*
      <account-page>: Displays the transaction so an account
@@ -103,9 +101,6 @@ class AccountPage extends LitElement {
     return html`
       <style>
 
-        section.page {
-          max-width: 800px;
-        }
         .info {
           display: flex;
           flex-direction: row;

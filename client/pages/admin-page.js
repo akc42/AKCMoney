@@ -25,32 +25,6 @@ import RouteManager from '../elements/route-manager.js';
      <admin-page>: Controls the admin functions
 */
 class AdminPage extends RouteManager {
-  static get styles() {
-    return css``;
-  }
-  static get properties() {
-    return {
-      domains: {type: Array} //
-    };
-  }
-  constructor() {
-    super();
-    this.domains = [];
-  }
-  connectedCallback() {
-    super.connectedCallback();
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-  update(changed) {
-    super.update(changed);
-  }
-  firstUpdated() {
-  }
-  updated(changed) {
-    super.updated(changed);
-  }
   render() {
     return html`
       <style>
@@ -60,11 +34,11 @@ class AdminPage extends RouteManager {
       </style>
       ${cache({
         home: html`<admin-home managed-page></admin-home>`,
-        accounts: html`<admin-accounts managed-page .domains=${this.domains}></admin-accounts>`,
-        codes: html`<admin-codes managed-page></admin-codes>`,
-        currencies: html`<admin-currencies managed-page></admin-currencies>`,
-        domains: html`<admin-domains managed-page></admin-domains>`,
-        users: html`<admin-users managed-page></admin-users>`
+        accounts: html`<admin-accounts managed-page .route=${this.subRoute}></admin-accounts>`,
+        codes: html`<admin-codes managed-page .route=${this.subRoute}></admin-codes>`,
+        currencies: html`<admin-currencies managed-page .route=${this.subRoute}></admin-currencies>`,
+        domains: html`<admin-domains managed-page .route=${this.subRoute}></admin-domains>`,
+        users: html`<admin-users managed-page .route=${this.subRoute}></admin-users>`
       }[this.page])}
     `;
   }

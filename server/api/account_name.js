@@ -21,16 +21,29 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:getcurrencyrate');
+  const debug = require('debug')('money:accountname');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getRate = db.prepare('SELECT rate, version FROM currency WHERE name = ?');
+    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+    const updateName = db.prepare('UPDATE account SET dversion = dversion + 1, name = ? WHERE name = ?');
+    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
     db.transaction(() => {
-      const {rate,version} = getRate.get(params.name);
-      responder.addSection('rate', rate);
-      responder.addSection('version', version);
+      //first check new name does not exist
+      const v = getVersion.get(params.new);
+      if (v === null) {
+        const v = getVersion.get(params.old);
+        if (v === params.dversion) {
+          updateName.run(params.new, params.old);
+          responder.addSection('status', 'OK');
+          responder.addSection('accounts', getAccounts.all());
+        } else {
+          responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
+        }
+      } else {
+        responder.addSection('status', 'Duplicate Name Error')
+      }
     })();
     debug('request complete')
   };

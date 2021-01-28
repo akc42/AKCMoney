@@ -81,6 +81,8 @@
   --save-icon-color: black;
   --set-icon-color: darkgreen;
   --undo-icon-color: burlywood;
+  --archived-icon-color: darkblue;
+  --unarchived-icon-color: lightblue;
 
 
   --menu-separator-color: grey;
@@ -92,6 +94,8 @@
   --pw-input-length: 120px; 
   --year-selector-width: 60px;
   --max-page-width: 1000px;
+  --currency-selector-width: 60px;
+  --domain-selector-width:100px;
 }
   
 body {

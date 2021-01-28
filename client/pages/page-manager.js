@@ -39,7 +39,8 @@ export class PageManager extends RouteManager {
     return {
       codes: {type: Array}, //list of codes
       repeats: {type: Array}, //list of repeats
-      accounts: {type: Array}, //list of accounts
+      accounts: {type: Array} //list of accounts
+
     };
   }
   constructor() {
@@ -86,7 +87,9 @@ export class PageManager extends RouteManager {
                         .codes=${this.codes}></offsheet-page>`,
         profile: html`<profile-page managed-page .route=${this.subRoute}></profile-page>`,
         sorter: html`<sorter-page managed-page  .route=${this.subRoute}></sorter-page>`,
-        admin: html`<admin-page managed-page .route=${this.subRoute}></admin-page>`
+        admin: html`<admin-page 
+                        managed-page 
+                        .route=${this.subRoute}></admin-page>`
       }[this.page])}
     `;
   }

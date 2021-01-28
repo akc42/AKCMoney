@@ -21,16 +21,17 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:getcurrencyrate');
+  const debug = require('debug')('money:accounts');
   const db = require('@akc42/server-utils/database');
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getRate = db.prepare('SELECT rate, version FROM currency WHERE name = ?');
+  module.exports = async function(user,p ,responder) {
+    debug('new request from', user.name,);
+    const dc = db.prepare('SELECT name FROM currency WHERE priority = 0').pluck();
+    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
     db.transaction(() => {
-      const {rate,version} = getRate.get(params.name);
-      responder.addSection('rate', rate);
-      responder.addSection('version', version);
+      responder.addSection('currency', dc.get())
+      responder.addSection('accounts', getAccounts.all());
+      
     })();
     debug('request complete')
   };

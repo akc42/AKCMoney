@@ -21,16 +21,25 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:getcurrencyrate');
+  const debug = require('debug')('money:accountcurrency');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getRate = db.prepare('SELECT rate, version FROM currency WHERE name = ?');
+    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+    const updateCurrency = db.prepare('UPDATE account SET dversion = dversion + 1, currency = ? WHERE name = ?');
+    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name'); 
     db.transaction(() => {
-      const {rate,version} = getRate.get(params.name);
-      responder.addSection('rate', rate);
-      responder.addSection('version', version);
+      //first version is still the same
+      const v = getVersion.get(params.name);
+      if (v === params.dversion) {
+        updateCurrency.run(params.currency, params.name);
+        responder.addSection('status', 'OK');
+        responder.addSection('accounts', getAccounts.all())
+      } else {
+        responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
+      }
+    
     })();
     debug('request complete')
   };
