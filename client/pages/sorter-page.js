@@ -47,7 +47,7 @@ class SorterPage extends LitElement {
     this.accounts = [];
     this.selected = 0;
     this.sorted = 0;
-    this.rounte = {active: false};
+    this.route = {active: false};
     this.router = new Route('/', 'page:sorter');
     this.priorities = [];
   }
