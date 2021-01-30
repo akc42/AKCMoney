@@ -63,9 +63,7 @@ class SorterPage extends LitElement {
     }
     super.update(changed);
   }
-  firstUpdated() {
-    this.dragImage = this.shadowRoot.querySelector('#dragim');
-  }
+
   updated(changed) {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
