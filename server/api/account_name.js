@@ -32,7 +32,7 @@
     db.transaction(() => {
       //first check new name does not exist
       const v = getVersion.get(params.new);
-      if (v === null) {
+      if (v === undefined) {
         const v = getVersion.get(params.old);
         if (v === params.dversion) {
           updateName.run(params.new, params.old);

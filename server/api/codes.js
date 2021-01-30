@@ -26,12 +26,13 @@
 
   module.exports = async function(user,p ,responder) {
     debug('new request from', user.name);
-   
+    const getTypes = db.prepare('SELECT * FROM codetype ORDER BY type');
     const getCodes = db.prepare(`SELECT * FROM code 
       ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
       description COLLATE NOCASE ASC`);
     db.transaction(() => {
       responder.addSection('codes', getCodes.all());
+      responder.addSection('types', getTypes.all());
     })();
     debug('request complete')
   };

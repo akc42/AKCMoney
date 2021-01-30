@@ -31,7 +31,7 @@
     const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
     db.transaction(() => {
       const v = getVersion.get(params.name);
-      if (v === null) {
+      if (v === undefined) {
         insertAccount.run(params.currency, params.domain, params.name);
         responder.addSection('status','OK');
         responder.addSection('accounts', getAccounts.all());

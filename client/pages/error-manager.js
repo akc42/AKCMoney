@@ -24,9 +24,8 @@ import {cache} from '../libs/cache.js';
 import button from '../styles/button.js';
 import page from '../styles/page.js';
 
-import {Debug} from '../libs/utils.js';
+import {Debug, configPromise} from '../libs/utils.js';
 
-const logger = Debug('error');
 
 /*
      <error-manager>: a page which handles errors.
@@ -49,6 +48,9 @@ class ErrorManager extends LitElement {
 
   constructor() {
     super();
+    configPromise.then(() => {
+      this.logger = Debug('error'); //forces logging in default config
+    });
 
     this.anError = false;
     this.forbidden = false;
@@ -90,24 +92,24 @@ class ErrorManager extends LitElement {
   }
   _clientError(e) {
     if (this.anError) return;
-//    e.preventDefault();
+    e.preventDefault();
     const message = `Client Error:
 ${e.error.stack}
 has occured`;
-    logger(message, true);
+    this.logger(message);
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }
   _promiseRejection(e) {
     if (this.anError) return;
-//   e.preventDefault();
+    e.preventDefault();
     const possibleError = e.reason;
 
     if (possibleError.type === 'api-error') {
       this._serverError(possibleError)
     } else {
-      const message = `Client Error: Uncaught Promise Rejection with reason ${e.reason} has occured`;
-      logger(message, true);
+      
+      this.logger(possibleError);
       this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
       this.anError = true;
     }

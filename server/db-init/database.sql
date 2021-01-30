@@ -375,7 +375,7 @@ INSERT INTO settings (name,value) VALUES('creation_date', strftime('%s','now'));
 INSERT INTO settings (name,value) VALUES('token_key', 'newTokenKey'); --key used to encrypt/decrypt cookie token (new value set during db create)
 INSERT INTO settings (name,value) VALUES('repeat_days', 90); -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
 INSERT INTO settings (name,value) VALUES('year_end', 1231); -- Month and Date (100* MM + DD) as a numeric of financial year end.
-INSERT INTO settings (name,value) VALUES('client_log','logger'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing.
+INSERT INTO settings (name,value) VALUES('client_log',':error:'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing.
 INSERT INTO settings (name,value) VALUES('client_uid', 0); --if non zero this uid logs everything
 INSERT INTO settings (name,value) VALUES('min_pass_len', 6); --minimum password length
 INSERT INTO settings (name,value) VALUES('dwell_time', 2000); --time to elapse before new urls get to be pushed to the history stack (rather than update)

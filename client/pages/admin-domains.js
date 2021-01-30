@@ -154,11 +154,11 @@ class AdminDomains extends LitElement {
     `;
   }
   _addDomain(e) {
-    e.stopPropagation()
+    e.stopPropagation();
+    const nameInput = this.shadowRoot.querySelector('#newname');
     if (this.name.length === 0) {
-      const nameInput = this.shadowRoot.querySelector('#newname');
       nameInput.classList.add('error');
-    } else {
+    } else if (!nameInput.classList.contains('error')) {
       api('domain_add', { name: this.name, description: this.description}).then(response => {
         if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
         this.name = ''; 
@@ -181,7 +181,7 @@ class AdminDomains extends LitElement {
   }
   _domainNameChanged(e) {
     e.stopPropagation();
-    if (!e.currentTarget.classList.has('error')) {
+    if (!e.currentTarget.classList.contains('error')) {
       const index = parseInt(e.currentTarget.dataset.index, 10);
       api('domain_name', {
         old: this.domains[index].name, 
@@ -205,7 +205,7 @@ class AdminDomains extends LitElement {
   _deleteConfirm(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
-    api('domain_delete', { name: this.domains[index].name, version: this.accounts[index].version }).then(response => {
+    api('domain_delete', { name: this.domains[index].name, version: this.domains[index].version }).then(response => {
       if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
       this.domains = response.domains;
     });
@@ -235,7 +235,7 @@ class AdminDomains extends LitElement {
     //check name is unique
     for (let i = 0; i < this.domains.length; i++) {
       if (i !== index) {
-        if (this.domains.name === name) {
+        if (this.domains[i].name.toLowerCase() === name.toLowerCase()) {
           found = true; //name not unique
           break;
         }
@@ -243,12 +243,6 @@ class AdminDomains extends LitElement {
     }
     if (found) {
       e.currentTarget.classList.add('error');
-    } else if (index >= 0) {
-      e.currentTarget.classList.remove('error');
-      api('domain_name', { old: this.domains[index].name, new: name, dversion: this.domains[index].version }).then(response => {
-        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-        this.domains = response.domains;
-      });
     } else {
       e.currentTarget.classList.remove('error');
     }

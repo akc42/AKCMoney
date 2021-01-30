@@ -234,11 +234,11 @@ class AdminAccounts extends LitElement {
     `;
   }
   _addAccount(e) {
+    const nameInput = this.shadowRoot.querySelector('#newname');
     e.stopPropagation();
     if (this.name.length === 0) {
-      const nameInput = this.shadowRoot.querySelector('#newname');
       nameInput.classList.add('error');
-    } else if (this.domain.length > 0) {
+    } else if (this.domain.length > 0 && !nameInput.classList.contains('error')) {
       api('account_add', {name: this.name, domain: this.domain, currency: this.currency}).then(response => {
         if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
         this.name = ''; //Only reset name as that has to be unique - assume we are keeping exisiting settings
@@ -347,7 +347,7 @@ class AdminAccounts extends LitElement {
     //check name is unique
     for(let i=0; i< this.accounts.length; i++) {
       if (i !== index) {
-        if (this.accounts.name === name) {
+        if (this.account[i].name.toLowerCase() === name.toLowerCase()) {
           found = true; //name not unique
           break;
         }

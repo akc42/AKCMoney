@@ -39,7 +39,7 @@ INSERT INTO settings (name,value) VALUES('version',1); --version of this configu
 INSERT INTO settings (name,value) VALUES('token_key', 'newTokenKey'); --key used to encrypt/decrypt cookie token (new value set during db create)
 INSERT INTO settings (name,value) SELECT 'repeat_days' AS name, CAST(repeat_days AS Integer) AS value FROM config LIMIT 1;
 INSERT INTO settings (name,value) SELECT 'year_end' AS name, CAST(year_end AS INTEGER) AS value FROM config LIMIT 1;
-INSERT INTO settings (name,value) VALUES('client_log','logger'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing.
+INSERT INTO settings (name,value) VALUES('client_log',':error:'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing.
 INSERT INTO settings (name,value) VALUES('client_uid', 0); --if non zero this uid logs everything
 INSERT INTO settings (name,value) VALUES('token_expires', 720); --hours until expire for standard logged on token
 INSERT INTO settings (name,value) VALUES('min_pass_len', 6); --minimum password length

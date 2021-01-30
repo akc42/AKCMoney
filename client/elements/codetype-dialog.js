@@ -19,7 +19,7 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
-import { domHost } from '../libs/utils.js';
+import { api, domHost } from '../libs/utils.js';
 import './material-icon.js';
 import './dialog-box.js';
 
@@ -48,6 +48,7 @@ class CodeTypeDialog extends LitElement {
     this.type = '';
     this._gotRequest = this._gotRequest.bind(this);
     this.eventLocked = true;
+    
 
   }
   connectedCallback() {
@@ -58,6 +59,7 @@ class CodeTypeDialog extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.domHost.removeEventListener('types-request', this._gotRequest);
+    this.eventLocked = false;
   }
   update(changed) {
     super.update(changed);
@@ -71,13 +73,18 @@ class CodeTypeDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="typessmenu" @overlay-closed=${this._closing} closeOnClick>
+      <style>
+        .type {
+          margin-right: 5px;
+        }
+      </style>
+      <dialog-box id="typesmenu" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer">
           ${cache(this.types.map((type, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
             <button type="button" role="menuitem" 
               data-index="${i}" @click=${this._typeSelected}>
-              <span>${type.type}</span> <span>${type.description}</span>
+              <span class="type">${type.type}</span> <span class="description">${type.description}</span>
             </button>
           `))}        
         </div>
@@ -89,12 +96,15 @@ class CodeTypeDialog extends LitElement {
     e.stopPropagation();
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.type = this.types[index].type;
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('types-reply', {detail: {key: this.type, visual: this.type}}));
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('types-reply', {detail: { 
+      key: this.type, 
+      visual: this.types[index].description
+    }}));
     this.dialog.close();
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
       bubbles: true, 
       composed: true, 
-      detail: this.type 
+      detail: this.types[index]
     })); //tell the outside world we have a value
   }
   _closing(e) {

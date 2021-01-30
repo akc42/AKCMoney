@@ -41,21 +41,33 @@ class AdminCodes extends LitElement {
   static get properties() {
     return {
       codes: {type: Array},
+      types: {type: Array},
       description: {type: String},
       type: {type: String},
+      typeDescription: {type: String},
       route: {type: Object}
     };
   }
   constructor() {
     super();
     this.codes = [];
+    this.types = [];
     this.description = '';
     this.type = '';
+    this.typeDescription = '';
 
     this.route = {active: false};
     this.router = new Route('/','page:codes');
   }
-
+  update(changed) {
+    if (changed.has('type') && this.type.length > 0) {
+      const type = this.types.find(t => t.type === this.type);
+      if (type !== undefined) {
+        this.typeDescription = type.description;
+      }
+    }
+    super.update(changed);
+  }
   updated(changed) {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
@@ -81,65 +93,29 @@ class AdminCodes extends LitElement {
           border: 1px solid white;
           text-align: center;
         }
-        .account, .header {     
+        .code, .header {     
           padding: 2px;
           display: grid;
           grid-gap: 1px;
           color: var(--table-text-color);
-          grid-template-columns: 1fr var(--domain-selector-width) var(--currency-selector-width) 20px 80px;
-        }
-        .account {
+          grid-template-columns: 1fr var(--codetype-selector-width) 80px;
           grid-template-areas:
-            "name name name name name"
-            ". domain currency archive action";
+            "description description description" 
+            ". type action";
         }
-        .header {
-           grid-template-areas:
-            "name name name name name"
-            ". domain currency archive archive";
-         
+        .description {
+          grid-area: description;
         }
-        .name {
-          grid-area: name;
-        }
-        .domain {
-          grid-area: domain;
-        }
-        .currency {
-          grid-area: currency;
-        }
-        .archive, .unarchive {
-          grid-area: archive;
-          margin-top: 1px;
-          cursor: pointer;
-          align-self:start;
-          justify-self:center;
-          box-shadow: 0px 0px 5px 1px rgba(0,0,0,0.48);
-          border-radius:2px;
-        }
-        .archive:active, .archive:hover, .unarchive:active, .unarchive:hover {
-          box-shadow: none;
-        }
-
-        .archive {
-          color:var(--unarchived-icon-color);
-        }
-        .header .archive {
-          color: var(--table-text-color);
-          justify-self: start;
-          box-shadow: none;
-          cursor: default;
-        }
-        .unarchive {
-          color: var(--archived-icon-color);
+        .type {
+          grid-area: type;
         }
         .action {
           grid-area: action;
         }
-        #newa >material-icon {
+        #newc >material-icon {
           color: var(--add-icon-color);
         }
-        .dela >material-icon {
+        .delc >material-icon {
           color:var(--delete-icon-color);
         }
         .scrollable {
@@ -150,34 +126,30 @@ class AdminCodes extends LitElement {
           flex-direction: column;
           padding-right: var(--scrollbar-width);
         }
-        #newaccount {
+        #newcode {
           background-color: var(--table-odd-color);
           color: var(--table-text-color);
           margin-left: 5px;
         }
-        #domainselector.error {
+        #typeselector.error {
           background-color: var(--input-error-color);
         }
         @media (min-width: 500px) {
-          .header {
-            grid-template-areas: 
-              "name domain currency archive archive"
+          .code, .header {
+            grid-template-areas:
+              "description type action";
 
-          } 
-          .account {
-            grid-template-areas: 
-              "name domain currency archive action"
           }
         }
+
       </style>
-      <codetype-dialog></codetype-dialog>
+      <codetype-dialog .types=${this.types}></codetype-dialog>
       <section class="page">
         <h1>Accounting Codes Manager</h1>
         <h3>Codes List</h3>
         <div class="header">
           <div class="description">Description</div>
           <div class="type">Type</div>
-
           <div class="action"></div>          
         </div>
         <div id="newcode" class="code">
@@ -189,7 +161,7 @@ class AdminCodes extends LitElement {
             class="type"
             list=${'types'} 
             .key=${this.type} 
-            .visual=${this.type} 
+            .visual=${this.typeDescription} 
             @item-selected=${this._typeChanged}></list-selector>
           <button id="newc" class="action" @click=${this._addCode}><material-icon>post_add</material-icon><span>Add</span></button>
         </div>
@@ -203,7 +175,7 @@ class AdminCodes extends LitElement {
                 class="type"
                 list=${'types'} 
                 .key=${code.type} 
-                .visual=${code.type} 
+                .visual=${this.types.find(t => t.type ===code.type).description} 
                 data-index="${i}"
                 @item-selected=${this._codeTypeChanged}></list-selector>
  
@@ -224,6 +196,9 @@ class AdminCodes extends LitElement {
     if (this.description.length === 0) {
       const nameInput = this.shadowRoot.querySelector('#newdescription');
       nameInput.classList.add('error');
+    } else if (this.type.length === 0) {
+      const typeSelector = this.shadowRoot.querySelector('#typeselector');
+      typeSelector.classList.add('error');
     } else {
       api('code_add', {description: this.description, type: this.type}).then(response => {
         if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
@@ -242,10 +217,10 @@ class AdminCodes extends LitElement {
   }
   _codeDescriptionUpdate(e) {
     e.stopPropagation();
-    if (!e.currentTarget.classList.has('error')) {
+    if (!e.currentTarget.classList.contains('error')) {
       const index = parseInt(e.currentTarget.dataset.index, 10);
       api('code_description',{
-        id: this.codess[index].id, 
+        id: this.codes[index].id, 
         description: e.currentTarget.value,
         version: this.codes[index].version
       }).then(response => {
@@ -257,7 +232,7 @@ class AdminCodes extends LitElement {
   _codeTypeChanged(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
-    const code = e.detail;
+    const code = e.detail.type;
     api('code_type', {
       id: this.codes[index].id,
       type: code,
@@ -274,7 +249,7 @@ class AdminCodes extends LitElement {
     e.currentTarget.dispatchEvent(new CustomEvent('delete-request', { 
       bubbles: true, 
       composed: true, 
-      detail: `this account (${this.accounts[index].name})` 
+      detail: `this code (${this.codes[index].description})` 
     }));
   }
   _deleteConfirm(e) {
@@ -297,10 +272,17 @@ class AdminCodes extends LitElement {
   async _fetchCodes() {
     const response = await api('codes',{});
     this.codes = response.codes;
+    this.types = response.types;
   }
   _typeChanged(e) {
     e.stopPropagation();
-    this.type = e.detail;
+    this.type = e.detail.type;
+    this.typeDescription = e.detail.description;
+    if (this.type.length > 0 ) {
+      e.currentTarget.classList.remove('error');
+    } else {
+      e.currentTarget.classList.add('error');
+    }
   }
 }
 customElements.define('admin-codes', AdminCodes);

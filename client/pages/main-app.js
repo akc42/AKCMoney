@@ -614,9 +614,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _errorChanged(e) {
     e.stopPropagation();
-    if (e.status === 'error') {
+    if (e.detail === 'error') {
       this.serverError = true;
-    } else if (e.status === 'reset') {
+    } else if (e.detail === 'reset') {
       this.serverError = false;
       this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'reset'}));
     }

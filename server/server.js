@@ -291,7 +291,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       debug('set up logging api')
       api.post('/log/:topic/:message/:gap', (req,res) => {
         const ip = req.headers['x-forwarded-for'];
-        const message = `${chalk.black.bgCyan(req.body.topic)} ${req.body.message}${req.body.gap !== undefined ? chalk.redBright(' +' + req.body.gap + 'ms') : ''}`;
+        const message = `${chalk.black.bgCyan(req.params.topic)} ${req.params.message}${req.params.gap !== undefined ? chalk.redBright(' +' + req.params.gap + 'ms') : ''}`;
         logger(ip,'log',message );
         res.end();
       });

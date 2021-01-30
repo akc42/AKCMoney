@@ -31,7 +31,7 @@
     const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
     db.transaction(() => {
       const v = getVersion.get(params.name);
-      if (v === null) {
+      if (v === undefined) {
         insertDomain.run(params.name, params.description);
         responder.addSection('status','OK');
         responder.addSection('domains', getDomains.all());
