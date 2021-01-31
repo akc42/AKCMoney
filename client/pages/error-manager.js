@@ -43,6 +43,7 @@ class ErrorManager extends LitElement {
     return {
       anError: {type: Boolean},
       forbidden: {type: Boolean},
+      serverDown: {type: Boolean}
     };
   }
 
@@ -54,6 +55,7 @@ class ErrorManager extends LitElement {
 
     this.anError = false;
     this.forbidden = false;
+    this.serverDown = false;
     this._clientError = this._clientError.bind(this);
     this._serverError = this._serverError.bind(this);
     this._promiseRejection = this._promiseRejection.bind(this);
@@ -80,12 +82,15 @@ class ErrorManager extends LitElement {
         <h1>${this.forbidden ? 'Forbidden' : 'Something Went Wrong'}</h1>
         ${cache(this.forbidden ? html`
           <p class="forbidden">You have tried to access a forbidden area.</p>
+        `: this.serverDown? html`
+          <p>It looks as though the <strong>api server</strong> is not running at the moment.  Please check and then restart</p>
+          <button  @click=${this._reset}>Restart</button>
         `:html`
           <p>We are sorry but something has gone wrong with the operation of the site.  The problem has been logged
           with the server and it will be dealt with soon.</p>
           <p>Nevertheless, you may wish to e-mail the web master (<a href="mailto:${sessionStorage.getItem('webmaster')}">${sessionStorage.getItem('webmaster')}</a>) to let
           them know that there has been an issue.</p>             
-          <button slot="action" @click=${this._reset}>Restart</button>
+          <button @click=${this._reset}>Restart</button>
         `)}
       `: '')}
     `;
@@ -117,7 +122,9 @@ has occured`;
   _reset() {
     this.anError = false;
     this.forbidden = false;
+    this.serverDown = false;
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'reset'}));
+    window.location.reload();
   }
   _serverError(e) {
     if (this.anError) return;
@@ -131,6 +138,7 @@ has occured`;
       this.forbidden=true;
 
     }
+    if (e.detail !== undefined && isNaN(e.detail)) this.serverDown = true;
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }

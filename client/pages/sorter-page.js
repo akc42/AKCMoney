@@ -51,25 +51,12 @@ class SorterPage extends LitElement {
     this.router = new Route('/', 'page:sorter');
     this.priorities = [];
   }
-  connectedCallback() {
-    super.connectedCallback();
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-  update(changed) {
-    if (changed.has('domain') && this.domain.length > 0) {
-      this.dispatchEvent(new CustomEvent('domain', {bubbles: true, composed: true, detail: this.domain}));
-    }
-    super.update(changed);
-  }
-
   updated(changed) {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
         this.domain = route.query.domain;
-        this._fetchAcountData();
+        this._fetchCurrencies();
       }
     }
     super.updated(changed);
@@ -181,7 +168,7 @@ class SorterPage extends LitElement {
     }
     this.selected = newSelection;
   }
-  async _fetchAcountData() {
+  async _fetchACurrencies() {
     const response = await api('sorter_data', {domain: this.domain});
     this.accounts = response.accounts;
     this.priorities = response.accounts.filter(a => a.sort !== null).map(a => Object.create({name:a.name,sort: a.sort}));

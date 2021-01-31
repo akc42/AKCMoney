@@ -21,24 +21,14 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:domaindelete');
+  const debug = require('debug')('money:currenciesrefresh');
   const db = require('@akc42/server-utils/database');
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-    const deleteDomain = db.prepare('DELETE FROM domain WHERE name = ?');
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+  module.exports = async function(user,p , responder) {
+    debug('new request from', user.name);
+    const getCurrencies = db.prepare('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC');
     db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === params.version) {
-        deleteDomain.run(params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('domains', getDomains.all());
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      }
-      
+      responder.addSection('currencies', getCurrencies.all());
     })();
     debug('request complete')
   };

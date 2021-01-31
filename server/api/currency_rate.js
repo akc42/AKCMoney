@@ -21,22 +21,20 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:domaindelete');
+  const debug = require('debug')('money:currencyrate');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-    const deleteDomain = db.prepare('DELETE FROM domain WHERE name = ?');
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
+    const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, rate = ?, priority = ? WHERE name = ?');
     db.transaction(() => {
       const v = getVersion.get(params.name);
       if (v === params.version) {
-        deleteDomain.run(params.name);
         responder.addSection('status', 'OK');
-        responder.addSection('domains', getDomains.all());
+        updateCurrency.run(params.rate, params.priority, params.name);
       } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
+        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
       }
       
     })();

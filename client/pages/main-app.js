@@ -537,7 +537,8 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             @page-changed=${this._pageChanged}
             @user-refresh=${this._userRefresh}
             @ad-reread=${this._fetchAccDom}
-            @of-reread=${this._fetchOff}></page-manager>
+            @of-reread=${this._fetchOff}
+            @currencies-reread=${this._fetchCurrencies}></page-manager>
 
         `: '')}
       </section>
@@ -633,6 +634,11 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.accounts = response.accounts;
     this.domains = response.domains;
 
+  }
+  async _fetchCurrencies(e) {
+    e.stopPropagation();
+    const response = await api('currencies_refresh',{});
+    this.currencies = response.currencies;
   }
   async _fetchOff() {
     const response = await api('offsheet_list', { domain: this.domain });

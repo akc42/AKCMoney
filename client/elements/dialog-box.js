@@ -151,7 +151,7 @@ class DialogBox extends LitElement  {
     if (reason !== 'testing') {
       this.closedPromise = new Promise(accept => this.closeResolver = accept);
       if (this.sizingTarget.open) {
-        if (this.dispatchEvent(new CustomEvent('overlay-closing', {bubbles: true, composed: true}))) {
+        if (this.dispatchEvent(new CustomEvent('overlay-closing', {bubbles: true, composed: true, cancelable: true}))) {
           //close if not prevented
           this.sizingTarget.close(reason || 'request');
         } else {
