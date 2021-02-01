@@ -132,7 +132,6 @@ class MainApp extends LitElement {
     super.update(changed);
   }
   firstUpdated() {
-    this.sessionMgr = this.shadowRoot.querySelector('#session');
     const scrollDiv = document.createElement("div");
     scrollDiv.className = "scrollbar-measure";
     this.shadowRoot.appendChild(scrollDiv);
@@ -619,7 +618,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       this.serverError = true;
     } else if (e.detail === 'reset') {
       this.serverError = false;
-      this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'reset'}));
+      this.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'reset'}));
     }
   }
   _extrasMenu(e) {
@@ -679,7 +678,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     e.stopPropagation();
     this.authorised = false;
     this.user = { uid: 0, isAdmin: false, account: '', domain: '' };
-    this.sessionMgr.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'logoff'}));
+    this.dispatchEvent(new CustomEvent('session-state', { bubbles: true, composed: true, detail:'logoff'}));
   }
   _makeCSV(e) {
     e.stopPropagation()
@@ -742,7 +741,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     const status = e.detail;
     //the following two statements will cause a re-validation of user.
     this.authorised = false;
-    this.sessionMgr.dispatchEvent(new CustomEvent('session-state',{bubbles: true, composed: true, detail:'reset'}));
+    this.dispatchEvent(new CustomEvent('session-state',{bubbles: true, composed: true, detail:'reset'}));
     if (status) {
       switchPath('/');  //successfully updated profile
     } else {

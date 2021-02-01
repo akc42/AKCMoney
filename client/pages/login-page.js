@@ -20,7 +20,6 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 
 import '../elements/form-manager.js';
-import {SessionState} from './session-manager.js';
 
 import page from '../styles/page.js';
 import button from '../styles/button.js';
@@ -167,7 +166,7 @@ class LoginPage extends LitElement {
     if (response) {
       if (response.uid !== undefined) {
         sessionStorage.setItem('user', JSON.stringify(response));
-        this.dispatchEvent(new SessionState('authorised'));
+        this.dispatchEvent(new CustomEvent('session-state', {bubbles: true, composed: true, detail: 'authorised'}));
         return;
       }
     }
