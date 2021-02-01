@@ -127,6 +127,9 @@ class ProflePage extends LitElement {
         #see {
           grid-area: see;
         }
+        #see material-icon {
+          cursor:pointer;
+        }
         #username {
           grid-area: userinput;
         }
@@ -190,10 +193,10 @@ class ProflePage extends LitElement {
           <input id="replica" name="replica" type="${this.visible ? 'text' : 'password'}" .value=${this.replica} @input=${this._repChanged}/>
           <label for="domain">Default Domain</label>
           <input type="hidden" name="domain" .value=${this.domain} />
-          <list-selector id="domain" list="domains" .value=${this.domain} @value-changed=${this._domainChanged}></list-selector>
+          <list-selector id="domain" list="domains" .key=${this.domain} .visual=${this.domain} @item-selected=${this._domainChanged}></list-selector>
           <label for="account">Default Account:</label>
           <input type="hidden" name="account" .value=${this.account} />
-          <list-selector id="account" list="accounts" .value=${this.account} @value-changed=${this._accountChanged}></list-selector>
+          <list-selector id="account" list="accounts" .key=${this.account} .visual=${this.account} @item-selected=${this._accountChanged}></list-selector>
           <button type="submit" @click=${this._update}><material-icon>save</material-icon><span>Save and Close</span></button>  
         </form>
       </section>
@@ -267,7 +270,7 @@ class ProflePage extends LitElement {
   }
   _toggleVisibility(e) {
     e.stopPropagation();
-    this.visibility = !this.visibility
+    this.visible = !this.visible
   }
 }
 customElements.define('profile-page', ProflePage);
