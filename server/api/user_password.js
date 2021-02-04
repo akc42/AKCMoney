@@ -21,20 +21,20 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:currencypriority');
+  const debug = require('debug')('money:userpassword');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-    const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, priority = ? WHERE name = ?');
+    const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
+    const updateUser = db.prepare('UPDATE user SET password = NULL WHERE uid = ?');
     db.transaction(() => {
-      const v = getVersion.get(params.name);
+      const v = getVersion.get(params.uid);
       if (v === params.version) {
+        updateUser.run(params.uid);
         responder.addSection('status', 'OK');
-        updateCurrency.run(params.priority, params.name);
       } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
+        responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
       }
       
     })();

@@ -525,6 +525,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             id="pages"
             .account=${this.account}
             .domain=${this.domain}
+            .domains=${this.domains}
             .accounts=${this.accounts}
             .codes=${this.codes}
             .repeats=${this.repeats}

@@ -33,7 +33,131 @@ import Route from '../libs/route.js';
 */
 class AdminCurrencies extends LitElement {
   static get styles() {
-    return [page, button, error, css``];
+    return [page, button, error, css`
+      .dcurrency {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        margin: 5px;
+      }
+      .dcurrency .name {
+        margin-left: 20px;
+      }
+      .header {
+        margin: 0px -5px 2px 5px;
+        background-color: var(--table-heading-background);
+        font-weight: bold;
+      }
+      .header > * {
+        border: 1px solid white;
+        text-align: center;
+      }
+      .currency, .header {     
+        padding: 2px;
+        display: grid;
+        grid-gap: 1px;
+        color: var(--table-text-color);
+        grid-template-columns: 1fr var(--currency-selector-width) 60px 100px;
+        grid-template-areas:
+          "description description description description" 
+          ". name show rate";
+      }
+      .currency {
+        cursor: pointer;
+      }
+      .description {
+        grid-area: description;
+      }
+      .name {
+        grid-area: name;
+      }
+      .show {
+        grid-area: show;
+      }
+      .rate {
+        grid-area: rate;
+      }
+
+
+      .scrollable {
+        background-color: var(--table-odd-color);
+        color: var(--table-text-color);
+        margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .wrapper:nth-child(even) {
+        background-color: var(--table-even-color);
+      }
+      .selector {
+        height: 10px;
+        width: 100%;
+        background-color: lightslategrey;
+        cursor: pointer;
+      }
+      .selector.selected {
+        background-color: pink;
+        cursor: default;
+      }
+      hr {
+        width:100%;
+        border-top: 1px -solid var(--menu-separator);
+      }
+      .dcurrency {
+        display: flex;
+        flex-direction: row;
+        cursor: pointer;
+      }
+      .name {
+        width: var(--currency-selector-width);
+      }
+
+      .sorting {
+        margin-left: 4em;
+      }
+      .actions {
+        display: flex;
+        flex-direction: row;
+        margin: 0 0 30px 20px;
+      }
+      #save {
+        margin-left: 20px;
+      }
+      #ratewrap {
+        display: grid;
+        padding: 2px;
+        display: grid;
+        background-color: var(--form-background-color);
+        color: var(--form-text-color);
+        grid-gap: 5px;
+        grid-template-columns: 80px 10px 80px;
+        grid-template-areas:
+          "label . ."
+          "input input ."
+          "save . cancel";
+      }
+      #ratewrap label {
+        grid-area: label;
+        font-weight: bold;
+      }
+      #ratewrap input {
+        grid-area: input;
+      }
+      #ratewrap button {
+        grid-area: save;
+      }
+      #ratewrap button[cancel] {
+        grid-area: cancel;
+      }
+
+      @media (min-width: 500px) {
+        .currency, .header {
+          grid-template-areas:
+            "description name show rate";
+        }
+      }
+    `];
   }
   static get properties() {
     return {
@@ -83,134 +207,6 @@ class AdminCurrencies extends LitElement {
   }
   render() {
     return html`
-      <style>
-        section.page {
-          max-width: 450px;
-        }
-        .dcurrency {
-          display: flex;
-          flex-direction: row;
-          align-items: flex-start;
-          margin: 5px;
-        }
-        .dcurrency .name {
-          margin-left: 20px;
-        }
-        .header {
-          margin: 0px -5px 2px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
-        }
-        .header > * {
-          border: 1px solid white;
-          text-align: center;
-        }
-        .currency, .header {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 1fr var(--currency-selector-width) 60px 100px;
-          grid-template-areas:
-            "description description description description" 
-            ". name show rate";
-        }
-        .currency {
-          cursor: pointer;
-        }
-        .description {
-          grid-area: description;
-        }
-        .name {
-          grid-area: name;
-        }
-        .show {
-          grid-area: show;
-        }
-        .rate {
-          grid-area: rate;
-        }
-
-
-        .scrollable {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .wrapper:nth-child(even) {
-          background-color: var(--table-even-color);
-        }
-        .selector {
-          height: 10px;
-          width: 100%;
-          background-color: lightslategrey;
-          cursor: pointer;
-        }
-        .selector.selected {
-          background-color: pink;
-          cursor: default;
-        }
-        hr {
-          width:100%;
-          border-top: 1px -solid var(--menu-separator);
-        }
-        .dcurrency {
-          display: flex;
-          flex-direction: row;
-          cursor: pointer;
-        }
-        .name {
-          width: var(--currency-selector-width);
-        }
-
-        .sorting {
-          margin-left: 4em;
-        }
-        .actions {
-          display: flex;
-          flex-direction: row;
-          margin: 0 0 30px 20px;
-        }
-        #save {
-          margin-left: 20px;
-        }
-        #ratewrap {
-          display: grid;
-          padding: 2px;
-          display: grid;
-          background-color: var(--form-background-color);
-          color: var(--form-text-color);
-          grid-gap: 5px;
-          grid-template-columns: 80px 10px 80px;
-          grid-template-areas:
-            "label . ."
-            "input input ."
-            "save . cancel";
-        }
-        #ratewrap label {
-          grid-area: label;
-          font-weight: bold;
-        }
-        #ratewrap input {
-          grid-area: input;
-        }
-        #ratewrap button {
-          grid-area: save;
-        }
-        #ratewrap button[cancel] {
-          grid-area: cancel;
-        }
-
-        @media (min-width: 500px) {
-          .currency, .header {
-            grid-template-areas:
-              "description name show rate";
-          }
-        }
-      </style>
       <dialog-box id="ratesetter" @overlay-closed=${this._closed} @overlay-closing=${this._closing}>
         <div id="ratewrap">
           <label for="rate">Rate</label>

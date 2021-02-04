@@ -19,13 +19,11 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 
-import '../elements/form-manager.js';
-
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
 
-import { submit } from '../modules/form.js';
+import { submit } from '../libs/utils.js';
 
 /*
      <login-page>: Manages a user login.
@@ -162,7 +160,7 @@ class LoginPage extends LitElement {
 
   _login(e) {
     e.stopPropagation();
-    const response = e.response;
+    const response = e.detail;
     if (response) {
       if (response.uid !== undefined) {
         sessionStorage.setItem('user', JSON.stringify(response));

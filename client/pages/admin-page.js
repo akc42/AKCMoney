@@ -21,10 +21,20 @@ import {html, css } from '../libs/lit-element.js';
 import { cache } from '../libs/cache.js';
 import RouteManager from '../elements/route-manager.js';
 
+
 /*
      <admin-page>: Controls the admin functions
 */
 class AdminPage extends RouteManager {
+  static get properties() {
+    return {
+      domains: {type: Array} //array of domains
+    };
+  }
+  constructor() {
+    super();
+    this.domains = [];
+  }
   render() {
     return html`
       <style>
@@ -38,7 +48,7 @@ class AdminPage extends RouteManager {
         codes: html`<admin-codes managed-page .route=${this.subRoute}></admin-codes>`,
         currencies: html`<admin-currencies managed-page .route=${this.subRoute}></admin-currencies>`,
         domains: html`<admin-domains managed-page .route=${this.subRoute}></admin-domains>`,
-        users: html`<admin-users managed-page .route=${this.subRoute}></admin-users>`
+        users: html`<admin-users managed-page .route=${this.subRoute} .domains=${this.domains}></admin-users>`
       }[this.page])}
     `;
   }

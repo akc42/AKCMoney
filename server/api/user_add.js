@@ -21,22 +21,23 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:currencypriority');
+  const debug = require('debug')('money:useradd');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-    const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, priority = ? WHERE name = ?');
+    const insertUser = db.prepare('INSERT INTO user(name, isAdmin) VALUES(?,?)');
+    const addCapability = db.prepare('INSERT INTO capability(uid,domain) VALUES(?,?)');
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    ORDER BY u.name, u.uid`);
     db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === params.version) {
-        responder.addSection('status', 'OK');
-        updateCurrency.run(params.priority, params.name);
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
+      const { lastInsertRowid } = insertUser.run(params.name, params.isAdmin);
+      if (params.isAdmin !== 1) {
+        for (const domain of params.domains) {
+          addCapability.run(lastInsertRowid, domain);
+        }
       }
-      
+      responder.addSection('users', getUsers.all())
     })();
     debug('request complete')
   };

@@ -39,7 +39,8 @@ export class PageManager extends RouteManager {
     return {
       codes: {type: Array}, //list of codes
       repeats: {type: Array}, //list of repeats
-      accounts: {type: Array} //list of accounts
+      accounts: {type: Array}, //list of accounts
+      domains: {type: Array} //list of domains
 
     };
   }
@@ -89,6 +90,7 @@ export class PageManager extends RouteManager {
         sorter: html`<sorter-page managed-page  .route=${this.subRoute}></sorter-page>`,
         admin: html`<admin-page 
                         managed-page 
+                        .domains=${this.domains}
                         .route=${this.subRoute}></admin-page>`
       }[this.page])}
     `;

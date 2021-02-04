@@ -76,8 +76,8 @@
 
   }
 
-  function finalErr (err, res, req) {
-    logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack}`);
+  function finalErr (err,req) {
+    logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
   }
 
   function generateCookie(payload, key, expires) {
@@ -458,7 +458,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         res.satusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Cache-Control', 'no-cache');
-        const done = finalhandler(req,res,{onerr:finalErr});
+        const done = finalhandler(req,res,{onerror: finalErr});
         router(req,res,done);
         
       });

@@ -21,20 +21,23 @@
 (function() {
   'use strict';
 
-  const debug = require('debug')('money:currencypriority');
+  const debug = require('debug')('money:userdelete');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-    const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, priority = ? WHERE name = ?');
+    const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
+    const deleteUser = db.prepare('DELETE FROM user WHERE uid = ?'); //capabilities and prioritys get deleted with cascade
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    ORDER BY u.name, u.uid`);
     db.transaction(() => {
-      const v = getVersion.get(params.name);
+      const v = getVersion.get(params.uid);
       if (v === params.version) {
+        deleteUser.run(params.uid);
         responder.addSection('status', 'OK');
-        updateCurrency.run(params.priority, params.name);
+        responder.addSection('users', getUsers.all())
       } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
+        responder.addSection('status', `User version Error Disk:${v}, Param:${params.version}`);
       }
       
     })();

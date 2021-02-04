@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/akc42/AKCMoney#readme",
   "dependencies": {
-    "@akc42/app-utils": "^1.1.1",
+    "@akc42/app-utils": "^1.1.7",
     "@akc42/distributed-router": "^1.1.0",
     "@akc42/server-utils": "^1.0.5",
     "@webcomponents/webcomponentsjs": "^2.5.0",
@@ -50,6 +50,6 @@
     "jest": "^26.6.3",
     "jest-playwright": "0.0.1",
     "playwright": "^1.8.0",
-    "rollup": "^2.38.1"
+    "rollup": "^2.38.4"
   }
 }

@@ -279,10 +279,12 @@ class AdminAccounts extends LitElement {
   _accountNameChanged(e) {
     e.stopPropagation();
     if (!e.currentTarget.classList.has('error')) {
-      api('account_name', { old: this.accounts[index].name, new: e.currentTarget.value, dversion: this.accounts[index].dversion }).then(response => {
-        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-        this.accounts = response.accounts;
-      });
+      if (this.accounts[index].name !== e.currentTarget.value) {
+        api('account_name', { old: this.accounts[index].name, new: e.currentTarget.value, dversion: this.accounts[index].dversion }).then(response => {
+          if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+          this.accounts = response.accounts;
+        });
+      }
     }
   }
   _archive(e) {

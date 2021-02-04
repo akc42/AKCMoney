@@ -8,6 +8,7 @@ export default {
     'node_modules/lit-html/directives/cache.js',
     'node_modules/lit-html/directives/class-map.js',
     'node_modules/lit-html/directives/guard.js',
+    'node_modules/lit-html/directives/live.js',
     'node_modules/lit-html/directives/repeat.js',
     'node_modules/lit-html/directives/style-map.js',
     'node_modules/lit-html/directives/template-content.js',

@@ -332,7 +332,7 @@ CREATE TABLE user (
 
 CREATE INDEX user_idx_name ON user(name);
 
-INSERT INTO user (name, isAdmin) VALUES ('Admin', 1);  --make the admin user
+INSERT INTO user (uid, name, isAdmin) VALUES (1, 'Admin', 1);  --make the admin user
 
 CREATE TABLE capability (
     uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,

@@ -28,7 +28,11 @@ class HomePage extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     const user = JSON.parse(sessionStorage.getItem('user'));
-    switchPath(`/account`,{account: user.account});
+    if (user.password && user.account !== null) {
+      switchPath(`/account`,{account: user.account});
+    } else {
+      switchPath('/profile');
+    }
   }
 
   render() {

@@ -219,14 +219,16 @@ class AdminCodes extends LitElement {
     e.stopPropagation();
     if (!e.currentTarget.classList.contains('error')) {
       const index = parseInt(e.currentTarget.dataset.index, 10);
-      api('code_description',{
-        id: this.codes[index].id, 
-        description: e.currentTarget.value,
-        version: this.codes[index].version
-      }).then(response => {
-        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-        this.codes = response.codes;
-      });
+      if (this.codes[index].description !== e.currentTarget.value) {
+        api('code_description',{
+          id: this.codes[index].id, 
+          description: e.currentTarget.value,
+          version: this.codes[index].version
+        }).then(response => {
+          if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+          this.codes = response.codes;
+        });
+      }
     }
   }
   _codeTypeChanged(e) {

@@ -170,27 +170,31 @@ class AdminDomains extends LitElement {
   _domainDescriptionChanged(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
-    api('domain_description',{
-      name: this.domains[index].name,
-      description: e.currentTarget.value,
-      version: this.domains[index].version
-    }).then(response => {
-      if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-      this.domains = response.domains;      
-    })
+    if (this.domains[index].description !== e.currentTarget.value) {
+      api('domain_description',{
+        name: this.domains[index].name,
+        description: e.currentTarget.value,
+        version: this.domains[index].version
+      }).then(response => {
+        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+        this.domains = response.domains;      
+      });
+    }
   }
   _domainNameChanged(e) {
     e.stopPropagation();
     if (!e.currentTarget.classList.contains('error')) {
       const index = parseInt(e.currentTarget.dataset.index, 10);
-      api('domain_name', {
-        old: this.domains[index].name, 
-        new: e.currentTarget.value, 
-        version: this.domains[index].version 
-      }).then(response => {
-        if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-        this.domains = response.domains;
-      });
+      if (this.domains[index].name !== e.currentTarget.value) {
+        api('domain_name', {
+          old: this.domains[index].name, 
+          new: e.currentTarget.value, 
+          version: this.domains[index].version 
+        }).then(response => {
+          if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+          this.domains = response.domains;
+        });
+      }
     }
   }
   _deleteDomain(e) {

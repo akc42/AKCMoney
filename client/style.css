@@ -55,6 +55,7 @@
   --error-color: red;
   --input-error-color: lightpink;
   --waiting-color:orange;
+  --fieldset-background-color: white;
 
   --home-icon-color: blue;
   --accounts-icon-color: red;
@@ -65,7 +66,7 @@
   --admin-icon-color: fuchsia;
   --currency-icon-color: steelblue;
   --codes-icon-color: burlywood;
-  --users-icon-color: navy;
+  --users-icon-color:darkorange;
   --radio-button-color: navy;
   --csv-icon-color: skyblue;
   --pdf-icon-color: darkred;
@@ -83,6 +84,7 @@
   --undo-icon-color: burlywood;
   --archived-icon-color: darkblue;
   --unarchived-icon-color: lightblue;
+  --reset-icon-color: orange;
 
 
   --menu-separator-color: grey;

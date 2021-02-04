@@ -57,22 +57,17 @@ class ErrorManager extends LitElement {
     this.forbidden = false;
     this.serverDown = false;
     this._clientError = this._clientError.bind(this);
-    this._serverError = this._serverError.bind(this);
     this._promiseRejection = this._promiseRejection.bind(this);
   }
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener('error', this._clientError);
-    window.addEventListener('app-error', this._clientError);
-    window.addEventListener('api-error', this._serverError);
     window.addEventListener('unhandledrejection', this._promiseRejection);
     this.forbidden = false;
   }
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('error', this._clientError);
-    window.removeEventListener('app-error', this._clientError);
-    window.removeEventListener('api-error', this._serverError);
     window.removeEventListener('unhandledrejection', this._promiseRejection);
 
   }
@@ -97,26 +92,22 @@ class ErrorManager extends LitElement {
   }
   _clientError(e) {
     if (this.anError) return;
-    e.preventDefault();
+    //e.preventDefault();
     const message = `Client Error:
-${e.error.stack}
+${e.stack}
 has occured`;
     this.logger(message);
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }
   _promiseRejection(e) {
-    if (this.anError) return;
-    e.preventDefault();
+    //e.preventDefault();
     const possibleError = e.reason;
 
     if (possibleError.type === 'api-error') {
-      this._serverError(possibleError)
+      this._serverError(possibleError);
     } else {
-      
-      this.logger(possibleError);
-      this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
-      this.anError = true;
+      this._clientError(possibleError);
     }
   }
   _reset() {
@@ -128,17 +119,16 @@ has occured`;
   }
   _serverError(e) {
     if (this.anError) return;
-//    e.preventDefault();
     //put us back to home
     window.history.pushState({}, null, '/');
     window.dispatchEvent(new CustomEvent('location-altered',{bubbles: true, composed: true}));
-    if (e.reason === 403) {
+    if (e.detail === 403) {
       //unauthorised so log off
       window.dispatchEvent(new CustomEvent('auth-changed', {bubbles: true, composed: true, detail:false}));
       this.forbidden=true;
 
     }
-    if (e.detail !== undefined && isNaN(e.detail)) this.serverDown = true;
+    if (e.detail === 502) this.serverDown = true;
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }

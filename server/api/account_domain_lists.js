@@ -32,9 +32,8 @@
       WHERE a.archived = 0 AND u.uid = ? AND (u.isAdmin = 1 OR c.domain IS NOT NULL) 
       ORDER BY p.sort ASC NULLS LAST, CASE WHEN a.domain = ? THEN 0 ELSE 1 END, 
       CASE WHEN u.account = a.name THEN 0 ELSE 1 END, a.domain, a.name`);
-    const getDomains = db.prepare(`SELECT d.name FROM domain d, user u 
-      LEFT JOIN capability c ON c.domain = d.name WHERE u.uid = ? AND (u.isAdmin = 1 OR c.domain is NOT NULL) 
-      ORDER BY CASE WHEN u.domain = d.name THEN 0 ELSE 1 END, d.name;`).pluck();
+    const getDomains = db.prepare(`SELECT d.name FROM domain d, user u WHERE (u.isAdmin = 1 OR 
+      d.name IN (SELECT Domain FROM capability WHERE uid = u.uid)) AND u.uid = ?`).pluck();
     db.transaction(() => {
       responder.addSection('accounts',getAccounts.all(params.domain, user.uid, params.domain));
       responder.addSection('domains', getDomains.all(user.uid));
