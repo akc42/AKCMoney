@@ -34,7 +34,182 @@ import './date-format.js';
 */
 class AccountTransaction extends LitElement {
   static get styles() {
-    return [button,error, tooltip, css``];
+    return [button,error, tooltip, css`
+      :host {
+        background-color: transparent;
+      }
+      .wrapper {
+        padding: 2px;
+        display: grid;
+        grid-gap: 1px;
+        grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+        grid-template-areas:
+          "date ref . amount balance code"
+          "description description description description description description";
+
+      }
+      .container {
+        padding: 2px;
+        cursor: normal;
+        background-color: var(--form-background-color);
+        display: grid;
+        grid-gap: 1px;
+        grid-template-columns: 94px repeat(2,35px) 6fr 9fr 1fr 8fr repeat(2, var(--amount-width)) 20px;
+        grid-template-areas:
+          "date date dstsrc currency currency currency currency amount setrate setrate"
+          "cleared . rate acurrency acurrency acurrency acurrency accamount setrate setrate"
+          "lref ref ref repeat repeat repeat repeat repeat setrate setrate"
+          "description description description description description description description description description description"
+          "- accode accode accode accode accode accode accode accode code"
+          "srcdst account account account account account account account account account"
+          "switch switch . . move move move move balance ."
+          "cancel . . save save save save save delete delete";
+      }
+      .wrapper[data-tooltip] {
+        display: grid;
+        cursor: pointer;
+      }
+      .date, calendar-input {
+        grid-area: date;
+        cursor: pointer;
+      }
+      .date.reconciled {
+        text-decoration: line-through;
+      }
+      .date.passed {
+        background-color: var(--old-transaction);
+      }
+      .date.cleared {
+        background-color: var(--cleared-transaction);
+      }
+      .date.selected {
+        background-color: var(--selected-for-unclear);
+      }
+      .date.cleared.selected {
+        background-color: var(--selected-for-clear);
+      }
+      .date.repeating {
+        background-color: var(--repeating-transaction);
+      }
+      .lref {
+        grid-area: lref;
+        text-align: right;
+      }
+      .ref, input[name="rno"] {
+        grid-area: ref;
+      }
+      .description, #description {
+        grid-area: description;
+      }
+
+      .currency {
+        grid-area: currency;
+      }     
+      label[for="cleared"] {
+        grid-area: cleared;
+      }
+      .amount {
+        text-align: right;
+        grid-area: amount;
+      }
+      .amount.currency {
+        background-color: var(--currency-difference-color);
+      }
+
+      .setrate {
+        grid-area: setrate;
+      }
+      .balance {
+        text-align: right;
+        grid-area: balance;
+      }
+      div.code {
+        grid-area: code;
+        margin: 0;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        background:transparent url(codes.png) no-repeat 0 0;
+      }
+
+      div.code.C {
+          background:transparent url(/images/codes.png) no-repeat 0 -20px;
+      }
+      div.code.R {
+          background:transparent url(/images/codes.png) no-repeat 0 -40px;
+      }
+      div.code.A {
+          background:transparent url(/images/codes.png) no-repeat 0 -60px;
+      }
+      div.code.B {
+          background:transparent url(/images/codes.png) no-repeat 0 -80px;
+      }
+      div.code.O {
+          background:transparent url(/images/codes.png) no-repeat 0 -100px;
+      }
+      .acurrency {
+        grid-area: acurrency;
+      }
+      .dual {
+        font-weight: bold;
+      }
+      #accountamount {
+        grid-area: accamount;
+      }
+      .rate {
+        grid-area: rate;
+      }
+      .repeat {
+        grid-area: repeat;
+      }
+      .accode {
+        grid-area: accode;
+      }
+      .srcdst {
+        grid-area: srcdst;
+        text-align: right;
+      }
+      .dstsrc {
+        grid-area: dstsrc;
+        text-align: right;
+      }
+      .account {
+        grid-area: account;
+      }
+      .switch {
+        grid-area: switch;
+      }
+      .cancel {
+        grid-area: cancel;
+      }
+      .save {
+        grid-area: save;
+      }
+      .move {
+        grid-area: move;
+      }
+      .delete {
+        grid-area: delete
+      }
+      @media (min-width: 500px) {
+        .wrapper {
+          grid-template-areas:
+            "date ref description amount balance code";
+        }
+        .container {
+          grid-template-areas:
+            "date date dstsrc description description description description amount currency ."
+            ". . . . setrate setrate rate accamount acurrency ."
+            "cleared ref ref repeat accode accode accode accode accode code"
+            "switch switch srcdst account account account move . balance ."
+            "cancel . save save . . lref . delete delete";
+        }
+        .lref {
+          display: none;
+        }
+      }
+    
+    `];
   }
   static get properties() {
     return {
@@ -159,7 +334,7 @@ class AccountTransaction extends LitElement {
           detail: { amount: this.dstclear ? amount : -amount, isSrc: false, set: this.dstclear, index: this.index }
         }));
       }
-
+      
       if (this.src === this.account && (!this.srcclear || this.readonly) && !this.accounting) {
         this.cumulative -= amount;
       } else if ((this.dst === this.account && (!this.dstclear || this.readonly)) || this.accounting) {
@@ -216,12 +391,18 @@ class AccountTransaction extends LitElement {
         }));
       }
     } else {
+      if ((changed.has('acurrency') || changed.has('currency')) && this.edit && this.acurrency !== this.currency) {
+        this.accountAmountInput = this.shadowRoot.querySelector('#accountamount');
+        this.accountAmountError = !this.accountAmountInput.reportValidity();
+      }
       if (changed.has('edit') && this.edit) {
         this.amountInput = this.shadowRoot.querySelector('#amount');
         this.inputError = !this.amountInput.reportValidity()
         this.descriptionInput = this.shadowRoot.querySelector('#description');
-        this.accountAmountInput = this.shadowRoot.querySelector('#accountamount');
-        this.accountAmountError = !this.accountAmountInput.reportValidity();
+        if (this.acurrency !== this.currency) {
+          this.accountAmountInput = this.shadowRoot.querySelector('#accountamount');
+          this.accountAmountError = !this.accountAmountInput.reportValidity();
+        }
         if (this.inputError) {
           this.amountInput.focus();
         } else {
@@ -295,182 +476,6 @@ class AccountTransaction extends LitElement {
     }
   
     return html`
-      <style>
-        :host {
-          background-color: transparent;
-        }
-        .wrapper {
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
-          grid-template-areas:
-            "date ref . amount balance code"
-            "description description description description description description";
-
-        }
-        .container {
-          padding: 2px;
-          cursor: normal;
-          background-color: var(--form-background-color);
-          display: grid;
-          grid-gap: 1px;
-          grid-template-columns: 94px repeat(2,35px) 6fr 9fr 1fr 8fr repeat(2, var(--amount-width)) 20px;
-          grid-template-areas:
-            "date date dstsrc currency currency currency currency amount setrate setrate"
-            "cleared . rate acurrency acurrency acurrency acurrency accamount setrate setrate"
-            "lref ref ref repeat repeat repeat repeat repeat setrate setrate"
-            "description description description description description description description description description description"
-            "- accode accode accode accode accode accode accode accode code"
-            "srcdst account account account account account account account account account"
-            "switch switch . . move move move move balance ."
-            "cancel . . save save save save save delete delete";
-        }
-        .wrapper[data-tooltip] {
-          display: grid;
-          cursor: pointer;
-        }
-        .date, calendar-input {
-          grid-area: date;
-          cursor: pointer;
-        }
-        .date.reconciled {
-          text-decoration: line-through;
-        }
-        .date.passed {
-          background-color: var(--old-transaction);
-        }
-        .date.cleared {
-          background-color: var(--cleared-transaction);
-        }
-        .date.selected {
-          background-color: var(--selected-for-unclear);
-        }
-        .date.cleared.selected {
-          background-color: var(--selected-for-clear);
-        }
-        .date.repeating {
-          background-color: var(--repeating-transaction);
-        }
-        .lref {
-          grid-area: lref;
-          text-align: right;
-        }
-        .ref, input[name="rno"] {
-          grid-area: ref;
-        }
-        .description, #description {
-          grid-area: description;
-        }
-
-        .currency {
-          grid-area: currency;
-        }     
-        label[for="cleared"] {
-          grid-area: cleared;
-        }
-        .amount {
-          text-align: right;
-          grid-area: amount;
-        }
-        .amount.currency {
-          background-color: var(--currency-difference-color);
-        }
-
-        .setrate {
-          grid-area: setrate;
-        }
-        .balance {
-          text-align: right;
-          grid-area: balance;
-        }
-        div.code {
-          grid-area: code;
-          margin: 0;
-          padding: 0;
-          width: 20px;
-          height: 20px;
-          background:transparent url(codes.png) no-repeat 0 0;
-        }
-
-        div.code.C {
-            background:transparent url(/images/codes.png) no-repeat 0 -20px;
-        }
-        div.code.R {
-            background:transparent url(/images/codes.png) no-repeat 0 -40px;
-        }
-        div.code.A {
-            background:transparent url(/images/codes.png) no-repeat 0 -60px;
-        }
-        div.code.B {
-            background:transparent url(/images/codes.png) no-repeat 0 -80px;
-        }
-        div.code.O {
-            background:transparent url(/images/codes.png) no-repeat 0 -100px;
-        }
-        .acurrency {
-          grid-area: acurrency;
-        }
-        .dual {
-          font-weight: bold;
-        }
-        #accountamount {
-          grid-area: accamount;
-        }
-        .rate {
-          grid-area: rate;
-        }
-        .repeat {
-          grid-area: repeat;
-        }
-        .accode {
-          grid-area: accode;
-        }
-        .srcdst {
-          grid-area: srcdst;
-          text-align: right;
-        }
-        .dstsrc {
-          grid-area: dstsrc;
-          text-align: right;
-        }
-        .account {
-          grid-area: account;
-        }
-        .switch {
-          grid-area: switch;
-        }
-        .cancel {
-          grid-area: cancel;
-        }
-        .save {
-          grid-area: save;
-        }
-        .move {
-          grid-area: move;
-        }
-        .delete {
-          grid-area: delete
-        }
-        @media (min-width: 500px) {
-          .wrapper {
-            grid-template-areas:
-              "date ref description amount balance code";
-          }
-          .container {
-            grid-template-areas:
-              "date date dstsrc description description description description amount currency ."
-              ". . . . setrate setrate rate accamount acurrency ."
-              "cleared ref ref repeat accode accode accode accode accode code"
-              "switch switch srcdst account account account move . balance ."
-              "cancel . save save . . lref . delete delete";
-          }
-          .lref {
-            display: none;
-          }
-        }
-
-      </style>
       ${cache(this.edit && !this.readonly ? html`
         <form id="login" action="xaction_update" @submit=${submit} @form-response=${this._update}>
           <input type="hidden" name="account" .value=${this.account} />
