@@ -268,6 +268,7 @@ class AccountPage extends LitElement {
           
         }
       </style>
+      <div id="dragim"><material-icon>topic</material-icon></div>
       <dialog-box id="parallel" position="top">
         <p>We have just noticed that an update to a transaction that you tried failed bacause
         someone else has been editing it in parallel.  Click "Reload" below to re-read the account
@@ -524,7 +525,7 @@ class AccountPage extends LitElement {
     e.dataTransfer.setDragImage(this.dragImage,0,0);
   }
   async _fetchAccountData(name, tid, edit) {
-    const openid = tid ?? 0;
+    let openid = tid ?? 0;
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     this.transactions = [];
     const response = await api('/account', { account: name , tid: openid})
@@ -535,12 +536,15 @@ class AccountPage extends LitElement {
       this.reconciledBalance = this.clearedBalance = this.account.balance;
       
       if (response.transactions.length > 1) {
+        const transactionDate = new Date();
+        const todayTZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
+        const todayStart = Math.floor(transactionDate.getTime()/86400000) * 86400 - todayTZOffset;
         let previousTransaction = response.transactions[0];        
         for (let i=1; i < response.transactions.length; i++) {
           let previousTime = previousTransaction.date;
           let transaction = response.transactions[i];
-          if (transaction.date - previousTime < 60) {
-            const transactionDate = new Date()
+          if (openid === 0 && transaction.date > todayStart) openid = transaction.id;
+          if (transaction.date - previousTime < 60) {  
             transactionDate.setTime(transaction.date * 1000);
             const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
             let currentDayEnd = ((Math.floor(transaction.date / 86400) + 1) * 86400) - 1 - TZOffset;
@@ -602,44 +606,46 @@ class AccountPage extends LitElement {
     transactionDate.setTime(transaction.date * 1000);
     const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
     this._printTime('Current source time', transaction.date);
+    //work out the limits that the transaction can fit into
     const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400) ;
-    const srcDay = Math.floor((transaction.date - TZOffset) / 86400);
-    let lowerLimit = srcDay * 86400;
-    let upperLimit = ((srcDay + 1) * 86400) - 1; 
+    //start with begining and end of the destination day
+    let lowerLimit = dstDay * 86400;
+    let upperLimit = ((dstDay + 1) * 86400) - 1; 
     this._printTime('Initial Lower Limit', lowerLimit);
     this._printTime('Initial Upper Limit', upperLimit);
     if (up) {
-     if (dst > 0 ) {
-        //there is a prior transaction so we limit our selves to it
+      //moving up so upper limit is just before the transaction we are moving past
+      upperLimit = this.transactions[dst].date - 1;
+      this._printTime('Adjusted Upper Limit', upperLimit);
+      if (dst > 0 ) {
         const preDay = Math.floor((this.transactions[dst-1].date - TZOffset) / 86400);
-        if (preDay === srcDay) {
-          lowerLimit = this.transactions[dst - 1];
+        if (preDay === dstDay) {
+          //there is a prior transaction on the same day so we try limit ourselves to after it 
+          lowerLimit = this.transactions[dst - 1].date + 1;
+          if (lowerLimit > upperLimit) lowerlimit = upperLimit;
           this._printTime('Adjusted Lower Limit', lowerLimit)
         }
       }
-      if (srcDay === dstDay) {
-        upperLimit = this.transactions[dst].date;
-        this._printTime('Adjusted Upper Limit', upperLimit);
-      }
     } else {
+      //moving down so lower limit is just after the transaction we are moving past
+      lowerLimit = this.transactions[dst].date + 1;
+      this._printTime('Adjusted Lower Limit', lowerLimit);
       if (dst < (this.transactions.length - 1)) {
         const postDay = Math.floor((this.transactions[dst + 1].date - TZOffset) / 86400);
-        if (postDay === srcDay) {
-          upperLimit = this.transactions[dst + 1].date;
+        if (postDay === dstDay) {
+          //There is a further transaction on the same day, so try to limit ourselves to before it
+          upperLimit = this.transactions[dst + 1].date - 1;
+          if (upperLimit < lowerLimit) upperLimit = lowerLimit;
           this._printTime('Adjusted Upper Limit', upperLimit);
         }
       }
-      if (srcDay === dstDay) {
-        lowerLimit = this.transactions[dst].date;
-        this._printTime('Adjusted Lower Limit', lowerLimit);
-      }
     }
-    if (transaction.date < lowerLimit + 60 || transaction.date > upperLimit - 60) {
-      transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
-      this._printTime('Adjsted transaction Time', transaction.date);
-    }
-    this.transactions.splice(up? dst: dst + 1, 0, transaction);  //add our new transaction into place    
-    if (transaction.id !== 0) { //only update date if transaction is in db
+    //fit the new transaction half way between our limits.
+    transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
+    this._printTime('Adjsted transaction Time', transaction.date);  
+    const inspoint = up ? dst : dst + 1
+    this.transactions.splice(inspoint, 0, transaction);  //add our new transaction into place    
+    if (transaction.id !== 0) { //only update date if transaction is in db (not so when we have just created it)
       const response = await api('/xaction_date', {
         id: transaction.id, 
         version: transaction.version, 
@@ -647,7 +653,7 @@ class AccountPage extends LitElement {
         account: this.account.name
       });
       if (response.status === 'OK') {
-        transaction = response.transaction;
+        this.transactions[inspoint] = response.transaction;
         this._rebalance();
       } else {
         this.dialog.show();
