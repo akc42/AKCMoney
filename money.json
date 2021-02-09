@@ -1,0 +1,25 @@
+{
+  "apps" : [
+    {
+      "name" : "api-server",
+      "script" : "server/server.js",
+      "args" : [
+        "--color"
+      ],
+      "kill_timeout": 15000,
+      "watch" : ["server","style.json"],
+      "ignore_watch" : ["server/{test,mocks}", "server/{pcode,access,evening,getwebenqs,daily,certificate}.js"],
+      "watch_options": {"followSymlinks" : false},
+      "min_uptime"       : "30s",
+      "max_restarts"     : 5,
+      "merge_logs" : true,
+      "log_date_format" : "YYYY-MM-DD HH:mm:ss",
+      "env": {
+        "DEBUG_COLORS": true,
+        "LOG_NO_DATE" : "yes"
+
+      }
+
+    }
+  ]
+}
