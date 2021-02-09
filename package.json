@@ -27,6 +27,7 @@
     "@akc42/app-utils": "^2.0.2",
     "@akc42/distributed-router": "^1.1.0",
     "@akc42/server-utils": "^1.0.5",
+    "@rollup/plugin-node-resolve": "^10.0.0",
     "@webcomponents/webcomponentsjs": "^2.5.0",
     "bcrypt": "^5.0.0",
     "better-sqlite3": "^7.1.2",
@@ -45,11 +46,9 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^10.0.0",
     "jest": "^26.6.3",
     "jest-playwright": "0.0.1",
     "jest-playwright-preset": "^1.4.5",
-    "playwright": "^1.8.0",
-    "rollup": "^2.38.4"
+    "playwright": "^1.8.0"
   }
 }
