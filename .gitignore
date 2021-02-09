@@ -12,6 +12,7 @@ docs/**/*.log
 docs/**/*.pdf
 docs/**/*.vscodeLog
 docs/version.inc
+nginx
 node_modules
 keys
 .DS_Store
