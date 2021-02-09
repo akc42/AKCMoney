@@ -22,7 +22,6 @@
 
   const debug = require('debug')('money:responder');
   const contentDisposition = require('content-disposition');
-  const {blankIfNull} = require('./utils');
 
   module.exports = class CSVResponder {
     constructor(response) {

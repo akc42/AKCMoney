@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {generateUri} from '../libs/utils.js';
+import {generateUri} from '../libs/switch-path.js';
 const link = document.createElement('a');
 
 export default (url,params) => {

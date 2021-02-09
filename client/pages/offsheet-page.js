@@ -21,7 +21,7 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import Route from '../libs/route.js';
 
 import '../elements/account-transaction.js';
-import { api } from '../libs/utils.js';
+import api from '../libs/post-api.js';
 
 import page from '../styles/page.js';
 

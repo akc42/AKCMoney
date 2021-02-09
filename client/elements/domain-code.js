@@ -23,7 +23,7 @@ import {cache} from '../libs/cache.js';
 
 import './account-transaction.js';
 import './material-icon.js';
-import { api } from '../libs/utils.js';
+import api from '../libs/post-api.js';
 
 /*
      <domain-code>

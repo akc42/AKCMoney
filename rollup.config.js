@@ -17,7 +17,13 @@ export default {
     'node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js',
     'node_modules/@akc42/distributed-router/route.js',
     'node_modules/@akc42/distributed-router/location.js',
-    'node_modules/@akc42/app-utils/utils.js'
+    'node_modules/@akc42/app-utils/app-keys.js',
+    'node_modules/@akc42/app-utils/config-promise.js',
+    'node_modules/@akc42/app-utils/debug.js',
+    'node_modules/@akc42/app-utils/dom-host.js',
+    'node_modules/@akc42/app-utils/post-api.js',
+    'node_modules/@akc42/app-utils/submit-function.js',
+    'node_modules/@akc42/app-utils/switch-path.js'
   ],
   output: {
     dir: 'client/libs',

@@ -22,7 +22,7 @@ import {classMap} from '../libs/class-map.js';
 import {cache} from '../libs/cache.js';
 
 import Route from '../libs/route.js';
-import { api } from '../libs/utils.js';
+import api from '../libs/post-api.js';
 import '../elements/material-icon.js'
 import '../elements/account-transaction.js';
 import '../elements/calendar-dialog.js';

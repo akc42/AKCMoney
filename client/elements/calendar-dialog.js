@@ -21,7 +21,7 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 import {classMap} from '../libs/class-map.js';
 import {guard} from '../libs/guard.js';
-import { domHost } from '../libs/utils.js';
+import domHost from '../libs/dom-host.js';
 
 import './dialog-box.js';
 

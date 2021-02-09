@@ -23,7 +23,7 @@ import {classMap} from '../libs/class-map.js';
 import '../elements/material-icon.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
-import { api } from '../libs/utils.js';
+import api from '../libs/post-api.js';
 import Route from '../libs/route.js';
 /*
      <sorter-page>: Sorting Accounts
@@ -56,7 +56,7 @@ class SorterPage extends LitElement {
       const route = this.router.routeChange(this.route);
       if (route.active) {
         this.domain = route.query.domain;
-        this._fetchCurrencies();
+        this._fetchAccountData();
       }
     }
     super.updated(changed);
@@ -168,7 +168,7 @@ class SorterPage extends LitElement {
     }
     this.selected = newSelection;
   }
-  async _fetchACurrencies() {
+  async _fetchAccountData() {
     const response = await api('sorter_data', {domain: this.domain});
     this.accounts = response.accounts;
     this.priorities = response.accounts.filter(a => a.sort !== null).map(a => Object.create({name:a.name,sort: a.sort}));

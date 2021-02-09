@@ -1,7 +1,6 @@
 client/libs
 server/db-init/pre-upgrade_*.sql
 server/db-init/post-upgrade_*.sql
-server/db-init/meeting.db
 docs/**/*.aux
 docs/**/*.fdb_latexmk
 docs/**/*.fls

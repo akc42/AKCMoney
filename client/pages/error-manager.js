@@ -24,7 +24,7 @@ import {cache} from '../libs/cache.js';
 import button from '../styles/button.js';
 import page from '../styles/page.js';
 
-import {Debug, configPromise} from '../libs/utils.js';
+const debug = require('debug')('money:error')
 
 
 /*
@@ -49,10 +49,6 @@ class ErrorManager extends LitElement {
 
   constructor() {
     super();
-    configPromise.then(() => {
-      this.logger = Debug('error'); //forces logging in default config
-    });
-
     this.anError = false;
     this.forbidden = false;
     this.serverDown = false;
@@ -96,7 +92,11 @@ class ErrorManager extends LitElement {
     const message = `Client Error:
 ${e.stack}
 has occured`;
-    this.logger(message);
+    const logpath = `/api/log/${encodeURIComponent('error')}/${encodeURIComponent(message)}`
+
+    window.fetch(logpath, { method: 'post' })
+      .catch(() => true);//no interest in reply, but must make sure it doesn't throw an exception.
+    debug('Server Message Sent:', message );
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }

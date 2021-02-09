@@ -26,7 +26,7 @@ import '../elements/list-selector.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
-import { api } from '../libs/utils.js';
+import api from '../libs/post-api.js';
 import Route from '../libs/route.js';
 /*
      <admin-currencies>: Manage Currencies

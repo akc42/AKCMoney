@@ -18,7 +18,7 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html } from '../libs/lit-element.js';
-import {switchPath} from '../libs/utils.js';
+import {switchPath} from '../libs/switch-path.js';
 
 /*
      <home-page>: Main Home Page for the application - immediately switches elsewhere

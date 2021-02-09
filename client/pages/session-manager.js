@@ -21,17 +21,19 @@
 
 import { LitElement, html } from '../libs/lit-element.js';
 
-import {api, configPromise, switchPath} from '../libs/utils.js';
+import api from '../libs/post-api.js';
+import configPromise from '../libs/config-promise.js';
+import {switchPath} from '../libs/switch-path.js';
 
 import page from '../styles/page.js';
 
-import {Debug} from '../libs/utils.js';
+
 
 import  '../elements/waiting-indicator.js';
 
 import '/api/user.js';  //create user cookie
 
-const debug = Debug('session');
+const debug = require('debug')('money:session');
 
 
 

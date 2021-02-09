@@ -23,8 +23,9 @@ import {classMap} from '../libs/class-map.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
 import tooltip from '../styles/tooltip.js';
-
-import { api, submit, switchPath } from '../libs/utils.js';
+import api from '../libs/post-api.js';
+import submit from '../libs/submit-function.js'
+import {switchPath } from '../libs/switch-path.js';
 
 import './list-selector.js';
 import './date-format.js';

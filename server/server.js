@@ -289,9 +289,9 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         A simple log api
       */
       debug('set up logging api')
-      api.post('/log/:topic/:message/:gap', (req,res) => {
+      api.post('/log/:topic/:message', (req,res) => {
         const ip = req.headers['x-forwarded-for'];
-        const message = `${chalk.black.bgCyan(req.params.topic)} ${req.params.message}${req.params.gap !== undefined ? chalk.redBright(' +' + req.params.gap + 'ms') : ''}`;
+        const message = `${chalk.black.bgCyan(req.params.topic)} ${req.params.message}`;
         logger(ip,'log',message );
         res.end();
       });

@@ -20,7 +20,10 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 
-import {api, AppKeys, configPromise, switchPath} from '../libs/utils.js';
+import api from '../libs/post-api.js';
+import AppKeys from '../libs/app-keys.js';
+import configPromise from '../libs/config-promise.js';
+import {switchPath} from '../libs/switch-path.js';
 
 import '../elements/material-icon.js';
 import '../elements/dialog-box.js';
