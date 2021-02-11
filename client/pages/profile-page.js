@@ -216,7 +216,7 @@ class ProflePage extends LitElement {
     const response = e.detail;
     if (response !== null) {
       switch (response.status) {
-        case 'good':
+        case 'OK':
           this.message = '';
           this.password = '';
           this.replica = ''

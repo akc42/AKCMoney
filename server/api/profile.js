@@ -30,7 +30,7 @@
     const checkName = db.prepare('SELECT COUNT(*) FROM user WHERE name = ?').pluck();
     const getUser = db.prepare('SELECT * FROM user WHERE uid = ?');
     const updateUser = db.prepare('UPDATE user SET name = ?, password = ?, account = ?, domain = ?, version = ? WHERE uid = ?');
-    let status = 'good'; //start out as all good
+    let status = 'OK'; //start out as all good
     let hashedPassword = null;
     if (params.password.length > 0 ) {
       if (params.replica === params.password) {
@@ -39,7 +39,7 @@
         status = 'different' //password and replica don't match
       }
     }
-    if (status === 'good') {
+    if (status === 'OK') {
       db.transaction(() => {
         const dbUser = getUser.get(user.uid);
         if (dbUser.version === user.version) {
