@@ -37,7 +37,7 @@
         responder.addSection('accounts', getAccounts.all());
 
       } else {
-        responder.addSection('status', `Name alreadin in use ${params.name}`)
+        responder.addSection('status', `Name already in use ${params.name}`)
       }
     })();
     debug('request complete')
