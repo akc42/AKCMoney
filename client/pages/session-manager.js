@@ -109,7 +109,7 @@ class SessionManager extends LitElement {
             const matches = document.cookie.match(authTester);
             if (matches) {
               performance.mark('start_user_validate');
-              api('validate_user').then(response => {
+              api('validate_user',{}).then(response => {
                 this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
                 performance.mark('end_user_validate');
                 performance.measure('user_validate', 'start_user_validate', 'end_user_validate');
