@@ -26,6 +26,7 @@
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );
+    const checkName = db.prepare('SELECT COUNT(*) FROM user WHERE name = ?').pluck();
     const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
     const updateUser = db.prepare('UPDATE user SET version = version + 1, name = ? WHERE uid = ?');
     const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
@@ -33,9 +34,14 @@
     db.transaction(() => {
       const v = getVersion.get(params.uid);
       if (v === params.version) {
-        updateUser.run(params.name, params.uid);
-        responder.addSection('status', 'OK');
-        responder.addSection('users', getUsers.all())
+        const no = checkName(params.name);
+        if (no === 0) {
+          updateUser.run(params.name, params.uid);
+          responder.addSection('status', 'OK');
+          responder.addSection('users', getUsers.all())
+        } else {
+          responder.addSection('status', `User Name name ${params.name} is not unique`);
+        }
       } else {
         responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
       }
