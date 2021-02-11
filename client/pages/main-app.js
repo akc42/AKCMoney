@@ -150,8 +150,8 @@ class MainApp extends LitElement {
     if (changed.has('authorised')) {
       if (this.authorised) {
         this.user = JSON.parse(sessionStorage.getItem('user'));
-        this.account = this.user.account;
-        this.domain = this.user.domain;
+        if ((this.user.account ?? '').length > 0) this.account = this.user.account;
+        if((this.user.domain ?? '').length > 0) this.domain = this.user.domain;
         api('/standing').then(response => {
           this.codes = response.codes;
           this.repeats = response.repeats;
