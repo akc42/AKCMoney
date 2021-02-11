@@ -30,7 +30,7 @@
     updatedUser.remember = user.remember; //Not a database field
     if (user.version !== updatedUser.version || user.name !== updatedUser.name || 
       user.password !== updatedUser.password || user.account !== updatedUser.account || user.domain !== updatedUser.domain ||
-      user.isAdmin || updatedUser.isAdmin) {
+      user.isAdmin !== updatedUser.isAdmin) {
         genCook(updatedUser); //Need to make a new cookie as the value has changed
     }
     responder.addSection('user', updatedUser);
