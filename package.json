@@ -1,6 +1,6 @@
 {
   "name": "@akc42/money",
-  "version": "4.0.0",
+  "version": "4.0.2",
   "description": "Money Management Application",
   "main": "server/server.js",
   "scripts": {
@@ -46,6 +46,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "expect-playwright": "^0.3.2",
     "jest": "^26.6.3",
     "jest-playwright": "0.0.1",
     "jest-playwright-preset": "^1.4.5",
