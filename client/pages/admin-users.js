@@ -273,7 +273,7 @@ class AdminUsers extends LitElement {
     const newFieldset = this.shadowRoot.querySelector('#newdomains');
     if (this.name.length === 0) {
       this.nameInput.classList.add('error');
-    } else if (!(this.nameInput.classList.contains('error') || newFieldset.classList.contains('error'))) {
+    } else if (!this.nameInput.classList.contains('error') && (this.isAdmin || !newFieldset.classList.contains('error'))) {
       if (this.isAdmin || this.newDomains.length > 0) {
         api('user_add',{name: this.name, isAdmin: this.isAdmin? 1:0, domains: this.newDomains}).then(response => {
           this.name = '';
@@ -322,7 +322,7 @@ class AdminUsers extends LitElement {
   _nameChanged(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
-    if (e.currentTarget.value.length > 0) {
+    if (e.currentTarget.value.length > 0 && this._nameUnique(e.currentTarget.value, index)) {
       e.currentTarget.classList.remove('error');
     } else {
       e.currentTarget.classList.add('error');
@@ -331,7 +331,7 @@ class AdminUsers extends LitElement {
   _nameNewChanged(e) {
     e.stopPropagation();
     const name = e.currentTarget.value;
-    if (name.length > 0) {
+    if (name.length > 0 && this._nameUnique(name, -1)) {
       e.currentTarget.classList.remove('error');
       this.name = name;
     } else {
@@ -346,12 +346,28 @@ class AdminUsers extends LitElement {
     } else if (!e.currentTarget.classList.contains('error')) {
       const index = parseInt(e.currentTarget.dataset.index, 10);
       if (this.users[index].name !== name) { 
-        api('user_name', { uid: this.users[index].uid, version: this.users[index].version, name: name }).then(response => {
-          if (response.status !== 'OK') throw new Error(response.status);
-          this._processResponse(response.users);
-        });
+        if (this._nameUnique(name, index)) {
+          api('user_name', { uid: this.users[index].uid, version: this.users[index].version, name: name }).then(response => {
+            if (response.status !== 'OK') throw new Error(response.status);
+            this._processResponse(response.users);
+          });
+        } else {
+          e.currentTarget.classList.add('error');
+        }
       }
     }
+  }
+  _nameUnique(name, index) {
+    //check name is unique
+    for (let i = 0; i < this.users.length; i++) {
+      if (i !== index) {
+        if (this.users[i].name.toLowerCase() === name.toLowerCase()) {
+          return false; //name not unique
+        }
+      }
+    }
+    return true; //is y unique
+
   }
   _passwordConfirm(e) {
     e.stopPropagation();
