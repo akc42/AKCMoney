@@ -141,9 +141,9 @@
 
             debug('type src - source account', src, 'account', params.account);
             if (params.account !== src) swapSrcDst.run(tid); //we have to swap first
-            if (params.type === 'move' && dst === null && params.alt.length > 0) {
-              changeXactionSrc.run(params.alt, tid);
-              params.alt = '';
+            if (params.type === 'move' && dst === null && params.dst.length > 0) {
+              changeXactionSrc.run(params.dst, tid);
+              params.dst = '';
             }
             updateXactionSrc.run(
               nullOrAmount(params.amount),
@@ -161,9 +161,9 @@
           } else {
             debug('type dst - dst account', dst, 'account', params.account);
             if (params.account !== dst) swapSrcDst.run(tid); //we have to swap first
-            if (params.saver === 'move' && src === null && params.alt.length > 0) {
-              changeXactionDst.run(params.alt, tid);
-              params.alt = '';
+            if (params.saver === 'move' && src === null && params.src.length > 0) {
+              changeXactionDst.run(params.src, tid);
+              params.src = '';
             }
             updateXactionDst.run(
               nullOrAmount(params.amount),
