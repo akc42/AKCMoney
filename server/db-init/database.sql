@@ -70,14 +70,14 @@ CREATE TABLE repeat (
     priority integer 
 );
 
-INSERT INTO repeat VALUES (0, 'No Repeat');
-INSERT INTO repeat VALUES (1, 'Weekly');
-INSERT INTO repeat VALUES (2, 'Fortnightly');
-INSERT INTO repeat VALUES (3, 'Monthly');
-INSERT INTO repeat VALUES (4, 'Monthly (at End)');
-INSERT INTO repeat VALUES (5, 'Quarterly');
-INSERT INTO repeat VALUES (6, 'Yearly');
-INSERT INTO repeat VALUES (7, 'Four Weekly');
+INSERT INTO repeat VALUES (0, 'No Repeat',0);
+INSERT INTO repeat VALUES (1, 'Weekly',1);
+INSERT INTO repeat VALUES (2, 'Fortnightly',2);
+INSERT INTO repeat VALUES (3, 'Monthly',4);
+INSERT INTO repeat VALUES (4, 'Monthly (at End)',5);
+INSERT INTO repeat VALUES (5, 'Quarterly',6);
+INSERT INTO repeat VALUES (6, 'Yearly',7);
+INSERT INTO repeat VALUES (7, 'Four Weekly',3);
 
 CREATE TABLE currency (
     name character(3) PRIMARY KEY, -- standard international symbol for currency
@@ -332,7 +332,7 @@ CREATE TABLE user (
 
 CREATE INDEX user_idx_name ON user(name);
 
-INSERT INTO user (uid, name, isAdmin) VALUES (1, 'Admin', 1);  --make the admin user
+INSERT INTO user (uid, name, isAdmin, account) VALUES (1, 'Admin', 1, 'Cash');  --make the admin user with at least the cash account
 
 CREATE TABLE capability (
     uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -375,8 +375,9 @@ INSERT INTO settings (name,value) VALUES('creation_date', strftime('%s','now'));
 INSERT INTO settings (name,value) VALUES('token_key', 'newTokenKey'); --key used to encrypt/decrypt cookie token (new value set during db create)
 INSERT INTO settings (name,value) VALUES('repeat_days', 90); -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
 INSERT INTO settings (name,value) VALUES('year_end', 1231); -- Month and Date (100* MM + DD) as a numeric of financial year end.
-INSERT INTO settings (name,value) VALUES('client_log',':error:'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing.
+INSERT INTO settings (name,value) VALUES('client_log',':error:'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing 
 INSERT INTO settings (name,value) VALUES('client_uid', 0); --if non zero this uid logs everything
+INSERT INTO settings (name,value) VALUES('token_expires', 720); --hours until expire for standard logged on token
 INSERT INTO settings (name,value) VALUES('min_pass_len', 6); --minimum password length
 INSERT INTO settings (name,value) VALUES('dwell_time', 2000); --time to elapse before new urls get to be pushed to the history stack (rather than update)
 INSERT INTO settings (name,value) VALUES('webmaster', 'developer@example.com');  --site web master NOTE change once database created to correct person
