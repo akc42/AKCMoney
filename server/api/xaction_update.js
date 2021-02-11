@@ -155,7 +155,7 @@
               params.description,
               params.rno,
               parseInt(params.repeat,10),
-              nullIfZeroLength(params.alt),
+              nullIfZeroLength(params.dst),
               tid
             );
           } else {
