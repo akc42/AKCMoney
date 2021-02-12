@@ -34,7 +34,7 @@
     db.transaction(() => {
       const v = getVersion.get(params.uid);
       if (v === params.version) {
-        const no = checkName(params.name);
+        const no = checkName.get(params.name);
         if (no === 0) {
           updateUser.run(params.name, params.uid);
           responder.addSection('status', 'OK');
