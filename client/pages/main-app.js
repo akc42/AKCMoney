@@ -649,8 +649,8 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _goHome(e) {
     e.stopPropagation();
-    this.account = this.user.account;
-    this.domain = this.user.domain;
+    if ((this.user.account ?? '').length > 0) this.account = this.user.account;
+    if ((this.user.domain ?? '' ).length > 0) this.domain = this.user.domain;
     this.mainMenu.close();
     switchPath('/account', {account: this.account});
   }
