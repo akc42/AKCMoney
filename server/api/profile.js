@@ -46,7 +46,7 @@
           let no = 0;
           if (dbUser.name.toLowerCase() !== params.name.toLowerCase()) {
             //user has changed is name (other than just the case), so check its not already in use
-            no = checkName(params.name);
+            no = checkName.run(params.name);
           }
           if (no === 0) {
             updateUser.run(
