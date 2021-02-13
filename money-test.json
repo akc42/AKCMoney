@@ -18,7 +18,7 @@
         "DEBUG_COLORS": true,
         "LOG_NO_DATE" : "yes",
         "DATABASE_DB" : "money-test.db",
-        "DEBUG": "money:api,money:account"
+        "DATABASE_DB_PIN" : "No"
       }
     }
   ]
