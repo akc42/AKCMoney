@@ -205,12 +205,12 @@
         /*
           Special function to make a response to this request
         */
-        function makeResponse(res,uid) {
+        function makeResponse(res,uuid) {
           const payload = {
-            uid: uid,
+            uid: uuid,
             ip: ip
           };
-          debuguser('making response of uid', uid, 'ip', ip);
+          debuguser('making response of uuid', uuid, 'ip', ip);
           const token = jwt.encode(payload, serverConfig.tokenKey);
           debuguser('tracking token = ', token);
           res.writeHead(200, {
@@ -228,9 +228,11 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           //we have previously set this up as an e-tag and now the browser is asking us whether it has changed
           debuguser('tracking token found as ', token);
           try {
-            //we want to decode this to check it hasn't been tampered wth
-            const payload = jwt.decode(token, serverConfig.tokenKey);
-            debuguser('Decoded tracking token as payload', payload);
+            if (process.env.MONEY_TRACKING === 'yes') {
+              //we want to decode this to check it hasn't been tampered wth
+              const payload = jwt.decode(token, serverConfig.tokenKey);
+              debuguser('Decoded tracking token as payload', payload);
+            }
             res.statusCode = 304;
           } catch(e) {
             // someone has been messing with things so we make a new one, but mark it as corrupt, so when its used we know
@@ -246,41 +248,41 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         res.end();
         debuguser('/api/user.js response complete');
       });
-      /*
-          From this point on, all calls expect the user to have a trackCookie cookie.
-      */
 
-
-      debug('Setting up to Check Cookies from further in');
-      api.use((req, res, next) => {
-        debuguser('checking tracking cookie');
-        const cookies = req.headers.cookie;
-        if (!cookies) {
-          debuguser('did not find any cookies')
-          forbidden(req, res, 'No Cookie');
-          return;
-        }
-        const userTester = new RegExp(`^(.*; +)?${serverConfig.trackCookie}=([^;]+)(.*)?$`);
-        const matches = cookies.match(userTester);
-        if (matches) {
-          debuguser('Cookie found')
-          const token = matches[2];
-          try {
-            const payload = jwt.decode(token, serverConfig.tokenKey);  //this will throw if the token is corrupt
-            if (payload.uid === 'Corrupt') throw new Error('Corrupted Tracker Reused');
-            req.track = payload;
-            debuguser('completed checking cookie')
-            next();
-          } catch (error) {
-            debuguser('invalid tracking cookie')
-            forbidden(req, res, 'Invalid Track Token: Error: ' + error.toString());
+      if (process.env.MONEY_TRACKING === 'yes') {
+        /*
+            From this point on, all calls expect the user to have a trackCookie cookie.
+        */
+        debug('Setting up to Check Cookies from further in');
+        api.use((req, res, next) => {
+          debuguser('checking tracking cookie');
+          const cookies = req.headers.cookie;
+          if (!cookies) {
+            debuguser('did not find any cookies')
+            forbidden(req, res, 'No Cookie');
+            return;
           }
-        } else {
-          debuguser('did not find tracking cookie')
-          forbidden(req, res, 'Invalid Cookie');
-        }
-      });
-
+          const userTester = new RegExp(`^(.*; +)?${serverConfig.trackCookie}=([^;]+)(.*)?$`);
+          const matches = cookies.match(userTester);
+          if (matches) {
+            debuguser('Cookie found')
+            const token = matches[2];
+            try {
+              const payload = jwt.decode(token, serverConfig.tokenKey);  //this will throw if the token is corrupt
+              if (payload.uid === 'Corrupt') throw new Error('Corrupted Tracker Reused');
+              req.track = payload;
+              debuguser('completed checking cookie')
+              next();
+            } catch (error) {
+              debuguser('invalid tracking cookie')
+              forbidden(req, res, 'Invalid Track Token: Error: ' + error.toString());
+            }
+          } else {
+            debuguser('did not find tracking cookie')
+            forbidden(req, res, 'Invalid Cookie');
+          }
+        });
+      }
       /*
         We now only support posts request with json encoded bodies so we parse the body
       */

@@ -16,7 +16,8 @@
       "log_date_format" : "YYYY-MM-DD HH:mm:ss",
       "env": {
         "DEBUG_COLORS": true,
-        "LOG_NO_DATE" : "yes"
+        "LOG_NO_DATE" : "yes",
+        "MONEY_TRACKING": "yes"
       }
 
     }
