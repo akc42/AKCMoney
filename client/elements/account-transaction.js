@@ -444,7 +444,6 @@ class AccountTransaction extends LitElement {
     let codeVisual;
     let codeKey;
     let codeType = '';
- 
     if (this.src === this.account) {
       codeKey = this.srccode;
       if (!this.readonly) {

@@ -455,11 +455,9 @@ class AccountPage extends LitElement {
     const index = e.currentTarget.index + 1;
     if (index < this.balances.length) {
       this.balances[index] = e.detail;
-      if (index < this.transactions.length) { //transactions length is one less than balances.
-        //avoid a redraw of entire set of transactions - just update the one transaction (which will propagate)
-        const t = this.shadowRoot.querySelector(`#t${this.transactions[index].id}`);
-        t.balance = e.detail;
-      }
+      //avoid a redraw of entire set of transactions - just update the one transaction (which will propagate)
+      const t = this.shadowRoot.querySelector(`#t${this.transactions[index].id}`);
+      t.balance = e.detail
     }
   }
   _clearSetTransaction(i) {
@@ -717,12 +715,16 @@ class AccountPage extends LitElement {
     this.balances = [];
     this.balances.push(cumulative);
     for (const transaction of this.transactions) {
-      if (!transaction.reconcilled) {
+      if (transaction.reconciled === 0) {
         let amount;
         if (transaction.currency === this.account.currency) {
           amount = transaction.amount;
         } else {
-          amount = Math.round(transaction.amount * this.account.rate / transaction.trate)
+          if (transaction.src === this.account.name) {
+            amount = transaction.srcamount;
+          } else {
+            amount = transaction.dstamount;
+          }
         }
         if (transaction.src === this.account.name && transaction.srcclear === 0) {
           cumulative -= amount;
@@ -733,6 +735,7 @@ class AccountPage extends LitElement {
       this.balances.push(cumulative);
       this.minimumBalance = Math.min(cumulative, this.minimumBalance);
     }
+    this.balances.pop(); //last one is extra, so remove it
   }
   async _reconcile(e) {
     e.stopPropagation();
