@@ -1,12 +1,13 @@
 {
   "apps" : [
     {
-      "name" : "api-server",
+      "name" : "money-api-server",
       "script" : "server/server.js",
       "args" : [
         "--color"
       ],
       "kill_timeout": 15000,
+      "wait_ready": true,
       "watch" : ["server"],
       "watch_options": {"followSymlinks" : false},
       "min_uptime"       : "30s",
