@@ -315,10 +315,13 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           }
         }
         debugauth('login was ', success, 'Write log entry');
-        db.prepare(`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES (?,?,?,?,?)`)
-          .run(req.headers['x-forwarded-for'],req.track.uid, req.track.ip,req.body.name,success? 1: 0);
-
-        if (success) {
+        const loginEntry = db.prepare(`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES (?,?,?,?,?)`);
+        if (process.env.MONEY_TRACKING === 'yes') {
+            loginEntry.run(req.headers['x-forwarded-for'], req.track.uid, req.track.ip, req.body.name, success ? 1 : 0);
+        } else {
+          loginEntry.run(req.headers['x-forwarded-for'], null, null, req.body.name, success ? 1 : 0);
+        }
+         if (success) {
           user.password = !!user.password; //turn password into a boolean as to whether it exists;
           user.remember = req.body.remember !== undefined && user.password;
           res.setHeader('Set-Cookie', generateCookie(user, serverConfig.authCookie, user.remember ? serverConfig.tokenExpires:false)); //refresh cookie to the new value 
