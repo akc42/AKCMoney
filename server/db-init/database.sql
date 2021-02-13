@@ -272,7 +272,7 @@ CREATE TABLE domain (
     description character varying,
     version bigint DEFAULT 1 NOT NULL
 );
-
+INSERT INTO domain(name, description) VALUES ('Base', 'Main Domain For Accounting');
 
 
 -- an account, the fundemental accounting vehicle within the system.      
@@ -288,7 +288,7 @@ CREATE TABLE account (
 	archived boolean DEFAULT 0 NOT NULL --indicated if account is archived (does not appear in menus except Account Manager)
 );
 
-INSERT INTO account (name,currency,balance) VALUES ('Cash', 'GBP', 0);
+INSERT INTO account (name,currency,balance, domain) VALUES ('Cash', 'GBP', 0, 'Base');
 
 
 
@@ -332,7 +332,7 @@ CREATE TABLE user (
 
 CREATE INDEX user_idx_name ON user(name);
 
-INSERT INTO user (uid, name, isAdmin, account) VALUES (1, 'Admin', 1, 'Cash');  --make the admin user with at least the cash account
+INSERT INTO user (uid, name, isAdmin, account, domain) VALUES (1, 'Admin', 1, 'Cash', 'Base');  --make the admin user with at least the Cash account and Base domain
 
 CREATE TABLE capability (
     uid integer REFERENCES user(uid) ON UPDATE CASCADE ON DELETE CASCADE,
