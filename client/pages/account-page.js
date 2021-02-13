@@ -60,8 +60,10 @@ class AccountPage extends LitElement {
   }
   constructor() {
     super();
+    const now = new Date();
+    const nowNo = Math.round(now.getTime()/1000);
     this.accounts = [];
-    this.account = {name:''};
+    this.account = {name:'', date: nowNo};
     this.transactions = [];
     this.balances = [];
     this.codes = [];
@@ -70,11 +72,14 @@ class AccountPage extends LitElement {
     this.reconciledBalance = 0;
     this.clearedBalance = 0;
     this.minimumBalance = 0;
+    this.startDate = nowNo;
+    this.startType = 'U';
     this.balanceError = false;
     this.router = new Route('/','page:account');
     this.zeroLocked = true;
     this.selectedIndex = null;
     this.selectedClear = false;
+
   }
 
 
@@ -88,7 +93,13 @@ class AccountPage extends LitElement {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        this._fetchAccountData(route.query.account, route.query.tid, route.query.open === 'yes');
+        let account = route.query.account;
+        if ((account ?? '').length === 0) {
+          //no query parameter - so try to get an alternative.
+          const user = JSON.parse(sessionStorage.getItem('user'));
+          account = user.account ?? 'Cash';
+        }
+        this._fetchAccountData(account, route.query.tid, route.query.open === 'yes');
       }
     }
     if (changed.has('account') && this.account.name.length > 0) {
@@ -280,12 +291,11 @@ class AccountPage extends LitElement {
       </dialog-box>
       <calendar-dialog noUnset></calendar-dialog>
       <section class="page">
-        ${cache(this.account.name.length > 0 ? html`
           <h1>${this.account.name}</h1>
           <div class="info">
             <div class="domain"><strong>Domain:</strong> ${this.account.domain}</div>
             <div class="currency">
-              <div class="name">Currency For Account:<span>${this.account.currency}</span></div>
+              <div class="name">Currency For Account:<span id="defcur">${this.account.currency}</span></div>
               <div class="description">${this.account.cdesc}</div>
             </div>
           </div>
@@ -366,15 +376,6 @@ class AccountPage extends LitElement {
               </div>
             `))}
           </section>
-
-        `:html`
-          <h1>Problem with Account</h1>
-          <p>It appears that the account that is being requested is no longer in the database.  This is probably because someone
-              working in parallel with you has deleted it.  You can try to restart the software by
-              selecting another account from the menu above, but if that still fails then you should report the fault to
-              an adminstrator${this.route.active ? html`<span>, informing them that you had a problem with account name 
-              <strong>${this.route.query.account}</strong> not being in the database</span>`:''}.</p>
-        `)}
       </section>
     `;
   }
