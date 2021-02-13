@@ -23,13 +23,6 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../..', 'money.env') });
 const db = require('@akc42/server-utils/database');
 
-beforeAll(() => {
-  db.prepare(`INSERT INTO domain(name, description) VALUES('testDomain','A Domain for Testing')`).run();
-});
-afterAll(() => {
-  db.prepare(`DELETE FROM domain WHERE name = 'testDomain'`).run();
-})
-
 describe('account add api', () => {
   let accountAdd;
   beforeAll(() => {
@@ -42,7 +35,7 @@ describe('account add api', () => {
     const responder = {
       addSection: jest.fn()
     };
-    await accountAdd({name: 'Admin'}, {currency: 'GBP', domain:'testDomain', name: 'Cash'}, responder);
+    await accountAdd({name: 'Admin'}, {currency: 'GBP', domain:'Base', name: 'Cash'}, responder);
     expect(responder.addSection.mock.calls.length).toBe(1);
     expect(responder.addSection.mock.calls[0][0]).toBe('status');
     expect(responder.addSection.mock.calls[0][1]).toBe('Name already in use Cash');
@@ -52,7 +45,7 @@ describe('account add api', () => {
     const responder = {
       addSection: jest.fn()
     };
-    await accountAdd({ name: 'Admin' }, { currency: 'GBP', domain: 'testDomain', name: 'testAccount' }, responder);
+    await accountAdd({ name: 'Admin' }, { currency: 'GBP', domain: 'Base', name: 'testAccount' }, responder);
     expect(responder.addSection.mock.calls.length).toBe(2);
     expect(responder.addSection.mock.calls[0][0]).toBe('status');
     expect(responder.addSection.mock.calls[0][1]).toBe('OK');

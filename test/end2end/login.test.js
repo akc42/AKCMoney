@@ -18,28 +18,17 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//process.env.DEBUG='money:validate';
 
-process.env.LOG_NONE = 'yes';
-process.env.MONEY_DOMAIN = 'mondev.chandlerfamily.org.uk'; //set for testing
-const utils = require('../utils');
-
-beforeAll(async () => {
-  await utils.server.start;
-})
-afterAll(() => {
-  utils.server.close();
-})
 describe('initial connect without a cookie', () => {
   beforeAll(async () => {
-    await page.goto(`https://${process.env.MONEY_DOMAIN}`);
+    await page.goto(`https://${process.env.MONEY_DOMAIN}`)
   });
 
   test('initial check should display the login page', async () => {
     await expect(page).toHaveText('h1', 'Log In');
   });
   test('login user with no password will redirect to profile page', async () => {
-    const replaceUser = utils.database.prepare(`REPLACE INTO user (uid, name) VALUES(2,'test')`);
+    const replaceUser = database.prepare(`REPLACE INTO user (uid, name) VALUES(2,'test')`);
     replaceUser.run();
     await page.type('#username', 'test');
     await page.click('#submit');
@@ -49,11 +38,11 @@ describe('initial connect without a cookie', () => {
 });
 describe('connect with a cookie', () => {
   beforeAll(async () => { 
-    const getUser = utils.database.prepare('SELECT * FROM user WHERE uid = 1');
+    const getUser = database.prepare('SELECT * FROM user WHERE uid = 1');
     const user = getUser.get();
     user.remember = true;
     user.password = true;
-    const cookie = utils.cookie(user);
+    const cookie = makeCookie(user);
     await context.addCookies([cookie]);
     await page.goto(`https://${process.env.MONEY_DOMAIN}`);
   });

@@ -4,7 +4,9 @@
   "description": "Money Management Application",
   "main": "server/server.js",
   "scripts": {
+    "pretest": "pm2 start money-test.json",
     "test": "jest -c jest.e2e.config.js",
+    "posttest": "pm2 stop money-test-api-server",
     "test:server": "jest -c jest.config.js",
     "prepare": "rollup --config"
   },
