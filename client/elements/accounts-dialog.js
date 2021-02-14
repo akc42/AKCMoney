@@ -135,7 +135,12 @@ class AccountsDialog extends LitElement {
         visual: sessionStorage.getItem('nullAccount')
       }
     }));
-    this.dialog.close
+    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', {
+      bubbles: true,
+      composed: true,
+      detail: null
+    })); //tell the outside world we have a value
+    this.dialog.close()
   }
 }
 customElements.define('accounts-dialog', AccountsDialog);
