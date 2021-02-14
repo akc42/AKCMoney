@@ -366,7 +366,6 @@ class AccountPage extends LitElement {
                   @amount-edit=${this._amountEdit}
                   @balance-changed=${this._balanceChangedXaction} 
                   @clear-changed=${this._clearChanged} 
-                  @cleared-changed=${this._clearedChanged}
                   @delete-transaction=${this._deleteTransaction}
                   @selected-changed=${this._selectedChanged}
                   @transaction-changed=${this._transactionChanged}
@@ -449,17 +448,9 @@ class AccountPage extends LitElement {
           }
       }
     }
+    this._rebalance();
   }
-  _clearedChanged(e) {
-    e.stopPropagation();
-    const index = e.currentTarget.index + 1;
-    if (index < this.balances.length) {
-      this.balances[index] = e.detail;
-      //avoid a redraw of entire set of transactions - just update the one transaction (which will propagate)
-      const t = this.shadowRoot.querySelector(`#t${this.transactions[index].id}`);
-      t.balance = e.detail
-    }
-  }
+
   _clearSetTransaction(i) {
     const transaction = this.transactions[i];
     if (transaction.reconciled === 0) {    
@@ -715,7 +706,8 @@ class AccountPage extends LitElement {
     this.balances = [];
     this.balances.push(cumulative);
     for (const transaction of this.transactions) {
-      if (transaction.reconciled === 0) {
+      if (transaction.reconciled === 0 && ((transaction.src === this.account.name && transaction.srcclear === 0) || (
+        transaction.dst === this.account.name && transaction.dstclear === 0))) {
         let amount;
         if (transaction.currency === this.account.currency) {
           amount = transaction.amount;

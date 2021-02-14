@@ -351,11 +351,6 @@ class AccountTransaction extends LitElement {
         }
         this.cumulative += Math.round(amount/factor);
       }
-      if (this.cumulative !== cumulative) this.dispatchEvent(new CustomEvent('cleared-changed', { 
-        bubbles: true, 
-        composed: true, 
-        detail: this.cumulative 
-      }));
     }
     if (this.amountEdit) {
       if (changed.has('amount') && changed.get('amount') !== undefined && !changed.has('tid')) {
