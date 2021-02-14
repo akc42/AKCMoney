@@ -26,7 +26,11 @@
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name );
-    const getXactionVersion = db.prepare(`SELECT version, srcamount, dstamount, amount FROM xaction WHERE id = ?`);
+    const getXactionVersion = db.prepare(`SELECT t.version, t.currency, sa.currency AS scurrency, da.currency AS dcurrency, t.amount, t.srcamount, t.dstamount
+      FROM xaction AS t
+      LEFT JOIN account AS sa ON t.src = sa.name 
+      LEFT JOIN account AS da ON t.dst = da.name 
+      WHERE id = ?`);
     const updateXaction = db.prepare(`UPDATE xaction SET version = version + 1 , src = dst, dst = src, srcclear = dstclear, dstclear = srcclear,
         srccode = dstcode, dstcode = srccode, srcamount = ?, dstamount = ?, amount = ?   WHERE id = ?`);
     const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
@@ -34,21 +38,19 @@
     FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
     LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
     LEFT JOIN currency tc ON tc.name = t.currency
-    WHERE t.id = ?`)
+    WHERE t.id = ? and a.name = ?`)
     db.transaction(() => {
-      const {version, srcamount, dstamount, amount} = getXactionVersion.get(params.id);
+      const { version, currency, scurrency, dcurrency, amount, srcamount, dstamount } = getXactionVersion.get(params.id);
       if (version === params.version) {
         updateXaction.run(
-          dstamount !== null ? Math.round(dstamount * params.ratio) : null, 
-          srcamount !== null ? Math.round(srcamount * params.ratio) : null, 
-          Math.round(amount * params.ratio), 
+          dcurrency !== null && dcurrency !== currency ? Math.round(params.amount * dstamount / amount) : null, 
+          scurrency !== null && scurrency !== currency ? Math.round(params.amount * srcamount / amount) : null,
+          params.amount, 
           params.id);
         responder.addSection('status', 'OK');
-        responder.addSection('transaction', getUpdatedXaction.get(params.id));
-        responder.addSection('index', params.index);//reflect back
+        responder.addSection('transaction', getUpdatedXaction.get(params.id, params.account));
       } else {
-        debug('params version', params.version, 'database version', version);
-        responder.addSection('status', 'Fail');
+        responder.addSection('status', `Version Error Disk:${version}, Param:${params.version}`)
       }
     })();
     debug('request complete');

@@ -359,7 +359,8 @@ class AccountTransaction extends LitElement {
         api('/xaction_amount',{
           id: this.tid,
           version: this.version,
-          amount: this.amount
+          amount: this.amount,
+          account: this.account
         }).then(response => {
           if (response.status === 'OK') {
             this.transaction = response.transaction
@@ -591,9 +592,11 @@ class AccountTransaction extends LitElement {
             <input
               id="amount"
               type="text"
+              required
               pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
               class="amount ${classMap({ error: this.inputError, currency: this.acurrency !== this.currency })}" 
               .value=${((this.currency === this.acurrency ? this.amount : this.dstamount) / 100).toFixed(2)}
+              @click=${this._amountClick}
               @input="${this._amountChanged}"
               @blur=${this._amountUpdate}
               @contextmenu=${this._zeroRequest}  
@@ -703,6 +706,10 @@ class AccountTransaction extends LitElement {
       this.inputError = true;
     }
   }
+  _amountClick(e) {
+    e.stopPropagation();
+    e.preventDefault();  //prevents the blur when I click on the input field to be able to select parts of it
+  }
   _amountUpdate(e) {
     e.stopPropagation();
     if (this.amountInput.reportValidity()) {
@@ -789,6 +796,7 @@ class AccountTransaction extends LitElement {
   _noDrag(e) {
     e.stopPropagation();
     e.preventDefault();
+    console.log('no drag', e.currentTarget);
   }
   _repeatChanged(e) {
     e.stopPropagation();
@@ -896,6 +904,7 @@ class AccountTransaction extends LitElement {
   }
   _zeroRequest(e) {
     e.stopPropagation();
+    console.log('context menu');
     //can't do if transaction is cleared or is a repeated one.
     if (this.repeat !== this.repeats[0].rkey || this.reconcilled || (this.srcclear && this.src === this.account) ||
       (this.dstclear && this.dst === this.account)) return;

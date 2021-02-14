@@ -63,7 +63,7 @@ class AccountPage extends LitElement {
     const now = new Date();
     const nowNo = Math.round(now.getTime()/1000);
     this.accounts = [];
-    this.account = {name:'', date: nowNo};
+    this.account = {name:'', date: nowNo, currency:'XXX', cdesc:'Unknown', domain:''};
     this.transactions = [];
     this.balances = [];
     this.codes = [];
@@ -727,7 +727,11 @@ class AccountPage extends LitElement {
       this.balances.push(cumulative);
       this.minimumBalance = Math.min(cumulative, this.minimumBalance);
     }
-    this.balances.pop(); //last one is extra, so remove it
+    /*
+      It should be noted that this method leaves the balance array with one extra entry
+      than the transactions array.  This is deliberate as it allows us to properly
+      know what the final balance of the account it (its the last entry)
+    */
   }
   async _reconcile(e) {
     e.stopPropagation();
@@ -830,13 +834,10 @@ class AccountPage extends LitElement {
         e.currentTarget.transaction = this.transactions[index];  //cancel so reset
       }
     } else {
-      const refreshNeeded = (this.transactions[index].id !== e.detail.id);
       const resortNeeded = (this.transactions[index].date !== e.detail.date);
       this.transactions[index] = e.detail;
-      if (resortNeeded) {
-        this.transactions.sort((a, b) => a.date - b.date);
-        this.requestUpdate();
-      } else if (refreshNeeded) this.requestUpdate();
+      if (resortNeeded) this.transactions.sort((a, b) => a.date - b.date);
+      this._rebalance();
     }
   }
   _versionError(e) {
@@ -846,60 +847,35 @@ class AccountPage extends LitElement {
   _zeroAdjust(e) {
     e.stopPropagation();
     const currentEndBalance = this.balances.slice(-1)[0];
- 
-    let accountAmount = this.account.name === this.zeroTransaction.src ? 
-      (this.zeroTransaction.srcamount !== null ? this.zeroTransaction.srcamount: this.zeroTransaction.amount) : 
-      (this.zeroTransaction.dstamount !== null ? this.zeroTransaction.dstamount: this.zeroTransaction.amount) ;
-    let originalAmount = accountAmount; //remember it
+    const index = this.zeroTransaction.index;
+    const version = this.zeroTransaction.version;
+    let originalAmount;
+    let newAmount;
     let swap = false;
-    if (Math.abs(currentEndBalance) <= accountAmount) {
-      if (this.account.name === this.zeroTransaction.src) {
-        accountAmount += currentEndBalance;
-        this.zeroTransaction.srcamount = accountAmount;
-        this.zeroTransaction.dstamount = this.zeroTransaction.dstamount !== null ? 
-          Math.round(this.zeroTransaction.dstamount * accountAmount / originalAmount): null;
-      } else {
-        accountAmount -= currentEndBalance;
-        this.zeroTransaction.dstamount = accountAmount;
-        this.zeroTransaction.srcamount = this.zeroTransaction.srcamount !== null ? 
-          Math.round(this.zeroTransaction.srcamount * accountAmount / originalAmount): null;
-      }
+    if (this.account.name === this.zeroTransaction.src) {
+      originalAmount = (this.zeroTransaction.currency !== this.account.currency ? -this.zeroTransaction.srcamount : -this.zeroTransaction.amount);
+      if (originalAmount > currentEndBalance) swap = true;
+      newAmount = currentEndBalance - originalAmount;
     } else {
-      if ((this.account.name === this.zeroTransaction.src && currentEndBalance < 0) || 
-        (this.account.name === this.zeroTransaction.dst && currentEndBalance > 0)){
-          swap = true;
-        //have to swap source and destination
-        accountAmount = Math.abs(currentEndBalance) - accountAmount;
-      } else if (this.account === this.zeroTransaction.src) {
-        accountAmount += currentEndBalance;
-        this.zeroTransaction.srcamount = accountAmount;
-        this.zeroTransaction.dstamount = this.zeroTransaction.dstamount !== null ? 
-          Math.round(this.zeroTransaction.dstamount * accountAmount / originalAmount) : null;
+      originalAmount = (this.zeroTransaction.currency !== this.account.currency ? this.zeroTransaction.dstamount : this.zeroTransaction.amount);
+      if (originalAmount < currentEndBalance) swap = true;
+      newAmount = originalAmount - currentEndBalance
+    }
+    newAmount *= swap?-1:1;
+    api(`/${swap ? 'xaction_swap_zero': 'xaction_amount'}`, { 
+      id: this.zeroTransaction.tid, 
+      version: this.zeroTransaction.version,
+      amount: newAmount,
+      account: this.account.name
+    }).then (response => {
+      if(response.status === 'OK') {
+        this.transactions[index] = response.transaction;
+        this._rebalance();
       } else {
-        accountAmount -= currentEndBalance;
-        this.zeroTransaction.dstamount = accountAmount;
-        this.zeroTransaction.srcamount = this.zeroTransaction.srcamount !== null ? 
-          Math.round(this.zeroTransaction.srcamount * accountAmount / originalAmount) : null;
+        this.dialog.show();
       }
-    }
-    if (swap) {
-      api('/xaction_swap_zero', { 
-        id: this.zeroTransaction.tid, 
-        version: this.zeroTransaction.version,
-        ratio: accountAmount / originalAmount,
-        index: this.zeroTransaction.index 
-      }).then (response => {
-        if(response.status === 'OK') {
-          this.transactions[response.index] = response.transaction;
-          //This should avoid a complete redraw and just update the balances downwards.
-          this.zeroTransaction.transaction = response.transaction;
-        } else {
-          this.dialog.show();
-        }
-      });
-    } else {
-      this.zeroTransaction.amount = Math.round(this.zeroTransaction.amount * accountAmount / originalAmount);
-    }
+    });
+  
     this.zeroMenu.close();
   }
   _zeroClosed(e) {

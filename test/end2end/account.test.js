@@ -37,7 +37,7 @@ beforeAll(async () => {
 
   const makeDomain = database.prepare('INSERT INTO domain (name, description) VALUES(?,?)');
   const makeAccount = database.prepare(`INSERT INTO account(name,currency,balance, domain, startdate) VALUES(?,'GBP',?,?,?)`);
-  const updateStart = database.prepare(`UPDATE account SET startdate = ? WHERE name = ?`);
+  const updateStart = database.prepare(`UPDATE account SET startdate = ?, balance = ? WHERE name = ?`);
   const makeTransaction = database.prepare(`INSERT INTO xaction ( id, date, amount, currency, src, srcamount, srcclear, dst, dstamount, dstclear, description) 
     VALUES (?,?,1000,?,?,?,?,?,?,?,?)`);
   database.transaction(() => {
@@ -45,7 +45,7 @@ beforeAll(async () => {
     makeDomain.run('Test', 'Test Domain');
     makeAccount.run('TestBase',5000,'Base', dbDate);
     makeAccount.run('TestTest',10000,'Test',dbDate);
-    updateStart.run(dbDate, 'Cash');
+    updateStart.run(dbDate,100000, 'Cash');
 
     for (let i = 1; i < 100; i++) {
       //set some default values
@@ -85,7 +85,7 @@ beforeAll(async () => {
       makeTransaction.run(i+20, dbDate + 1 + (i * 100000), currency, src, srcamount, srcclear, dst, dstamount, dstclear, `Test Transaction No ${i}, with transaction id ${i+20}`)
 
     }
-
+    page.on('console', console.log)
   })();
 })
 afterAll(() => {
@@ -114,8 +114,31 @@ describe('managing reconciled and cleared balance', () => {
   beforeAll(async () => {
     await page.goto(`https://${process.env.MONEY_DOMAIN}/account?account=Cash`);
     await page.textContent('#defcur');
+    await page.$eval('account-page', el => el.updateComplete);
   })
-  test.todo('check reconciled balance is set correctly');
-  test.todo('check cleared balance is set correctly');
-  test.todo('check minumumbalance is set correctly');
+  test('check reconciled balance, cleared balance and minimum balance are set correctly', async() => {
+    const reconciledBalance = await page.$eval('#recbal', el => el.value);
+    expect(reconciledBalance).toBe('1000.00');
+    await expect(page).toHaveText('#clearb','1000.00');
+    await expect(page).toHaveText('#minb','607.50');
+  });
+  test('check cleared balance changes when transaction is cleared', async () => { 
+    await page.click('#t75 date-format');
+    await expect(page).toHaveText('#clearb', '990.00');
+    await page.click('#t99 date-format');
+    await expect(page).toHaveText('#clearb', '1000.00');
+    await page.click('#t90 date-format');
+    await expect(page).toHaveText('#clearb', '990.00');
+    await page.click('#t75 date-format');
+    await expect(page).toHaveText('#clearb', '1000.00');
+    await page.click('#t80 date-format');
+    await expect(page).toHaveText('#clearb', '1006.00');
+  });
+  test('clearing transaction changes cumulative balance of earlier transactions only', async () => {
+    await expect(page).toHaveText('#t76 .balance', '986.00');
+    await page.click('#t75 date-format');
+    await expect(page).toHaveText('#t76 .balance', '986.00');
+    await page.click('#t99 date-format');
+    await expect(page).toHaveText('#t76 .balance', '976.00');
+  });
 });
