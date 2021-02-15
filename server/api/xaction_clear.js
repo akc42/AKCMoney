@@ -42,7 +42,7 @@
       debug('db version', version, 'params version', params.version, 'xaction', params.id);
       if (version === params.version) {
         debug('do update; clear =', params.clear);
-        const infor = updateXaction.run(params.clear ? 1: 0, params.clear ? 1: 0, params.id, params.id, params.account);
+        updateXaction.run(params.clear ? 1: 0, params.clear ? 1: 0, params.id, params.id, params.account);
         responder.addSection('status', 'OK'); 
         responder.addSection('transaction', getUpdatedXaction.get(params.id, params.account))
       } else {

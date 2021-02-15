@@ -27,13 +27,19 @@
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'account', params.account, 'balance', params.balance);
     const getVersion = db.prepare('SELECT bversion FROM account WHERE name = ?').pluck();
-    const updatebalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
+    const updateBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
       date = (strftime('%s','now')) WHERE name = ?`);
+    const updateBalanceDate = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
+      date = ? WHERE name = ?`);
     db.transaction(() => {
       const bversion = getVersion.get(params.account);
       if (bversion === params.bversion) {
         debug('correct version, do update');
-        updatebalance.run(params.balance, params.account);
+        if (params.date === 0) {
+          updateBalance.run(params.balance, params.account);
+        } else {
+          updateBalanceDate.run(params.balance, params.date, params.account);
+        }
         responder.addSection('status', 'OK');
         responder.addSection('bversion', bversion + 1);
       } else {

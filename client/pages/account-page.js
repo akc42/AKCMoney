@@ -38,79 +38,7 @@ import error from '../styles/error.js';
 */
 class AccountPage extends LitElement {
   static get styles() {
-    return [page, button, menu, error, css``];
-  }
-  static get properties() {
-    return {
-      accounts: {type:Array},  //order list
-      account: {type: Object}, //Account we are talking about 
-      transactions: {type: Array},
-      balances: {type: Array}, //An array which matches the transactions with a balance value in it
-      codes: {type: Array},
-      currency: {type: Array},
-      repeats: {type: Array},
-      route: {type: Object}, //
-      reconciledBalance: {type: Number},
-      clearedBalance: {type: Number},
-      minimumBalance: {type: Number},
-      startDate: {type: Number}, //same values as account.startDate.
-      startType: {type: String}, //values U (unreconciled), F (financial year end), D (explicit date)
-      balanceError: {type: Boolean}
-    };
-  }
-  constructor() {
-    super();
-    const now = new Date();
-    const nowNo = Math.round(now.getTime()/1000);
-    this.accounts = [];
-    this.account = {name:'', date: nowNo, currency:'XXX', cdesc:'Unknown', domain:''};
-    this.transactions = [];
-    this.balances = [];
-    this.codes = [];
-    this.repeats = [];
-    this.route = {active: false};
-    this.reconciledBalance = 0;
-    this.clearedBalance = 0;
-    this.minimumBalance = 0;
-    this.startDate = nowNo;
-    this.startType = 'U';
-    this.balanceError = false;
-    this.router = new Route('/','page:account');
-    this.zeroLocked = true;
-    this.selectedIndex = null;
-    this.selectedClear = false;
-
-  }
-
-
-  firstUpdated() {
-    this.dragImage = this.shadowRoot.querySelector('#dragim');
-    this.dialog = this.shadowRoot.querySelector('#parallel');
-    this.zeroMenu = this.shadowRoot.querySelector('#zero');
-    this.zeroLocked = false;
-  }
-  updated(changed) {
-    if (changed.has('route') && this.route.active) {
-      const route = this.router.routeChange(this.route);
-      if (route.active) {
-        let account = route.query.account;
-        if ((account ?? '').length === 0) {
-          //no query parameter - so try to get an alternative.
-          const user = JSON.parse(sessionStorage.getItem('user'));
-          account = user.account ?? 'Cash';
-        }
-        this._fetchAccountData(account, route.query.tid, route.query.open === 'yes');
-      }
-    }
-    if (changed.has('account') && this.account.name.length > 0) {
-      this.recbalInput = this.shadowRoot.querySelector('#recbal');
-      this.dispatchEvent(new CustomEvent('account-changed', {bubbles: true, composed: true, detail: this.account.name}));
-    }
-    super.updated(changed);
-  }
-  render() {
-    return html`
-      <style>
+    return [page, button, menu, error, css`
 
         .info {
           display: flex;
@@ -277,8 +205,79 @@ class AccountPage extends LitElement {
             margin-top: 20px;
           }
           
+        }    
+    `];
+  }
+  static get properties() {
+    return {
+      accounts: {type:Array},  //order list
+      account: {type: Object}, //Account we are talking about 
+      transactions: {type: Array},
+      balances: {type: Array}, //An array which matches the transactions with a balance value in it
+      codes: {type: Array},
+      currency: {type: Array},
+      repeats: {type: Array},
+      route: {type: Object}, //
+      reconciledBalance: {type: Number},
+      clearedBalance: {type: Number},
+      minimumBalance: {type: Number},
+      startDate: {type: Number}, //same values as account.startDate.
+      startType: {type: String}, //values U (unreconciled), F (financial year end), D (explicit date)
+      balanceError: {type: Boolean}
+    };
+  }
+  constructor() {
+    super();
+    const now = new Date();
+    const nowNo = Math.round(now.getTime()/1000);
+    this.accounts = [];
+    this.account = {name:'', date: nowNo, currency:'XXX', cdesc:'Unknown', domain:''};
+    this.transactions = [];
+    this.balances = [];
+    this.codes = [];
+    this.repeats = [];
+    this.route = {active: false};
+    this.reconciledBalance = 0;
+    this.clearedBalance = 0;
+    this.minimumBalance = 0;
+    this.startDate = nowNo;
+    this.startType = 'U';
+    this.balanceError = false;
+    this.router = new Route('/','page:account');
+    this.zeroLocked = true;
+    this.selectedIndex = null;
+    this.selectedClear = false;
+
+  }
+
+
+  firstUpdated() {
+    this.dragImage = this.shadowRoot.querySelector('#dragim');
+    this.dialog = this.shadowRoot.querySelector('#parallel');
+    this.zeroMenu = this.shadowRoot.querySelector('#zero');
+    this.zeroLocked = false;
+  }
+  updated(changed) {
+    if (changed.has('route') && this.route.active) {
+      const route = this.router.routeChange(this.route);
+      if (route.active) {
+        let account = route.query.account;
+        if ((account ?? '').length === 0) {
+          //no query parameter - so try to get an alternative.
+          const user = JSON.parse(sessionStorage.getItem('user'));
+          account = user.account ?? 'Cash';
         }
-      </style>
+        this._fetchAccountData(account, route.query.tid, route.query.open === 'yes');
+      }
+    }
+    if (changed.has('account') && this.account.name.length > 0) {
+      this.recbalInput = this.shadowRoot.querySelector('#recbal');
+      this.dispatchEvent(new CustomEvent('account-changed', {bubbles: true, composed: true, detail: this.account.name}));
+    }
+    super.updated(changed);
+  }
+  render() {
+    return html`
       <div id="dragim"><material-icon>topic</material-icon></div>
       <dialog-box id="parallel" position="top">
         <p>We have just noticed that an update to a transaction that you tried failed bacause
@@ -403,13 +402,26 @@ class AccountPage extends LitElement {
       this.balanceError = false;
       const newAmount = Math.round(parseFloat(this.recbalInput.value) * 100);
       if (newAmount !== this.reconciledBalance) {
+        let bdate = 0;
+        for(const transaction of this.transactions) {
+          if (bdate === 0 && transaction.reconciled === 0) {
+            bdate = transaction.date;
+            break;
+          }
+        }
         const response = await api('account_balance', {
           balance: newAmount,
           bversion: this.account.bversion,
-          account: this.account.name
+          account: this.account.name,
+          date: bdate
         });
         if (response.status = 'OK') {
           this.account.bversion = response.bversion;
+          if (bdate !== 0) {
+            this.startDate = bdate;
+          } else {
+            this.startDate = Math.round(new Date().getTime() / 1000);
+          }
           this.clearedBalance += newAmount - this.reconciledBalance
           this.reconciledBalance = this.account.balance = newAmount;
         } else {
@@ -735,41 +747,53 @@ class AccountPage extends LitElement {
   }
   async _reconcile(e) {
     e.stopPropagation();
-    const response = await api('account_balance',{
-      balance: this.clearedBalance, 
-      bversion: this.account.bversion, 
-      account: this.account.name
-    });
-    if (response.status = 'OK') {
-      this.account.bversion = response.bversion;
-      let updateNeeded = false;
-      for (let i = 0; i < this.transactions.length; i++) {
-        const xactionElement = this.shadowRoot.querySelector(`#t${this.transactions[i].id}`);
-        if ((this.transactions[i].reconciled === 1 && 
-          ((xactionElement.src === this.account.name && !xactionElement.srcclear) ||
-          (xactionElement.dst === this.account.name && !xactionElement.dstclear))) ||
-          (this.transactions[i].reconciled === 0 && 
-          ((xactionElement.src === this.account.name && xactionElement.srcclear) ||
-          (xactionElement.dst === this.account.name && xactionElement.dstclear)))){
-          const response = await api('xaction_clear', {
-            clear: this.transactions[i].reconciled === 0, //we are not clearing this if we already have it reconciled 
-            id: this.transactions[i].id, 
-            version: this.transactions[i].version,
-            account: this.account.name
-          });
-          if (response.status === 'OK') {
-            this.transactions[i] = response.transaction;
-            updateNeeded = true;
-          } else {
-            this.dialog.show();
-            break;
-          }
+    let sdate = 0;
+    let updateNeeded = false;
+    for (let i = 0; i < this.transactions.length; i++) {
+      const xactionElement = this.shadowRoot.querySelector(`#t${this.transactions[i].id}`);
+      if ((this.transactions[i].reconciled === 1 && 
+        ((xactionElement.src === this.account.name && !xactionElement.srcclear) ||
+        (xactionElement.dst === this.account.name && !xactionElement.dstclear))) ||
+        (this.transactions[i].reconciled === 0 && 
+        ((xactionElement.src === this.account.name && xactionElement.srcclear) ||
+        (xactionElement.dst === this.account.name && xactionElement.dstclear)))){
+        //if we are actually de-reconciling this transaction it can be considered for the first unreconciled transaction
+        if (sdate === 0 && this.transactions[i].reconciled === 1) sdate = this.transactions[i].date;
+        const response = await api('xaction_clear', {
+          clear: this.transactions[i].reconciled === 0, //we are not clearing this if we already have it reconciled 
+          id: this.transactions[i].id, 
+          version: this.transactions[i].version,
+          account: this.account.name
+        });
+        if (response.status === 'OK') {
+          this.transactions[i] = response.transaction;
+          updateNeeded = true;
+        } else {
+          this.dialog.show();
+          break;
         }
-      }
+      } else if (sdate === 0 && this.transactions[i].reconciled === 0) sdate = this.transactions[i].date;
+    }
+    if (updateNeeded) {
       this.reconciledBalance = this.clearedBalance;
-      if (updateNeeded) this.requestUpdate();
-    } else {
-      this.dialog.show();
+      const response = await api('account_balance', {
+        balance: this.clearedBalance,
+        bversion: this.account.bversion,
+        account: this.account.name,
+        date: sdate
+      });
+      if (response.status === 'OK') {
+        if (sdate !== 0) {
+          this.startDate = sdate;
+        } else {
+          this.startDate = Math.round(new Date().getTime()/1000);
+        }
+        this.account.bversion = response.bversion;
+        this.account.balance = this.clearedBalance;
+        this.requestUpdate();
+      } else {
+        this.dialog.show();
+      }
     }
   }
   _reload(e) {
