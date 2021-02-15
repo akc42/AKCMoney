@@ -35,51 +35,7 @@ import input from '../styles/error.js';
 */
 class AdminCodes extends LitElement {
   static get styles() {
-    return [page,button, input,css``];
-  }
-  static get properties() {
-    return {
-      codes: {type: Array},
-      types: {type: Array},
-      description: {type: String},
-      type: {type: String},
-      typeDescription: {type: String},
-      route: {type: Object}
-    };
-  }
-  constructor() {
-    super();
-    this.codes = [];
-    this.types = [];
-    this.description = '';
-    this.type = '';
-    this.typeDescription = '';
-
-    this.route = {active: false};
-    this.router = new Route('/','page:codes');
-  }
-  update(changed) {
-    if (changed.has('type') && this.type.length > 0) {
-      const type = this.types.find(t => t.type === this.type);
-      if (type !== undefined) {
-        this.typeDescription = type.description;
-      }
-    }
-    super.update(changed);
-  }
-  updated(changed) {
-    if (changed.has('route') && this.route.active) {
-      const route = this.router.routeChange(this.route);
-      if (route.active) {
-        this._fetchCodes();
-      }
-    }
-
-    super.updated(changed);
-  }
-  render() {
-    return html`
-      <style>
+    return [page,button, input,css`
         h3 {
           text-align: center;
         }
@@ -139,9 +95,54 @@ class AdminCodes extends LitElement {
               "description type action";
 
           }
-        }
+        }    
+    `];
+  }
+  static get properties() {
+    return {
+      codes: {type: Array},
+      types: {type: Array},
+      description: {type: String},
+      type: {type: String},
+      typeDescription: {type: String},
+      route: {type: Object}
+    };
+  }
+  constructor() {
+    super();
+    this.codes = [];
+    this.types = [];
+    this.description = '';
+    this.type = '';
+    this.typeDescription = '';
 
-      </style>
+    this.route = {active: false};
+    this.router = new Route('/','page:codes');
+  }
+  update(changed) {
+    if (changed.has('type') && this.type.length > 0) {
+      const type = this.types.find(t => t.type === this.type);
+      if (type !== undefined) {
+        this.typeDescription = type.description;
+      }
+    }
+    if (changed.has('codes') && changed.get('codes') !== undefined && changed.get('codes').length > 0) {
+      this.dispatchEvent(new CustomEvent('std-reread', {bubbles: true, composed: true}));
+    }
+    super.update(changed);
+  }
+  updated(changed) {
+    if (changed.has('route') && this.route.active) {
+      const route = this.router.routeChange(this.route);
+      if (route.active) {
+        this._fetchCodes();
+      }
+    }
+
+    super.updated(changed);
+  }
+  render() {
+    return html`
       <codetype-dialog .types=${this.types}></codetype-dialog>
       <section class="page">
         <h1>Accounting Codes Manager</h1>

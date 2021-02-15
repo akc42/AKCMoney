@@ -34,40 +34,7 @@ import input from '../styles/error.js';
 */
 class AdminAccounts extends LitElement {
   static get styles() {
-    return [page,button, input,css``];
-  }
-  static get properties() {
-    return {
-      accounts: {type: Array},
-      name: {type: String},
-      domain: {type: String},
-      currency: {type: String},
-      route: {type: Object}
-    };
-  }
-  constructor() {
-    super();
-    this.accounts = [];
-    this.name = '';
-    this.domain = '';
-    this.currency = '';
-    this.route = {active: false};
-    this.router = new Route('/','page:accounts');
-  }
-
-  updated(changed) {
-    if (changed.has('route') && this.route.active) {
-      const route = this.router.routeChange(this.route);
-      if (route.active) {
-        this._fetchAccountsData();
-      }
-    }
-
-    super.updated(changed);
-  }
-  render() {
-    return html`
-      <style>
+    return [page,button, input,css`
         h3 {
           text-align: center;
         }
@@ -167,8 +134,46 @@ class AdminAccounts extends LitElement {
             grid-template-areas: 
               "name domain currency archive action"
           }
-        }
-      </style>
+        }    
+    `];
+  }
+  static get properties() {
+    return {
+      accounts: {type: Array},
+      name: {type: String},
+      domain: {type: String},
+      currency: {type: String},
+      route: {type: Object}
+    };
+  }
+  constructor() {
+    super();
+    this.accounts = [];
+    this.name = '';
+    this.domain = '';
+    this.currency = '';
+    this.route = {active: false};
+    this.router = new Route('/','page:accounts');
+  }
+  update(changed) {
+    if (changed.has('accounts') && changed.get('accounts') !== undefined && changed.get('accounts').length > 0) {
+      this.dispatchEvent(new CustomEvent('ad-reread',{bubbles: true, composed: true}))
+    }
+    super.update(changed);
+  }
+
+  updated(changed) {
+    if (changed.has('route') && this.route.active) {
+      const route = this.router.routeChange(this.route);
+      if (route.active) {
+        this._fetchAccountsData();
+      }
+    }
+
+    super.updated(changed);
+  }
+  render() {
+    return html`
       <section class="page">
         <h1>Accounts Manager</h1>
         <h3>Accounts List</h3>

@@ -302,6 +302,7 @@ class AdminCurrencies extends LitElement {
     if (response.status !== 'OK') throw new Error(response.status)
     this.currencies[index].version++;
     this._sortCurrencies();
+    this.dispatchEvent(new CustomEvent('std-reread', { bubbles: true, composed: true }));
   }
   async _fetchCurrencyData() {
     const response = await api('currency_data', {});
@@ -354,6 +355,7 @@ class AdminCurrencies extends LitElement {
           this.currencies[i].version++;
         }
         this.selected++;
+        this.dispatchEvent(new CustomEvent('std-reread', { bubbles: true, composed: true }));
       }
     } else {
       this.currencies[curIndex].display = 1;
@@ -369,8 +371,10 @@ class AdminCurrencies extends LitElement {
       const response = await api('currency_display', this.currencies[curIndex]);
       if (response.status !== 'OK') throw new Error(response.status);
       this.currencies[curIndex].version++;
+
     }
     this._sortCurrencies();
+    this.dispatchEvent(new CustomEvent('std-reread', { bubbles: true, composed: true }));
   }
   _rateCancel(e) {
     e.stopPropagation();
@@ -396,6 +400,7 @@ class AdminCurrencies extends LitElement {
       api('currency_rate', this.currencies[this.rateIndex]).then(response => {
         if (response.status !== 'OK') throw new Error(response.status);
         this.currencies[this.rateIndex].version++;
+        this.dispatchEvent(new CustomEvent('std-reread', {bubbles: true, composed: true}));
         this.requestUpdate();
       });
     } 

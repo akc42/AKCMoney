@@ -54,6 +54,9 @@ class AdminDomains extends LitElement {
     super.disconnectedCallback();
   }
   update(changed) {
+    if (changed.has('domains') && changed.get('domains') !== undefined && changed.get('domains').length > 0) {
+      this.dispatchEvent(new CustomEvent('domains-changed',{bubbles: true, composed: true, detail: this.domains}));
+    }
     super.update(changed);
   }
   firstUpdated() {

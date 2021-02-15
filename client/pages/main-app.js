@@ -50,139 +50,7 @@ import './session-manager.js';
 */
 class MainApp extends LitElement {
   static get styles() {
-    return [tooltip, menu, css``];
-  }
-  static get properties() {
-    return {
-      authorised: {type: Boolean}, //set if the user has logged in
-      user: {type: Object}, //Set if authorised,
-      version: {type: String}, //Version of software
-      copyrightYear: {type: String}, //Year of copyright.
-      accounts: {type: Array}, //array of account objects
-      account: {type: String}, //last selected account name (one opened when hitting home)
-      domains: {type: Array}, //array of domain names
-      domain: {type: Array}, //currently selected
-      offsheet: {type: Array}, //array of offsheet count types
-      currencies: {type: Array}, //Valid Currencies
-      repeats: {type: Array}, //Repeat types
-      codes: {type: Array}, //Accounting COdes
-      serverError: {type: Boolean}, //Set if server error happening
-      page: {type: String} //current subpage being displayed
-    };
-  }
-  constructor() {
-    super();
-    this.authorised = false;
-    this.user = {uid: 0, isAdmin: false, account: '', domain: ''}
-    this.version = 'v4.0.0'
-    this.copyrightYear = '2021';
-    this.accounts = [];
-    this.account = '';
-    this.domains = [];
-    this.domain = '';
-    this.offsheet =[];
-    this.currencies = [];
-    this.codes = [];
-    this.repeats = [];
-    this.serverError = false;
-    this.page = '';
-    this.domainYear = 0;
-    this.code = 0;
-    configPromise.then(() => {
-      this.version = sessionStorage.getItem('version');
-      this.copyrightYear = sessionStorage.getItem('copyrightYear');
-    });
-    this._keyPressed = this._keyPressed.bind(this);
-
-  }
-  connectedCallback() {
-    super.connectedCallback();
-    this.removeAttribute('unresolved');
-    if (this.keys !== undefined && this.authorised) {
-      document.body.addEventListener('key-pressed', this._keyPressed);
-      this.keys.connect();
-    }
-
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    if (this.keys !== undefined) this.keys.disconnect()
-    document.body.removeEventListener('key-pressed', this._keyPressed);
-  }
-  update(changed) {
-    if (changed.has('domain') && this.domain.length > 0) {
-      this._fetchAccDom();
-      this._fetchOff();
-    }
-    if (changed.has('user')) {
-      if (this.user.uid > 0) {
-        import('./page-manager.js');
-        document.body.addEventListener('key-pressed', this._keyPressed);
-        if (this.keys === undefined) {
-          this.keys = new AppKeys(document.body, 'f1 f2 f3 f4 f12');
-        } else {
-          this.keys.connect();
-        }
-        if (!changed.has('domain')) {
-          this._fetchAccDom();
-          this._fetchOff();
-        }
-      } else {
-        if (this.keys !== undefined) this.keys.disconnect()
-        document.body.removeEventListener('key-pressed', this._keyPressed);
-      }
-    }
-    super.update(changed);
-  }
-  firstUpdated() {
-    const scrollDiv = document.createElement("div");
-    scrollDiv.className = "scrollbar-measure";
-    this.shadowRoot.appendChild(scrollDiv);
-
-    // Get the scrollbar width
-    const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-    this.style.setProperty('--scrollbar-width', `-${scrollbarWidth}px`);
-
-    // Delete the DIV
-    this.shadowRoot.removeChild(scrollDiv);
-  }
-  updated(changed) {
-    if (changed.has('authorised')) {
-      if (this.authorised) {
-        this.user = JSON.parse(sessionStorage.getItem('user'));
-        if ((this.user.account ?? '').length > 0) this.account = this.user.account;
-        if((this.user.domain ?? '').length > 0) this.domain = this.user.domain;
-        api('/standing').then(response => {
-          this.codes = response.codes;
-          this.repeats = response.repeats;
-          this.currencies = response.currencies;
-        })
-      } else {
-        this.user = {uid: 0};
-      }
-    }
-    if (changed.has('user')) {
-      if (this.user.uid > 0) {
-        this.menuIcon = this.shadowRoot.querySelector('#menuicon')
-        this.mainMenu = this.shadowRoot.querySelector('#mainmenu');
-        this.accountsMenu = this.shadowRoot.querySelector('#accountsmenu');
-        this.domainsMenu = this.shadowRoot.querySelector('#domainsmenu');
-        this.adminMenu = this.shadowRoot.querySelector('#adminmenu');
-        this.extrasMenu = this.shadowRoot.querySelector('#extrasmenu')
-      } else {
-        this.menuicon = null;
-        this.mainMenu = null;
-        this.accountsMenu = null;
-        this.domainsMenu = null;
-        this.adminMenu = null;
-        this.extrasMenu = null;
-      }
-    }
-    super.updated(changed);
-  }
-  render() {
-    return html`
-      <style>
+    return [tooltip, menu, css`
         :host {
           height: 100%;
           display: flex;
@@ -385,11 +253,139 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
           #copyyear {
             margin-right: 1em;
           }
+        }    
+    `];
+  }
+  static get properties() {
+    return {
+      authorised: {type: Boolean}, //set if the user has logged in
+      user: {type: Object}, //Set if authorised,
+      version: {type: String}, //Version of software
+      copyrightYear: {type: String}, //Year of copyright.
+      accounts: {type: Array}, //array of account objects
+      account: {type: String}, //last selected account name (one opened when hitting home)
+      domains: {type: Array}, //array of domain names
+      domain: {type: Array}, //currently selected
+      offsheet: {type: Array}, //array of offsheet count types
+      currencies: {type: Array}, //Valid Currencies
+      repeats: {type: Array}, //Repeat types
+      codes: {type: Array}, //Accounting COdes
+      serverError: {type: Boolean}, //Set if server error happening
+      page: {type: String} //current subpage being displayed
+    };
+  }
+  constructor() {
+    super();
+    this.authorised = false;
+    this.user = {uid: 0, isAdmin: false, account: '', domain: ''}
+    this.version = 'v4.0.0'
+    this.copyrightYear = '2021';
+    this.accounts = [];
+    this.account = '';
+    this.domains = [];
+    this.domain = '';
+    this.offsheet =[];
+    this.currencies = [];
+    this.codes = [];
+    this.repeats = [];
+    this.serverError = false;
+    this.page = '';
+    this.domainYear = 0;
+    this.code = 0;
+    configPromise.then(() => {
+      this.version = sessionStorage.getItem('version');
+      this.copyrightYear = sessionStorage.getItem('copyrightYear');
+    });
+    this._keyPressed = this._keyPressed.bind(this);
+
+  }
+  connectedCallback() {
+    super.connectedCallback();
+    this.removeAttribute('unresolved');
+    if (this.keys !== undefined && this.authorised) {
+      document.body.addEventListener('key-pressed', this._keyPressed);
+      this.keys.connect();
+    }
+
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.keys !== undefined) this.keys.disconnect()
+    document.body.removeEventListener('key-pressed', this._keyPressed);
+  }
+  update(changed) {
+    if (changed.has('domain') && this.domain.length > 0) {
+      this._fetchAccDom();
+      this._fetchOff();
+    }
+    if (changed.has('user')) {
+      if (this.user.uid > 0) {
+        import('./page-manager.js');
+        document.body.addEventListener('key-pressed', this._keyPressed);
+        if (this.keys === undefined) {
+          this.keys = new AppKeys(document.body, 'f1 f2 f3 f4 f12');
+        } else {
+          this.keys.connect();
         }
+        if (!changed.has('domain')) {
+          this._fetchAccDom();
+          this._fetchOff();
+        }
+      } else {
+        if (this.keys !== undefined) this.keys.disconnect()
+        document.body.removeEventListener('key-pressed', this._keyPressed);
+      }
+    }
+    super.update(changed);
+  }
+  firstUpdated() {
+    const scrollDiv = document.createElement("div");
+    scrollDiv.className = "scrollbar-measure";
+    this.shadowRoot.appendChild(scrollDiv);
 
+    // Get the scrollbar width
+    const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+    this.style.setProperty('--scrollbar-width', `-${scrollbarWidth}px`);
 
-      </style>
-
+    // Delete the DIV
+    this.shadowRoot.removeChild(scrollDiv);
+  }
+  updated(changed) {
+    if (changed.has('authorised')) {
+      if (this.authorised) {
+        this.user = JSON.parse(sessionStorage.getItem('user'));
+        if ((this.user.account ?? '').length > 0) this.account = this.user.account;
+        if((this.user.domain ?? '').length > 0) this.domain = this.user.domain;
+        api('/standing').then(response => {
+          this.codes = response.codes;
+          this.repeats = response.repeats;
+          this.currencies = response.currencies;
+        })
+      } else {
+        this.user = {uid: 0};
+      }
+    }
+    if (changed.has('user')) {
+      if (this.user.uid > 0) {
+        this.menuIcon = this.shadowRoot.querySelector('#menuicon')
+        this.mainMenu = this.shadowRoot.querySelector('#mainmenu');
+        this.accountsMenu = this.shadowRoot.querySelector('#accountsmenu');
+        this.domainsMenu = this.shadowRoot.querySelector('#domainsmenu');
+        this.adminMenu = this.shadowRoot.querySelector('#adminmenu');
+        this.extrasMenu = this.shadowRoot.querySelector('#extrasmenu')
+      } else {
+        this.menuicon = null;
+        this.mainMenu = null;
+        this.accountsMenu = null;
+        this.domainsMenu = null;
+        this.adminMenu = null;
+        this.extrasMenu = null;
+      }
+    }
+    super.updated(changed);
+  }
+  render() {
+    return html`
       <waiting-indicator></waiting-indicator>
       ${cache(this.authorised?html`
         <currencies-dialog .currencies=${this.currencies}></currencies-dialog>
@@ -539,8 +535,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
             @domain-year-changed=${this._domainYearChanged}
             @page-changed=${this._pageChanged}
             @user-refresh=${this._userRefresh}
+            @domains-changed=${this._domainsChanged}
             @ad-reread=${this._fetchAccDom}
             @of-reread=${this._fetchOff}
+            @std-reread=${this._standingReread}
             @currencies-reread=${this._fetchCurrencies}></page-manager>
 
         `: '')}
@@ -584,6 +582,10 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   _domainChanged(e) {
     e.stopPropagation();
     this.domain = e.detail;
+  }
+  _domainsChanged(e) {
+    e.stopPropagation();
+    this.domains = e.detail;
   }
   _domainSelected(e) {
     e.stopPropagation();
@@ -739,6 +741,14 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.adminMenu.close();
     this.mainMenu.close();
     switchPath(`/admin/${target}`);
+  }
+  _standingReread(e) {
+    e.stopPropagation();
+    api('/standing').then(response => {
+      this.codes = response.codes;
+      this.repeats = response.repeats;
+      this.currencies = response.currencies;
+    });
   }
   _userRefresh(e) {
     e.stopPropagation();
