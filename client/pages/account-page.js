@@ -405,7 +405,7 @@ class AccountPage extends LitElement {
         let bdate = 0;
         for(const transaction of this.transactions) {
           if (bdate === 0 && transaction.reconciled === 0) {
-            bdate = transaction.date;
+            bdate = transaction.date - 1;
             break;
           }
         }
@@ -758,7 +758,7 @@ class AccountPage extends LitElement {
         ((xactionElement.src === this.account.name && xactionElement.srcclear) ||
         (xactionElement.dst === this.account.name && xactionElement.dstclear)))){
         //if we are actually de-reconciling this transaction it can be considered for the first unreconciled transaction
-        if (sdate === 0 && this.transactions[i].reconciled === 1) sdate = this.transactions[i].date;
+        if (sdate === 0 && this.transactions[i].reconciled === 1) sdate = this.transactions[i].date - 1;
         const response = await api('xaction_clear', {
           clear: this.transactions[i].reconciled === 0, //we are not clearing this if we already have it reconciled 
           id: this.transactions[i].id, 
@@ -772,7 +772,7 @@ class AccountPage extends LitElement {
           this.dialog.show();
           break;
         }
-      } else if (sdate === 0 && this.transactions[i].reconciled === 0) sdate = this.transactions[i].date;
+      } else if (sdate === 0 && this.transactions[i].reconciled === 0) sdate = this.transactions[i].date -1;
     }
     if (updateNeeded) {
       this.reconciledBalance = this.clearedBalance;
