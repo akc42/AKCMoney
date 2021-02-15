@@ -40,22 +40,18 @@ const { insertRepeats } = require('../utils');
     const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
       repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
     const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
-    const xactionsByDate =  db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
-      CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
+    const xactionsByDate =  db.prepare(`SELECT t.*, tc.rate AS trate, 
+      CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
+      CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
       FROM account a JOIN xaction t ON (t.src = a.name OR t.dst = a.name) 
       LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
-      LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN 
-        CASE WHEN t.srccode IS NOT NULL THEN t.srccode WHEN a.domain = aa.domain THEN t.dstcode END 
-        ELSE CASE WHEN t.dstcode IS NOT NULL THEN t.dstcode WHEN a.domain = aa.domain THEN t.dstcode END END
       LEFT JOIN currency tc ON tc.name = t.currency 
       WHERE a.name = ? AND t.date >= ? ORDER BY t.date`)
-    const xactionsUnReconciled = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
-      CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
+    const xactionsUnReconciled = db.prepare(`SELECT t.*, tc.rate AS trate, 
+      CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
+      CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
       FROM account a JOIN xaction t ON (t.src = a.name OR t.dst = a.name) 
       LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
-      LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN 
-        CASE WHEN t.srccode IS NOT NULL THEN t.srccode WHEN a.domain = aa.domain THEN t.dstcode END 
-        ELSE CASE WHEN t.dstcode IS NOT NULL THEN t.dstcode WHEN a.domain = aa.domain THEN t.dstcode END END
       LEFT JOIN currency tc ON tc.name = t.currency  
       WHERE a.name = ? AND CASE WHEN t.src = a.name THEN t.srcclear ELSE t.dstclear END = 0 ORDER BY t.date`)
 

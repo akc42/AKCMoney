@@ -40,12 +40,13 @@
       currency = ?, date = ?, description = ? , rno = ?, repeat = ?, src = ?  WHERE id = ?`);
     const changeXactionSrc = db.prepare('UPDATE xaction SET src = ? WHERE id = ?');
     const changeXactionDst = db.prepare('UPDATE xaction SET dst = ? WHERE id = ?');
-    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
-    CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
+    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, 
+    CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
+    CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
     FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
-    LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
+    LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
     LEFT JOIN currency tc ON tc.name = t.currency
-    WHERE t.id = ? AND a.name = ?`);
+    WHERE t.id = ? AND a.name = ?`)
     const updateAccountBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
       date = (strftime('%s','now')) WHERE name = ?`);
     db.transaction(() => {

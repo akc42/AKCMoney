@@ -31,7 +31,7 @@ class ListSelector extends LitElement {
   static get properties() {
     return {
       visual:{type: String}, //value shown in the selector as currently selected
-      key: {type: String}, //key of selected item - so item can be selected from list
+      key: {type: Object}, //key of selected item - so item can be selected from list
       list: {type: String} //name of the type of dialog to send a message to
     };
   }

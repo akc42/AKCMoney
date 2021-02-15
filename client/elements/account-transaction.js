@@ -231,6 +231,7 @@ class AccountTransaction extends LitElement {
       srccode: {type: String},
       trate: {type: Number},
       version: { type: Number },
+      sameDomain: {type: Boolean},
       index: { type: Number },
       balance: {type: Number},
       cumulative: {type: Number},
@@ -247,6 +248,7 @@ class AccountTransaction extends LitElement {
       readonly: {type: Boolean}, //set if context (domain/offsheet) doesn't allow editing (also cleared/reconcilled ignored)
       accounting: {type: Boolean}, //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
       selected: {type: Boolean} //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
+
     };
   }
   constructor() {
@@ -269,6 +271,7 @@ class AccountTransaction extends LitElement {
     this.srccode = '';
     this.trate = 1;
     this.version = 0;
+    this.sameDomain = false;
     this.index = 0;
     this.balance = 0;
     this.cumulative = 0;
@@ -441,7 +444,7 @@ class AccountTransaction extends LitElement {
     let codeKey;
     let codeType = '';
     if (this.src === this.account) {
-      codeKey = this.srccode;
+      codeKey = {key:this.srccode, filter: this.sameDomain? 'S': 'N'};
       if (!this.readonly) {
         if (this.dst === null) {
           visual = sessionStorage.getItem('nullAccount');
@@ -451,7 +454,7 @@ class AccountTransaction extends LitElement {
         }
       }
     } else {
-      codeKey = this.dstcode;
+      codeKey = {key:this.dstcode, filter: this.sameDomain?'D': 'N'};
       if (!this.readonly) {
         if (this.src === null) {
           visual = sessionStorage.getItem('nullAccount');
@@ -461,11 +464,11 @@ class AccountTransaction extends LitElement {
         }
       }
     }
-    if (codeKey === null) {
+    if (codeKey.key === null) {
       codeType = '';
       codeVisual = sessionStorage.getItem('nullCode');
     } else {
-      const code = this.codes.find(c => c.id === codeKey)
+      const code = this.codes.find(c => c.id === codeKey.key)
       codeVisual = code.description;
       codeType = code.type;
     }
@@ -638,7 +641,8 @@ class AccountTransaction extends LitElement {
       srcclear: this.srcclear? 1:0,
       srccode: this.srccode,
       trate: this.trate,
-      version: this.version
+      version: this.version,
+      samedomain: this.sameDomain? 1:0
     };
   }
   set transaction(value) {
@@ -662,6 +666,7 @@ class AccountTransaction extends LitElement {
       this.srccode = value.srccode;
       this.trate = value.trate;
       this.version = value.version;
+      this.sameDomain = value.samedomain !==0;
       if (this.tid === 0) this.edit = true;
     } else {
       console.log('transaction', value.id, 'not updated');
@@ -692,6 +697,9 @@ class AccountTransaction extends LitElement {
   }
   _altAccountChanged(e) {
     e.stopPropagation();
+    const thisAccount = this.accounts.find(a => a.name === this.account);
+    const otherAccount = this.accounts.find(a => a.name === e.detail);
+    this.sameDomain = (thisAccount ?? '').length > 0 && (otherAccount ?? '').length > 0 && thisAccount.domain === otherAccount.domain; 
     if (this.account === this.src) {
       this.dst = e.detail;
     } else {

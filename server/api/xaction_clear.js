@@ -31,12 +31,13 @@
       srcclear = CASE WHEN a.name = t.src THEN ? ELSE t.srcclear END,
       dstclear = CASE WHEN a.name = t.dst THEN ? ELSE t.dstclear END   
       FROM xaction t JOIN account a ON (a.name = t.src OR a.name = t.dst) WHERE x.id = ? AND t.id = ? AND a.name = ?`);
-    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, c.type As ctype, c.description AS cd,
-    CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
+    const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, 
+    CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
+    CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
     FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
-    LEFT JOIN code c ON c.id = CASE WHEN t.src = a.name THEN t.srccode ELSE t.dstcode END
+    LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
     LEFT JOIN currency tc ON tc.name = t.currency
-    WHERE t.id = ? and a.name = ?`);
+    WHERE t.id = ? AND a.name = ?`)
     db.transaction(() => {
       const version = getXactionVersion.get(params.id);
       debug('db version', version, 'params version', params.version, 'xaction', params.id);

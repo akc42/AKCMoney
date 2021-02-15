@@ -673,8 +673,6 @@ class AccountPage extends LitElement {
       const transactionDate = new Date();
       const transaction = {
         amount: 0,
-        cd: null,
-        ctype: null,
         currency: this.account.currency,
         date: Math.round(transactionDate.getTime()/1000),
         description: '',

@@ -31,21 +31,44 @@ import list from '../styles/list.js';
 class CodesDialog extends LitElement {
   static get styles() {
     return [list,css`
-      .codes-icon {
-        color: var(--codes-icon-color)
+      div.code {
+        margin: 0 1em 0 0.3em;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        background:transparent url(codes.png) no-repeat 0 0;
       }
+
+      div.code.C {
+          background:transparent url(/images/codes.png) no-repeat 0 -20px;
+      }
+      div.code.R {
+          background:transparent url(/images/codes.png) no-repeat 0 -40px;
+      }
+      div.code.A {
+          background:transparent url(/images/codes.png) no-repeat 0 -60px;
+      }
+      div.code.B {
+          background:transparent url(/images/codes.png) no-repeat 0 -80px;
+      }
+      div.code.O {
+          background:transparent url(/images/codes.png) no-repeat 0 -100px;
+      }
+
     `];
   }
   static get properties() {
     return {
       codes: {type: Array},
-      code: {type: String}
+      code: {type: Object},
+      request: {type: Object}
     };
   }
   constructor() {
     super();
     this.codes = [];
     this.code = '';
+    this.request = {key:{key: 0, filter: 'N'}, visual: ''};
     this._gotRequest = this._gotRequest.bind(this);
     this.eventLocked = true;
 
@@ -76,10 +99,14 @@ class CodesDialog extends LitElement {
           <button type="button" role="menuitem" @click=${this._nocodeSelected}>
             <span>${sessionStorage.getItem('nullCode')}</span>
           </button>
-          ${cache(this.codes.map((code, i) => html`
+          ${cache(this.codes.filter(c => 
+              this.request.key.filter === 'N' || (this.request.key.filter === 'S' && c.type !== 'R') || 
+              (this.request.key.filter === 'D' && c.type !== 'C' && c.type !== 'A') 
+          ).map((code, i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
             <button type="button" role="menuitem" 
               data-index="${i}" @click=${this._codeSelected}>
+              <div class="code ${code.type}"></div>
               <span>${code.description}</span>
             </button>
           `))}        
@@ -93,15 +120,10 @@ class CodesDialog extends LitElement {
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.code = this.codes[index];
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', { 
-      detail: { key: this.code.id, visual: this.code.description }
+      detail: { key: {key: code.id, filter: this.request.filter}, visual: code.description }
     }));
     this.dialog.close();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { 
-      bubbles: true, 
-      composed: true, 
-      detail: this.code 
-    })); //tell the outside world we have a value
-  }
+ }
   _closing(e) {
     e.stopPropagation();
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', { bubbles: true, composed: true, detail: this.code })); //tell the outside world we have a value
@@ -112,7 +134,7 @@ class CodesDialog extends LitElement {
     if (this.eventLocked) return;
     this.eventLocked = true;
     this.dialog.positionTarget = e.composedPath()[0];
-    this.code = e.detail;
+    this.request = e.detail;
     this.dialog.show();
 
   }
@@ -120,7 +142,7 @@ class CodesDialog extends LitElement {
     e.stopPropagation();
     this.code = {id: 0, type: ''};
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', {
-      detail: { key: 0, visual: sessionStorage.getItem('nullCode') }
+      detail: { key: {key: 0, filter: this.request.filter}, visual: sessionStorage.getItem('nullCode') }
     }));
     this.dialog.close();
 
