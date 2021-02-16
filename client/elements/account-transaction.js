@@ -442,8 +442,14 @@ class AccountTransaction extends LitElement {
       codeVisual = sessionStorage.getItem('nullCode');
     } else {
       const code = this.codes.find(c => c.id === codeKey.key)
-      codeVisual = code.description;
-      codeType = code.type;
+      if (code === undefined) {
+        debug('codeKey', codeKey)
+        codeType = '';
+        codeVisual = sessionStorage.getItem('nullCode');
+      } else {
+        codeVisual = code.description;
+        codeType = code.type;
+      }
     }
   
     return html`
