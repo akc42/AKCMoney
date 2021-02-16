@@ -118,14 +118,14 @@
               const { currency: acurrency, balance } = getAccount.get(prevAltAccount);
               contribution = acurrency === params.currency ?
                 (prevAltAccount === src ? amount : -amount) : (prevAltAccount === src ? srcamount : -dstamount);
-              if (newAltAccount === preAltAccount) {
+              if (newAltAccount === prevAltAccount) {
                 debug('previous alt is same as new alt');
                 //not changed altAccount so we now add in the new contribution
-                contribution += accurency === params.currency ?
+                contribution += acurrency === params.currency ?
                   (prevAltAccount === params.src ? -1 * nullOrAmount(params.amount) : nullOrAmount(params.amount)) :
                   (prevAltAccount === params.src ? -1 * nullOrAmount(params.accountamount) : nullOrAmount(params.accountamount));
               }
-              updateAccountBalance.run(balance + contribution, preAltAccount);
+              updateAccountBalance.run(balance + contribution, prevAltAccount);
               debug('previous account needs update', prevAltAccount, 'balance change of', contribution);
             }
             if (newAltAccount !== null && newAltAccount !== prevAltAccount) {
