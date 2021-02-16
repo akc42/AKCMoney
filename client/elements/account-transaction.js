@@ -29,6 +29,7 @@ import {switchPath } from '../libs/switch-path.js';
 const debug = require('debug')('money:transaction');
 import './list-selector.js';
 import './date-format.js';
+import { f } from '../libs/lit-html-fb016e47.js';
 /*
      <account-transaction>
 */
@@ -315,7 +316,6 @@ class AccountTransaction extends LitElement {
   updated(changed) {
     if (changed.has('amount') || changed.has('balance') || changed.has('src') || changed.has('currency') || changed.has('acurrency') ||
      changed.has('trate') || changed.has('arate') || changed.has('srcclear') || changed.has('dstclear')) {
-      const cumulative = this.cumulative;
       this.cumulative = this.balance; 
       let amount;
       if (this.currency === this.acurrency) {
@@ -323,20 +323,7 @@ class AccountTransaction extends LitElement {
       } else {
           amount = this.account === this.src ? this.srcamount : this.dstamount 
       }
-      if (changed.has('srcclear') && changed.get('srcclear') !== undefined && this.account === this.src) {
-        this.dispatchEvent(new CustomEvent('clear-changed', {
-          bubbles: true,
-          composed: true,
-          detail: {amount:this.srcclear ? -amount : amount, isSrc: true, set: this.srcclear, index: this.index}
-        }));
-      }
-      if (changed.has('dstclear') && changed.get('dstclear') !== undefined && this.account === this.dst) {
-        this.dispatchEvent(new CustomEvent('clear-changed', {
-          bubbles: true,
-          composed: true,
-          detail: { amount: this.dstclear ? amount : -amount, isSrc: false, set: this.dstclear, index: this.index }
-        }));
-      }
+
       
       if (this.src === this.account && (!this.srcclear || this.readonly) && !this.accounting) {
         this.cumulative -= amount;
@@ -374,21 +361,7 @@ class AccountTransaction extends LitElement {
         })
       }
     
-      if (changed.has('srcclear')) {
-        this.dispatchEvent(new CustomEvent('clear-changed', {
-          bubbles: true, composed: true, details: {
-            amount:this.srcclear ? -this.amount: this.amount,
-            clear: this.srcclear
-        }}));
-      }
-      if (changed.has('dstclear')) {
-        this.dispatchEvent(new CustomEvent('clear-changed', {
-          bubbles: true, composed: true, details: {
-            amount: this.dstclear ? this.amount : -this.amount,
-            clear: this.dstclear
-          }
-        }));
-      }
+
     } else {
       if ((changed.has('acurrency') || changed.has('currency')) && this.edit && this.acurrency !== this.currency) {
         this.accountAmountInput = this.shadowRoot.querySelector('#accountamount');
@@ -497,6 +470,7 @@ class AccountTransaction extends LitElement {
               id="amount"
               name="amount"
               type="text"
+              requuired
               pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
               class="amount ${classMap({ error: this.inputError, currency: this.acurrency !== this.currency })}" 
               .value=${(this.amount / 100).toFixed(2)} 
@@ -582,7 +556,8 @@ class AccountTransaction extends LitElement {
             <input
               id="amount"
               type="text"
-              pattern="^-(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
+              required
+              pattern="^(0|-(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?)$"
               class="amount ${classMap({error: this.inputError, currency: this.acurrency !== this.currency})}" 
               .value=${
             (-(this.currency === this.acurrency ? this.amount : this.srcamount) / 100).toFixed(2)}
@@ -623,6 +598,7 @@ class AccountTransaction extends LitElement {
     `;
   }
   get transaction() {
+    debug('get transaction called');
     return {
       amount: this.amount,
       currency: this.currency,
@@ -675,6 +651,8 @@ class AccountTransaction extends LitElement {
   }
   _accountAmountChanged(e) {
     e.stopPropagation();
+    const errorStat = this.accountAmountInput.validity;
+    debug('account-amount-changed-stat', errorStat)
     if (this.accountAmountInput.reportValidity()) {
       this.accountAmountError = false;
     } else {
@@ -683,6 +661,8 @@ class AccountTransaction extends LitElement {
   }
   _accountAmountUpdated(e) {
     e.stopPropagation();
+    const errorStat = this.accountAmountInput.validity;
+    debug('account-amount-update-stat', errorStat)
     if (this.accountAmountInput.reportValidity()) {
       this.accountAmountError = false;
       const newAmount = Math.round(Math.abs(parseFloat(this.amountAmountInput.value) * 100));
@@ -708,6 +688,8 @@ class AccountTransaction extends LitElement {
   }
   _amountChanged(e) {
     e.stopPropagation();
+    const errorStat = this.amountInput.validity;
+    debug('amount-changed-stat', errorStat)
     if (this.amountInput.reportValidity()) {
       this.inputError = false;
     } else {
@@ -720,6 +702,8 @@ class AccountTransaction extends LitElement {
   }
   _amountUpdate(e) {
     e.stopPropagation();
+    const errorStat = this.amountInput.validity
+    debug('amount-update-stat', errorStat)
     if (this.amountInput.reportValidity()) {
       this.inputError = false;
       const newAmount = Math.round(Math.abs(parseFloat(this.amountInput.value) * 100));
@@ -755,8 +739,23 @@ class AccountTransaction extends LitElement {
     if (this.reconciled) return;
     if (this.src === this.account) {
       this.srcclear = !this.srcclear;
+      this.dispatchEvent(new CustomEvent('clear-changed', {
+        bubbles: true, composed: true, detail: {
+          amount: this.amount,
+          clear: this.srcclear,
+          isSrc: true
+        }
+      }));
+
     } else if (this.dst === this.account) {
       this.dstclear = !this.dstclear;
+      this.dispatchEvent(new CustomEvent('clear-changed', {
+        bubbles: true, composed: true, detail: {
+          amount: this.amount,
+          clear: this.dstclear,
+          isSrc: false
+        }
+      }));
     }
   }
   _codeChanged(e) {
@@ -813,10 +812,29 @@ class AccountTransaction extends LitElement {
   resetClear() {
     this.selected = false;
     if (this.reconciled) return; //must not change previously reconcilled
+    let change = false;
     if (this.src === this.account) {
+      change = this.srcclear;
       this.srcclear = false;
+      if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
+        bubbles: true, composed: true, detail: {
+          amount: this.amount,
+          clear: false,
+          isSrc: true
+        }
+      }));
+
     } else if (this.dst === this.account) {
+      change = this.dstclear;
       this.dstclear = false;
+      if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
+        bubbles: true, composed: true, detail: {
+          amount: this.amount,
+          clear: false,
+          isSrc: false
+        }
+      }));
+
     }
   }
   _save(e) {
@@ -826,10 +844,29 @@ class AccountTransaction extends LitElement {
   setClear() {
     this.selected = false;
     if (this.reconciled) return; //must not change previously reconcilled
+    let change = false;
     if (this.src === this.account) {
+      change = !this.srcclear;
       this.srcclear = true;
+      if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
+        bubbles: true, composed: true, detail: {
+          amount: this.amount,
+          clear: true,
+          isSrc: true
+        }
+      }));
+
     } else if (this.dst === this.account) {
+      change = !this.dstclear;
       this.dstclear = true;
+      if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
+        bubbles: true, composed: true, detail: {
+          amount: this.amount,
+          clear: true,
+          isSrc: false
+        }
+      }));
+
     }
   }
   _setCurrencyRate(e) {
@@ -895,14 +932,6 @@ class AccountTransaction extends LitElement {
       this.edit = false;
       this.transaction = response.transaction;
       this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
-      if (response.balance !== undefined) {
-        this.dispatchEvent(new CustomEvent('balance-changed', {
-          bubbles: true, composed: true, detail: {
-            balance: response.balance,
-            bversion: response.bversion
-          }
-        }));
-      }
     } else {
       switchPath('account', {account: response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src, tid: response.transaction.id, open: 'yes'});
     }

@@ -363,7 +363,6 @@ class AccountPage extends LitElement {
                   .repeats=${this.repeats}
                   .accounts=${this.accounts}
                   @amount-edit=${this._amountEdit}
-                  @balance-changed=${this._balanceChangedXaction} 
                   @clear-changed=${this._clearChanged} 
                   @delete-transaction=${this._deleteTransaction}
                   @selected-changed=${this._selectedChanged}
@@ -389,12 +388,6 @@ class AccountPage extends LitElement {
       this.balanceError = true;
     }
 
-  }
-  _balanceChangedXaction(e) {
-    e.stopPropagation();
-    this.clearedBalance += e.details.balance - this.reconciledBalance;
-    this.reconciledBalance = this.account.balance = e.details.balance;
-    this._rebalance();
   }
   async _balanceUpdated(e) {
     e.stopPropagation();
@@ -435,13 +428,15 @@ class AccountPage extends LitElement {
   _clearChanged(e) {
     e.stopPropagation();
     //changing cleared balance will cause a re-render, so ensure data is correct
+    const index = e.currentTarget.index;
 
     if (e.detail.isSrc) {
-      this.transactions[e.detail.index].srcclear = e.detail.set ? 1:0;
+      this.transactions[index].srcclear = e.detail.clear ? 1:0;
+      this.clearedBalance += e.detail.amount * (e.detail.clear ? -1 : 1);
     } else {
-      this.transactions[e.detail.index].dstclear = e.detail.set ? 1 : 0;
+      this.transactions[index].dstclear = e.detail.clear ? 1 : 0;
+      this.clearedBalance += e.detail.amount * (e.detail.clear ? 1 : -1);
     }
-    this.clearedBalance += e.detail.amount;
     if (this.selectedIndex !== null) {
       /*
         At this point we have received an event which implies the user clicked on clear whilst were selected
@@ -449,7 +444,7 @@ class AccountPage extends LitElement {
       */
       const selectedIndex = this.selectedIndex; //remember it to prevent possible infinite loop of events
       this.selectedIndex = null;
-      const index = e.detail.index;
+      
       if (selectedIndex < index) {
           for(let i = selectedIndex; i <= index; i++) {
             this._clearSetTransaction(i);
@@ -667,16 +662,17 @@ class AccountPage extends LitElement {
       });
       if (response.status === 'OK') {
         this.transactions[inspoint] = response.transaction;
-        this._rebalance();
+
       } else {
         this.dialog.show();
       }
     } else {
-      this.requestUpdate().then(() => {
-        const wrap = this.shadowRoot.querySelector('#w0');
-        wrap.scrollIntoView({behavior: 'smooth', block: 'center'});
-      });
+      await this.requestUpdate();
+      const wrap = this.shadowRoot.querySelector('#w0');
+      wrap.scrollIntoView({behavior: 'smooth', block: 'center'});
     }
+    await this.updateComplete;
+    this._rebalance();
   }
   _newTransaction(e) {
     const wrap = this.shadowRoot.querySelector('#w0');
