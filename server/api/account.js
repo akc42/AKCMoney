@@ -27,7 +27,7 @@ const { insertRepeats } = require('../utils');
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function (user, params, responder) {
-    debug('new request from', user.name);
+    debug('new request from', user.name, 'account ',params.account,'tid', params.tid);
     const getAccount = db.prepare(`SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, 
       a.currency, a.startdate,c.description AS cdesc, c.rate 
       FROM account AS a JOIN currency AS c ON a.currency = c.name,
