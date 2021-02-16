@@ -285,9 +285,7 @@ class AccountPage extends LitElement {
         and try again</p>
         <button @click=${this._reload}><material-icon>replay</material-icon><span>Reload</span></button>
       </dialog-box>
-      <dialog-box id="zero" @overlay-closed=${this._zeroClosed}>
-        <button id="zselect" role="menuitem" @click=${this._zeroAdjust}><material-icon>exposure_zero</material-icon>Balance</button>
-      </dialog-box>
+
       <calendar-dialog noUnset></calendar-dialog>
       <section class="page">
           <h1>${this.account.name}</h1>
@@ -368,7 +366,7 @@ class AccountPage extends LitElement {
                   @selected-changed=${this._selectedChanged}
                   @transaction-changed=${this._transactionChanged}
                   @version-error=${this._versionError};
-                  @zero-adjust=${this._zeroMenuRequest}
+                  @zero-reply=${this._zeroAdjust}
                   ></account-transaction>
               </div>
             `))}
@@ -874,51 +872,38 @@ class AccountPage extends LitElement {
   }
   _zeroAdjust(e) {
     e.stopPropagation();
-    const currentEndBalance = this.balances.slice(-1)[0];
-    const index = this.zeroTransaction.index;
-    const version = this.zeroTransaction.version;
-    let originalAmount;
-    let newAmount;
-    let swap = false;
-    if (this.account.name === this.zeroTransaction.src) {
-      originalAmount = (this.zeroTransaction.currency !== this.account.currency ? -this.zeroTransaction.srcamount : -this.zeroTransaction.amount);
-      if (originalAmount > currentEndBalance) swap = true;
-      newAmount = currentEndBalance - originalAmount;
-    } else {
-      originalAmount = (this.zeroTransaction.currency !== this.account.currency ? this.zeroTransaction.dstamount : this.zeroTransaction.amount);
-      if (originalAmount < currentEndBalance) swap = true;
-      newAmount = originalAmount - currentEndBalance
-    }
-    newAmount *= swap?-1:1;
-    api(`/${swap ? 'xaction_swap_zero': 'xaction_amount'}`, { 
-      id: this.zeroTransaction.tid, 
-      version: this.zeroTransaction.version,
-      amount: newAmount,
-      account: this.account.name
-    }).then (response => {
-      if(response.status === 'OK') {
-        this.transactions[index] = response.transaction;
-        this._rebalance();
+    const currentEndBalance = this.balances.slice(-1)[0]; 
+    if (currentEndBalance !== 0) {
+      const index = e.currentTarget.index;
+      const version = e.currentTarget.version;
+      let originalAmount;
+      let newAmount;
+      let swap = false;
+      if (this.account.name === e.currentTarget.src) {
+        originalAmount = (e.currentTarget.currency !== this.account.currency ? -e.currentTarget.srcamount : -e.currentTarget.amount);
+        if (originalAmount > currentEndBalance) swap = true;
+        newAmount = currentEndBalance - originalAmount;
       } else {
-        this.dialog.show();
+        originalAmount = (e.currentTarget.currency !== this.account.currency ? e.currentTarget.dstamount : e.currentTarget.amount);
+        if (originalAmount < currentEndBalance) swap = true;
+        newAmount = originalAmount - currentEndBalance
       }
-    });
-  
-    this.zeroMenu.close();
+      newAmount *= swap?-1:1;
+      api(`/${swap ? 'xaction_swap_zero': 'xaction_amount'}`, { 
+        id: e.currentTarget.tid, 
+        version: e.currentTarget.version,
+        amount: newAmount,
+        account: this.account.name
+      }).then (response => {
+        if(response.status === 'OK') {
+          this.transactions[index] = response.transaction;
+          this._rebalance();
+        } else {
+          this.dialog.show();
+        }
+      });
+    }
   }
-  _zeroClosed(e) {
-    e.stopPropagation();
-    this.zeroLocked = false;
-  }
-  _zeroMenuRequest(e) {
-    e.stopPropagation();
-    if (this.zeroLocked) return;
-    this.zeroLocked = true;
-    this.zeroTransaction = e.currentTarget;
-    this.zeroMenu.positionTarget = e.detail;
-    this.zeroMenu.show();
 
-    
-  }
 }
 customElements.define('account-page', AccountPage);

@@ -25,6 +25,7 @@ import {connectUrl, disconnectUrl} from '../libs/location.js';
 
 import RouteManager from '../elements/route-manager.js';
 import '../elements/delete-dialog.js';
+import '../elements/zero-dialog.js';
 
 
 export class PageManager extends RouteManager {
@@ -68,6 +69,7 @@ export class PageManager extends RouteManager {
   render() {
     return html`
       <delete-dialog></delete-dialog>
+      <zero-dialog></zero-dialog>
       ${cache({
         home: html`<home-page managed-page></home-page>`,
         account: html`<account-page 

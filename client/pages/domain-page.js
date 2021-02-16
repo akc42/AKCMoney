@@ -150,24 +150,7 @@ class DomainPage extends LitElement {
         this.start = response.start;
         this.end = response.end;
         this.codes = response.codes;
-        this.balances = []
-        this.profit = 0;
-        for(let i = 0; i < this.codes.length; i++) {         
-          switch(this.codes[i].type) {
-            case 'R':
-            case 'B':
-              this.profit += this.codes[i].tamount;
-              break;
-            case 'C':
-            case 'A':
-              this.profit -= this.codes[i].tamount;
-              break;
-
-          }
-          this.balances[i] = this.profit;
-        }
-
-        
+        this._rebalance();
       });
     }
     if (changed.has('year')) {
@@ -238,7 +221,9 @@ class DomainPage extends LitElement {
               .end=${this.end} 
               .balance=${this.balances[i]}
               .repeats=${this.repeats}
-              .codes=${this.codes}></domain-code>
+              .codes=${this.codes}
+              data-index=${i}
+              @tamount-changed=${this._tamountChanged}></domain-code>
           `)}
         </section>
         <div class="footer">
@@ -256,6 +241,27 @@ class DomainPage extends LitElement {
     e.stopPropagation();
     this.eventLocked = false;
   }
+  _rebalance() {
+    this.balances = []
+    this.profit = 0;
+    for (let i = 0; i < this.codes.length; i++) {
+      switch (this.codes[i].type) {
+        case 'R':
+        case 'B':
+          this.profit += this.codes[i].tamount;
+          break;
+        case 'C':
+        case 'A':
+          this.profit -= this.codes[i].tamount;
+          break;
+
+      }
+      this.balances[i] = this.profit;
+    }
+
+
+
+  }
   _selectYear(e) {
     e.stopPropagation();
     this.year = parseInt(e.currentTarget.dataset.year,10);
@@ -268,6 +274,12 @@ class DomainPage extends LitElement {
         visual: this.year
       }
     }));
+  }
+  _tamountChanged(e) {
+    e.stopPropagation()
+    const index = parseInt(e.currentTarget.dataset.index,10);
+    this.codes[index].tamount = e.detail;
+    this._rebalance();
   }
   _yearRequest(e) {
     e.stopPropagation();

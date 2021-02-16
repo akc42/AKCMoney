@@ -30,7 +30,65 @@ import api from '../libs/post-api.js';
 */
 class DomainCode extends LitElement {
   static get styles() {
-    return css``;
+    return css`
+        .main {     
+          padding: 2px;
+          display: grid;
+          grid-gap: 1px;
+          color: var(--table-text-color);
+          grid-template-columns: 40px 1fr repeat(2, var(--amount-width)) 70px;
+          grid-template-areas:
+            "type . amount balance show"
+            "code code code code code";
+          margin: 2px 5px;
+          background-color: var(--table-panel-background);
+        }
+
+
+        .type {
+          grid-area: type;
+          width: 20px;
+          height: 20px;
+          margin: auto;
+        }
+        .code {
+          grid-area: code;
+        }
+        .amount {
+          grid-area: amount;
+          text-align: right;
+        }
+        .balance {
+          grid-area: balance;
+          text-align: right;
+        }
+        .show {
+          grid-area: show;
+          cursor:pointer;
+          margin:auto;
+        }
+
+        div.type.C {
+            background:transparent url(/images/codes.png) no-repeat 0 -20px;
+        }
+        div.type.R {
+            background:transparent url(/images/codes.png) no-repeat 0 -40px;
+        }
+        div.type.A {
+            background:transparent url(/images/codes.png) no-repeat 0 -60px;
+        }
+        div.type.B {
+            background:transparent url(/images/codes.png) no-repeat 0 -80px;
+        }
+
+        @media (min-width: 500px) {
+          .main {
+            grid-template-areas:
+              "type code amount balance show";    
+          }
+
+        }
+    `;
   }
   static get properties() {
     return {
@@ -93,15 +151,7 @@ class DomainCode extends LitElement {
         code: this.id
       }).then(response => {
         this.transactions = response.transactions;
-        this.fetchedTransactions = true;
-        this.balances = [];
-        let i = 0;
-        this.cumulative = 0;
-        for(const transaction of this.transactions) {
-          this.balances[i] = this.cumulative;
-          this.cumulative += Math.round(transaction.amount/ (this.type === 'A' ? 3 : 1));          
-          i += 1;
-        }
+        this._rebalance();
       });
     }
 
@@ -114,67 +164,6 @@ class DomainCode extends LitElement {
   }
   render() {
     return html`
-      <style>
-        .main {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 40px 1fr repeat(2, var(--amount-width)) 70px;
-          grid-template-areas:
-            "type . amount balance show"
-            "code code code code code";
-          margin: 2px 5px;
-          background-color: var(--table-panel-background);
-        }
-
-
-        .type {
-          grid-area: type;
-          width: 20px;
-          height: 20px;
-          margin: auto;
-        }
-        .code {
-          grid-area: code;
-        }
-        .amount {
-          grid-area: amount;
-          text-align: right;
-        }
-        .balance {
-          grid-area: balance;
-          text-align: right;
-        }
-        .show {
-          grid-area: show;
-          cursor:pointer;
-          margin:auto;
-        }
-
-        div.type.C {
-            background:transparent url(/images/codes.png) no-repeat 0 -20px;
-        }
-        div.type.R {
-            background:transparent url(/images/codes.png) no-repeat 0 -40px;
-        }
-        div.type.A {
-            background:transparent url(/images/codes.png) no-repeat 0 -60px;
-        }
-        div.type.B {
-            background:transparent url(/images/codes.png) no-repeat 0 -80px;
-        }
-
-        @media (min-width: 500px) {
-          .main {
-            grid-template-areas:
-              "type code amount balance show";    
-          }
-
-        }
-
-
-      </style>
       <section class="main">
         <div class="type ${this.type}"></div>
         <div class="code">${this.description}</div>
@@ -198,7 +187,7 @@ class DomainCode extends LitElement {
               ?accounting=${this.type !== 'B'}
               .repeats=${this.repeats}
               .codes=${this.codes}
-              ></account-transaction>
+              @zero-reply=${this._zeroAdjust}></account-transaction>
           `)}
         `:'')}
       </section>
@@ -218,7 +207,54 @@ class DomainCode extends LitElement {
       description: this.description
     };
   }
-
+  _rebalance() {
+    this.balances = [];
+    let i = 0;
+    this.cumulative = 0;
+    for (const transaction of this.transactions) {
+      this.balances[i] = this.cumulative;
+      this.cumulative += Math.round(transaction.amount / (this.type === 'A' ? 3 : 1));
+      i += 1;
+    }
+    if (this.cumulative !== this.tamount) {
+      this.tamount = this.cumulative;
+      this.dispatchEvent(new CustomEvent('tamount-changed',{bubble: true, composed: true, detail: this.tamount}))
+    } 
+  }
+  _zeroAdjust(e) {
+    e.stopPropagation();
+    const currentEndBalance = e.currentTarget.cumulative;
+    if (currentEndBalance !== 0) {
+      const index = e.currentTarget.index;
+      let originalAmount;
+      let newAmount;
+      
+      let swap = false;
+      if (this.id === e.currentTarget.srccode) {
+        originalAmount = e.currentTarget.amount * (this.type === 'B' ? 1 : -1);
+        if (originalAmount > currentEndBalance) swap = true;
+        newAmount = currentEndBalance - originalAmount;
+      } else {
+        originalAmount = e.currentTarget.amount;
+        if (originalAmount < currentEndBalance) swap = true;
+        newAmount = originalAmount - currentEndBalance
+      }
+      newAmount *= swap ? -1 : 1;
+      api(`/${swap ? 'xaction_swap_zero' : 'xaction_amount'}`, {
+        id: e.currentTarget.tid,
+        version: e.currentTarget.version,
+        amount: newAmount,
+        account: e.currentTarget.account
+      }).then(response => {
+        if (response.status === 'OK') {
+          this.transactions[index] = response.transaction;
+          this._rebalance();
+        } else {
+          this.dialog.show();
+        }
+      });
+    }
+  }
   _zoom(e) {
     e.stopPropagation();
     this.expanded = !this.expanded;

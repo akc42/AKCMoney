@@ -950,7 +950,7 @@ class AccountTransaction extends LitElement {
       (this.dstclear && this.dst === this.account)) return;
 
     e.preventDefault();
-    this.dispatchEvent(new CustomEvent('zero-adjust', {bubbles: true, composed: true, detail: e.currentTarget}));
+    e.currentTarget.dispatchEvent(new CustomEvent('zero-request', {bubbles: true, composed: true}));
   }
 }
 customElements.define('account-transaction', AccountTransaction);
