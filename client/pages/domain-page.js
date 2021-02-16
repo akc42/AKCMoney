@@ -35,7 +35,78 @@ import '../elements/domain-code.js';
 */
 class DomainPage extends LitElement {
   static get styles() {
-    return [page, menu,css``];
+    return [page, menu,css`
+        section.page {
+          max-width: 800px;
+        }
+        .header, .footer {     
+          padding: 2px;
+          display: grid;
+          grid-gap: 1px;
+          color: var(--table-text-color);
+          grid-template-columns: 40px 1fr repeat(2, var(--amount-width)) 70px;
+          grid-template-areas:
+            "type code amount balance show";
+        }
+        .header {
+          margin: 0px 5px;
+          background-color: var(--table-heading-background);
+          font-weight: bold;
+        }
+        .footer {
+          background-color: white;
+          margin: 0px 5px;
+          font-weight: bold;
+          padding: 5px 8px;
+          grid-gap: 0px;
+        }
+        .footer * {
+          padding: 3px 0px;
+          background-color: var(--table-panel-background);
+        }
+        .type {
+          grid-area: type;
+        }
+        .code {
+          grid-area: code;
+        }
+        .header .amount, .header .balance {
+          text-align: center;
+        }
+        .footer .amount, .footer .balance {
+          text-align: right;
+        }
+        .amount {
+          grid-area: amount;
+        
+        }
+        .balance {
+          grid-area: balance;
+        
+        }
+        .show {
+          grid-area: show;
+        }
+        #codes {
+          background-color: white;
+          color: var(--table-text-color);
+          margin: 0px calc(var(--scrollbar-width) + 5px) 0px 5px;
+          display: flex;
+          flex-direction: column;
+
+        }
+        #ysel {
+          width: var(--year-selector-width);
+          margin: 5px 0 10px 5px;
+        }
+        @media (min-width: 500px) {
+          .header,.footer {
+            grid-template-areas:
+              "type code amount balance show";    
+          }
+
+        }    
+    `];
   }
   static get properties() {
     return {
@@ -134,79 +205,6 @@ class DomainPage extends LitElement {
   }
   render() {
     return html`
-      <style>
-
-        section.page {
-          max-width: 800px;
-        }
-        .header, .footer {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 40px 1fr repeat(2, var(--amount-width)) 70px;
-          grid-template-areas:
-            "type code amount balance show";
-        }
-        .header {
-          margin: 0px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
-        }
-        .footer {
-          background-color: white;
-          margin: 0px 5px;
-          font-weight: bold;
-          padding: 5px 8px;
-          grid-gap: 0px;
-        }
-        .footer * {
-          padding: 3px 0px;
-          background-color: var(--table-panel-background);
-        }
-        .type {
-          grid-area: type;
-        }
-        .code {
-          grid-area: code;
-        }
-        .header .amount, .header .balance {
-          text-align: center;
-        }
-        .footer .amount, .footer .balance {
-          text-align: right;
-        }
-        .amount {
-          grid-area: amount;
-        
-        }
-        .balance {
-          grid-area: balance;
-        
-        }
-        .show {
-          grid-area: show;
-        }
-        #codes {
-          background-color: white;
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 0px 5px;
-          display: flex;
-          flex-direction: column;
-
-        }
-        #ysel {
-          width: var(--year-selector-width);
-          margin: 5px 0 10px 5px;
-        }
-        @media (min-width: 500px) {
-          .header,.footer {
-            grid-template-areas:
-              "type code amount balance show";    
-          }
-
-        }
-      </style>
       <dialog-box id="years" closeOnClick @overlay-closed=${this._closing}>
         ${cache(this.years.map(year => html`
           <button role="menuitem" @click=${this._selectYear} data-year="${year}">

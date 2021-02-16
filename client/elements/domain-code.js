@@ -62,7 +62,6 @@ class DomainCode extends LitElement {
     this.end = 0;
     this.repeats = [];
     this.codes = [];
-    this.fetchedTransactions = false;
 
   }
   connectedCallback() {
@@ -82,9 +81,10 @@ class DomainCode extends LitElement {
   }
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.expanded = false;
   }
   update(changed) {
-    if (!this.fetchedTransactions && this.expanded && changed.has('expanded')) {
+    if (this.expanded && changed.has('expanded')) {
       //63072000 = 2 more years back for assets
       api('domain_xactions', { 
         domain: this.domain, 
