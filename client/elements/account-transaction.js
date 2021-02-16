@@ -26,7 +26,7 @@ import tooltip from '../styles/tooltip.js';
 import api from '../libs/post-api.js';
 import submit from '../libs/submit-function.js'
 import {switchPath } from '../libs/switch-path.js';
-
+const debug = require('debug')('money:transaction');
 import './list-selector.js';
 import './date-format.js';
 /*
@@ -669,7 +669,7 @@ class AccountTransaction extends LitElement {
       this.sameDomain = value.samedomain !==0;
       if (this.tid === 0) this.edit = true;
     } else {
-      console.log('transaction', value.id, 'not updated');
+      debug('transaction', value.id, 'not updated');
     }
     
   }
@@ -804,7 +804,7 @@ class AccountTransaction extends LitElement {
   _noDrag(e) {
     e.stopPropagation();
     e.preventDefault();
-    console.log('no drag', e.currentTarget);
+    debug('no drag', e.currentTarget);
   }
   _repeatChanged(e) {
     e.stopPropagation();
@@ -887,32 +887,29 @@ class AccountTransaction extends LitElement {
   _update(e) {
     //we have got a response from our form save
     const response = e.detail;
-    if (response.status === 'OK') {
-      const saver = this.shadowRoot.querySelector('#saver');
-      const mover = saver.getAttribute('value');
-      if (mover === 'save') {
-        //was a save update to transaction, and account
-        this.edit = false;
-        this.transaction = response.transaction;
-        this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
-        if (response.balance !== undefined) {
-          this.dispatchEvent(new CustomEvent('balance-changed', {
-            bubbles: true, composed: true, detail: {
-              balance: response.balance,
-              bversion: response.bversion
-            }
-          }));
-        }
-      } else {
-        switchPath('account', {account: response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src, tid: response.transaction.id, open: 'yes'});
+    if (response.status !== 'OK') throw new Error(response.status);
+    const saver = this.shadowRoot.querySelector('#saver');
+    const mover = saver.getAttribute('value');
+    if (mover === 'save') {
+      //was a save update to transaction, and account
+      this.edit = false;
+      this.transaction = response.transaction;
+      this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
+      if (response.balance !== undefined) {
+        this.dispatchEvent(new CustomEvent('balance-changed', {
+          bubbles: true, composed: true, detail: {
+            balance: response.balance,
+            bversion: response.bversion
+          }
+        }));
       }
     } else {
-      this.dispatchEvent(new CustomEvent('version-error',{bubbles: true, composed: true}));
+      switchPath('account', {account: response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src, tid: response.transaction.id, open: 'yes'});
     }
+
   }
   _zeroRequest(e) {
     e.stopPropagation();
-    console.log('context menu');
     //can't do if transaction is cleared or is a repeated one.
     if (this.repeat !== this.repeats[0].rkey || this.reconcilled || (this.srcclear && this.src === this.account) ||
       (this.dstclear && this.dst === this.account)) return;

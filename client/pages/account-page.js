@@ -32,7 +32,7 @@ import page from '../styles/page.js';
 import button from '../styles/button.js';
 import menu from '../styles/menu.js';
 import error from '../styles/error.js';
-
+const debug = require('debug')('money:account');
 /*
      <account-page>: Displays the transaction so an account
 */
@@ -609,19 +609,28 @@ class AccountPage extends LitElement {
     const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
     this._printTime('Current source time', transaction.date);
     //work out the limits that the transaction can fit into
-    const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400) ;
+    const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400);
+    let insDay
+    if (transaction.id === 0) {
+      const now = Math.round(new Date().getTime()/1000);
+      insDay = Math.floor((now - TZOffset) / 86400);
+    } else {
+      insDay = dstDay
+    }
     //start with begining and end of the destination day
-    let lowerLimit = dstDay * 86400;
-    let upperLimit = ((dstDay + 1) * 86400) - 1; 
+    let lowerLimit = insDay * 86400;
+    let upperLimit = ((insDay + 1) * 86400) - 1; 
     this._printTime('Initial Lower Limit', lowerLimit);
     this._printTime('Initial Upper Limit', upperLimit);
     if (up) {
       //moving up so upper limit is just before the transaction we are moving past
-      upperLimit = this.transactions[dst].date - 1;
-      this._printTime('Adjusted Upper Limit', upperLimit);
+      if (insDay === dstDay) {
+        upperLimit = this.transactions[dst].date - 1;
+        this._printTime('Adjusted Upper Limit', upperLimit);
+      }
       if (dst > 0 ) {
         const preDay = Math.floor((this.transactions[dst-1].date - TZOffset) / 86400);
-        if (preDay === dstDay) {
+        if (preDay === insDay) {
           //there is a prior transaction on the same day so we try limit ourselves to after it 
           lowerLimit = this.transactions[dst - 1].date + 1;
           if (lowerLimit > upperLimit) lowerlimit = upperLimit;
@@ -630,11 +639,13 @@ class AccountPage extends LitElement {
       }
     } else {
       //moving down so lower limit is just after the transaction we are moving past
-      lowerLimit = this.transactions[dst].date + 1;
-      this._printTime('Adjusted Lower Limit', lowerLimit);
+      if (insDay === dstDay) {
+        lowerLimit = this.transactions[dst].date + 1;
+        this._printTime('Adjusted Lower Limit', lowerLimit);
+      }
       if (dst < (this.transactions.length - 1)) {
         const postDay = Math.floor((this.transactions[dst + 1].date - TZOffset) / 86400);
-        if (postDay === dstDay) {
+        if (postDay === insDay) {
           //There is a further transaction on the same day, so try to limit ourselves to before it
           upperLimit = this.transactions[dst + 1].date - 1;
           if (upperLimit < lowerLimit) upperLimit = lowerLimit;
@@ -670,11 +681,10 @@ class AccountPage extends LitElement {
   _newTransaction(e) {
     const wrap = this.shadowRoot.querySelector('#w0');
     if (wrap === null) {
-      const transactionDate = new Date();
       const transaction = {
         amount: 0,
         currency: this.account.currency,
-        date: Math.round(transactionDate.getTime()/1000),
+        date: Math.round(new Date().getTime()/1000),
         description: '',
         dst: null,
         dstamount: null,
@@ -707,7 +717,7 @@ class AccountPage extends LitElement {
 
     const d = new Date();
     d.setTime(time * 1000);
-    console.log(reason, d.toLocaleString());
+    debug(reason, d.toLocaleString());
 
   }
   _rebalance() {
