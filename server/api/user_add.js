@@ -28,7 +28,7 @@
     debug('new request from', user.name, 'with params', params );
     const insertUser = db.prepare('INSERT INTO user(name, isAdmin) VALUES(?,?)');
     const addCapability = db.prepare('INSERT INTO capability(uid,domain) VALUES(?,?)');
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
     ORDER BY u.name, u.uid`);
     db.transaction(() => {
       const { lastInsertRowid } = insertUser.run(params.name, params.isAdmin);

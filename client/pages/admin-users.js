@@ -385,17 +385,27 @@ class AdminUsers extends LitElement {
       if (u.uid !== lastUid) {
         if (lastUid !== 0) this.users.push(user);
         lastUid = u.uid;
-        user = { uid: u.uid, version: u.version, name: u.name, isAdmin: u.isAdmin != 0, domains: [] };
+        user = { uid: u.uid, version: u.version, name: u.name, isAdmin: u.isAdmin != 0, domain: u.defaultdomain, domains: [] };
       }
-      user.domains.push(u.domain);
+      if ((u.domain ?? '').length > 0) user.domains.push(u.domain);
     }
     this.users.push(user);
   }
   _toggleAdmin(e) {
     e.stopPropagation();
     const index = parseInt(e.currentTarget.dataset.index, 10);
-    this.users[index].isAdmin = !this.users[index].isAdmin;
-    api('user_admin', { uid: this.users[index].uid, version: this.users[index].version, isAdmin: this.users[index].isAdmin ? 1:0}).then(response =>{
+    const isAdmin = !this.users[index].isAdmin;
+    const domains = this.users[index].domains;
+    if (!isAdmin && domains.length === 0) {
+      if ((this.users[index].domain ?? '').length > 0) {
+        domains.push(this.users[index].domain); //pick at least one domain
+      } else {
+        domains.push(this.domains[0]); //pick at least one domain
+      }
+    }
+    this.users[index].isAdmin = isAdmin;
+
+    api('user_admin', { uid: this.users[index].uid, version: this.users[index].version, isAdmin: isAdmin ? 1:0, domains: domains}).then(response =>{
       if (response.status !== 'OK') throw new Error(response.status);
       this._processResponse(response.users);
     });

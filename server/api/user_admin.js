@@ -25,18 +25,30 @@
   const db = require('@akc42/server-utils/database');
 
   module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
+    debug('new request from', user.name, 'for user uid', params.uid, 'isAdmin', params.isAdmin );
     const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
     const updateUser = db.prepare('UPDATE user SET version = version + 1, isAdmin = ? WHERE uid = ?');
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    const insertCapability = db.prepare('REPLACE INTO capability(uid, domain) VALUES(?,?)');
+    const deleteCapability = db.prepare('DELETE FROM capability WHERE uid = ? ');
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
     ORDER BY u.name, u.uid`);
     db.transaction(() => {
       const v = getVersion.get(params.uid);
       if (v === params.version) {
         updateUser.run(params.isAdmin, params.uid);
+        if (params.isAdmin === 1) {
+          debug('deleting capabilities');
+          deleteCapability.run(params.uid);
+        } else {
+          for(const domain of params.domains) {
+            debug('insert capability for domain', domain)
+            insertCapability.run(params.uid,domain);
+          }
+        }
         responder.addSection('status', 'OK');
         responder.addSection('users', getUsers.all())
       } else {
+        debug('failed with version error');
         responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
       }
       

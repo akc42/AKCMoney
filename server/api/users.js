@@ -26,7 +26,7 @@
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name);
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
     ORDER BY u.name, u.uid`)
     
     db.transaction(() => {

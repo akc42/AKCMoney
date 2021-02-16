@@ -29,7 +29,7 @@
     const checkName = db.prepare('SELECT COUNT(*) FROM user WHERE name = ?').pluck();
     const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
     const updateUser = db.prepare('UPDATE user SET version = version + 1, name = ? WHERE uid = ?');
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
     ORDER BY u.name, u.uid`);
     db.transaction(() => {
       const v = getVersion.get(params.uid);

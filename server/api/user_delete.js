@@ -28,7 +28,7 @@
     debug('new request from', user.name, 'with params', params );
     const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
     const deleteUser = db.prepare('DELETE FROM user WHERE uid = ?'); //capabilities and prioritys get deleted with cascade
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
     ORDER BY u.name, u.uid`);
     db.transaction(() => {
       const v = getVersion.get(params.uid);

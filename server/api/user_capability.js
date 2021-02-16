@@ -31,7 +31,7 @@
     const insertCapability = db.prepare('INSERT INTO capability(uid, domain) VALUES(?,?)');
     const deleteCapability = db.prepare('DELETE FROM capability WHERE uid = ? AND domain = ?');
     const deletePriority = db.prepare('DELETE FROM priority WHERE uid = ? AND domain = ?');
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
     ORDER BY u.name, u.uid`);
     db.transaction(() => {
       const v = getVersion.get(params.uid);
