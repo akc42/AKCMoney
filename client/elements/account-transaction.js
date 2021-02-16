@@ -747,7 +747,7 @@ class AccountTransaction extends LitElement {
       this.srcclear = !this.srcclear;
       this.dispatchEvent(new CustomEvent('clear-changed', {
         bubbles: true, composed: true, detail: {
-          amount: this.amount,
+          amount: this.currency === this.acurrency ? this.amount: this.srcamount,
           clear: this.srcclear,
           isSrc: true
         }
@@ -757,7 +757,7 @@ class AccountTransaction extends LitElement {
       this.dstclear = !this.dstclear;
       this.dispatchEvent(new CustomEvent('clear-changed', {
         bubbles: true, composed: true, detail: {
-          amount: this.amount,
+          amount: this.currency === this.acurrency ? this.amount : this.dstamount,
           clear: this.dstclear,
           isSrc: false
         }
@@ -824,7 +824,7 @@ class AccountTransaction extends LitElement {
       this.srcclear = false;
       if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
         bubbles: true, composed: true, detail: {
-          amount: this.amount,
+          amount: this.currency === this.acurrency ? this.amount : this.srcamount,
           clear: false,
           isSrc: true
         }
@@ -835,7 +835,7 @@ class AccountTransaction extends LitElement {
       this.dstclear = false;
       if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
         bubbles: true, composed: true, detail: {
-          amount: this.amount,
+          amount: this.currency === this.acurrency ? this.amount : this.dstamount,
           clear: false,
           isSrc: false
         }
@@ -856,7 +856,7 @@ class AccountTransaction extends LitElement {
       this.srcclear = true;
       if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
         bubbles: true, composed: true, detail: {
-          amount: this.amount,
+          amount: this.currency === this.acurrency ? this.amount : this.srcamount,
           clear: true,
           isSrc: true
         }
@@ -867,7 +867,7 @@ class AccountTransaction extends LitElement {
       this.dstclear = true;
       if (change) this.dispatchEvent(new CustomEvent('clear-changed', {
         bubbles: true, composed: true, detail: {
-          amount: this.amount,
+          amount: this.currency === this.acurrency ? this.amount : this.dstamount,
           clear: true,
           isSrc: false
         }
