@@ -22,7 +22,7 @@
   'use strict';
 
   const debug = require('debug')('money:currencypriority');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );

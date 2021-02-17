@@ -29,6 +29,7 @@
     "@akc42/app-utils": "^2.0.2",
     "@akc42/distributed-router": "^1.1.0",
     "@akc42/server-utils": "^1.0.6",
+    "@akc42/sqlite-db": "^1.0.0",
     "@rollup/plugin-node-resolve": "^10.0.0",
     "@webcomponents/webcomponentsjs": "^2.5.0",
     "bcrypt": "^5.0.0",

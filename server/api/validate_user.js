@@ -22,7 +22,7 @@
   'use strict';
 
   const debug = require('debug')('money:validate');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   module.exports = async function(user, params, responder, genCook) {
     debug('new request from', user.name );
     const updatedUser = db.prepare(`SELECT * FROM user WHERE uid = ?`).get(user.uid);

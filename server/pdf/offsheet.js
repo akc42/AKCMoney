@@ -21,7 +21,7 @@
   'use strict';
 
   const debug = require('debug')('money:pdfoffsheet');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   const {dbDateToString, blankIfNull} = require('../utils.js');
   const path = require('path');
   const LEFT_EDGE = 72;

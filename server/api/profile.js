@@ -22,7 +22,7 @@
   'use strict';
 
   const debug = require('debug')('money:profile');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   const bcrypt = require('bcrypt');
 
   module.exports = async function(user, params, responder, genCook) {

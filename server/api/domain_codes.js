@@ -24,7 +24,7 @@
   'use strict';
 
   const debug = require('debug')('money:domaincodes');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   const { insertRepeats } = require('../utils');
 
   module.exports = async function(user, params, responder) {

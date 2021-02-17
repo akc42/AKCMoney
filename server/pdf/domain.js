@@ -22,7 +22,7 @@
   'use strict';
 
   const debug = require('debug')('money:pdfdomain');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   const path = require('path');
   const { insertRepeats, dbDateToString, blankIfNull } = require('../utils');
   const LEFT_EDGE = 72;

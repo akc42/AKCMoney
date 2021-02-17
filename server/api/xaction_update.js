@@ -22,7 +22,7 @@
   'use strict';
 
   const debug = require('debug')('money:xactionupdate');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   const {nullIfZeroLength, booleanToDbValue, nullOrAmount, nullOrNumber} = require('../utils');
 
   module.exports = async function(user, params, responder) {

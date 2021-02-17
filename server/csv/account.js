@@ -24,7 +24,7 @@ const { end } = require('pdfkit');
   'use strict';
 
   const debug = require('debug')('money:csvaccount');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
 
   module.exports = async function(user, params, responder) {
     debug('new request from', user.name, 'with params', params );

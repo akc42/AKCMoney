@@ -22,7 +22,7 @@
   'use strict';
 
   const debug = require('debug')('money:csvdomain');
-  const db = require('@akc42/server-utils/database');
+  const db = require('@akc42/sqlite-db');
   const path = require('path');
   const { insertRepeats, dbDateToString } = require('../utils');
 

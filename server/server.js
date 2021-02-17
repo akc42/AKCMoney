@@ -27,8 +27,9 @@
 
   const path = require('path');
   require('dotenv').config({path: path.resolve(__dirname,'../','money.env')});
+  const db = require('@akc42/sqlite-db'); //this has to come after environment is set up
 
-  const {logger, Responder, database:db, version:versionPromise} = require('@akc42/server-utils'); //this has to come after environment is set up
+  const {logger, Responder, version:versionPromise} = require('@akc42/server-utils'); //this has to come after environment is set up
   const CSVResponder = require('./csvresponder');
 
   const fs = require('fs');
