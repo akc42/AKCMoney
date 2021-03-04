@@ -475,7 +475,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       serverDestroy(server);        
       versionPromise.then(info => {
         logger('app', `Release ${info.version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
-        if (module.parent) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
+        if (process.send) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
       });
         
 
