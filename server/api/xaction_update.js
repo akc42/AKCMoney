@@ -143,7 +143,9 @@
             debug('type src - source account', src, 'account', params.account);
             if (params.account !== src) swapSrcDst.run(tid); //we have to swap first
             if (params.type === 'move' && dst === null && params.dst.length > 0) {
+              debug('Previous dst was null, but we moved to it, so make src', params.dst,'and make dst null (later update)');
               changeXactionSrc.run(params.dst, tid);
+              params.account = params.dst
               params.dst = '';
             }
             updateXactionSrc.run(
@@ -159,11 +161,14 @@
               nullIfZeroLength(params.dst),
               tid
             );
-          } else {
+
+          } else if (params.account === params.dst){
             debug('type dst - dst account', dst, 'account', params.account);
             if (params.account !== dst) swapSrcDst.run(tid); //we have to swap first
             if (params.saver === 'move' && src === null && params.src.length > 0) {
+              debug('Previous src was null, but we moved to it, so make dst', params.src, 'and make src null (later update)');
               changeXactionDst.run(params.src, tid);
+              params.account = params.src;
               params.src = '';
             }
             updateXactionDst.run(
@@ -179,14 +184,20 @@
               nullIfZeroLength(params.src),
               tid
             );
-
+          } else {
+            debug('Invalid Account:', params.account, ',source:', params.src, ',destination:', params.dst);
+            responder.addSection('status', 'Fail Invalid Account');
+            return;
           }
-  
+          debug('tid', tid, 'params.account', params.account);
+          const transaction = getUpdatedXaction.get(tid, params.account)
+          debug('transaction', transaction)
+          responder.addSection('transaction', transaction);
           responder.addSection('status', 'OK');
-          responder.addSection('transaction', getUpdatedXaction.get(tid,params.account));
+          
         } else {
           debug('params version', params.version, 'database version', version,'tid', tid);
-          responder.addSection('status', 'Fail');
+          responder.addSection('status', 'Fail version mismatch');
         }
       }
     })();
