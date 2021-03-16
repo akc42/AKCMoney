@@ -671,7 +671,7 @@ class AccountTransaction extends LitElement {
     debug('account-amount-update-stat', errorStat)
     if (this.accountAmountInput.reportValidity()) {
       this.accountAmountError = false;
-      const newAmount = Math.round(Math.abs(parseFloat(this.amountAmountInput.value) * 100));
+      const newAmount = Math.round(Math.abs(parseFloat(this.accountAmountInput.value) * 100));
       if (newAmount !== this.amount) {
         if (this.account === this.src) {
           this.srcamount = newAmount;
