@@ -58,11 +58,11 @@
           nullOrAmount(params.amount),
           params.currency,
           nullIfZeroLength(params.src),
-          params.account === params.src && currency !== params.currency ? NullOrAmount(params.accountamount) : null,
+          params.account === params.src && currency !== params.currency ? nullOrAmount(params.accountamount) : null,
           params.account === params.src ? booleanToDbValue(params.cleared) : 0,
           params.account === params.src ? nullOrNumber(params.code) : null,
           nullIfZeroLength(params.dst),
-          params.account === params.dst && currency !== params.currency ? NullOrAmount(params.accountamount) : null,
+          params.account === params.dst && currency !== params.currency ? nullOrAmount(params.accountamount) : null,
           params.account === params.dst ? booleanToDbValue(params.cleared) : 0,
           params.account === params.dst ? nullOrNumber(params.code) : null,
           nullIfZeroLength(params.rno),
@@ -72,7 +72,7 @@
         debug('made new transaction with id = ', lastInsertRowid);
         if (params.cleared !== undefined && ((currency === params.currency && nullOrAmount(params.amount) !== null) ||
           (currency !== params.currency && nullOrAmount(params.accountamount !== null))) ) {
-          const balanceChange = NullOrAmount((params.account === params.src ? '-': '') + 
+          const balanceChange = nullOrAmount((params.account === params.src ? '-': '') + 
             currency !== params.currency ? params.accountamount : params.amount)
           updateAccountBalance.run(balance + balanceChange, params.account);
           debug('updated account',params.account,'with new balance change of', balanceChange);
