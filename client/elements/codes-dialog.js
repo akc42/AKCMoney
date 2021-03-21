@@ -120,7 +120,7 @@ class CodesDialog extends LitElement {
     const index =  parseInt(e.currentTarget.dataset.index,10);
     this.code = this.codes[index];
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', { 
-      detail: { key: {key: code.id, filter: this.request.filter}, visual: code.description }
+      detail: { key: {key: this.code.id, filter: this.request.filter}, visual: this.code.description }
     }));
     this.dialog.close();
  }
