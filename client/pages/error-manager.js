@@ -90,7 +90,7 @@ class ErrorManager extends LitElement {
     if (this.anError) return;
     //e.preventDefault();
     const message = `Client Error:
-${e.stack}
+${e.stack??e.error.stack??e.message}
 has occured`;
     const logpath = `/api/log/${encodeURIComponent('error')}/${encodeURIComponent(message)}`
 
