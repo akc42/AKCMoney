@@ -21,10 +21,11 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 
 
+
 import button from '../styles/button.js';
 import page from '../styles/page.js';
 
-const debug = require('debug')('money:error')
+
 
 
 /*
@@ -93,10 +94,7 @@ class ErrorManager extends LitElement {
 ${e.stack??e.error.stack??e.message}
 has occured`;
     const logpath = `/api/log/${encodeURIComponent('error')}/${encodeURIComponent(message)}`
-
-    window.fetch(logpath, { method: 'post' })
-      .catch(() => true);//no interest in reply, but must make sure it doesn't throw an exception.
-    debug('Server Message Sent:', message );
+    navigator.sendBeacon(logPath);
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }
