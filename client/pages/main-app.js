@@ -292,7 +292,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.page = '';
     this.domainYear = 0;
     this.code = 0;
-    configPromise.then(() => {
+    configPromise().then(() => {
       this.version = sessionStorage.getItem('version');
       this.copyrightYear = sessionStorage.getItem('copyrightYear');
     });

@@ -32,7 +32,9 @@ import page from '../styles/page.js';
 import button from '../styles/button.js';
 import menu from '../styles/menu.js';
 import error from '../styles/error.js';
-const debug = require('debug')('money:account');
+
+import Debug from '../libs/debug.js';
+const debug = Debug('account');
 /*
      <account-page>: Displays the transaction so an account
 */
@@ -648,7 +650,7 @@ class AccountPage extends LitElement {
     }
     //fit the new transaction half way between our limits.
     transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
-    this._printTime('Adjsted transaction Time', transaction.date);  
+    this._printTime('Adjusted transaction Time', transaction.date);  
     const inspoint = up ? dst : dst + 1
     this.transactions.splice(inspoint, 0, transaction);  //add our new transaction into place    
     if (transaction.id !== 0) { //only update date if transaction is in db (not so when we have just created it)

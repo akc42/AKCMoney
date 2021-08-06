@@ -386,6 +386,7 @@ INSERT INTO settings (name,value) VALUES('track_cookie', 'm_user'); --cookie nam
 INSERT INTO settings (name,value) VALUES('auth_cookie', 'm_auth'); --authcookie name
 INSERT INTO settings (name,value) VALUES('null_account', '-- Select (Optional) Other Account --'); --NUll account text (dst or src)
 INSERT INTO settings (name,value) VALUES('null_code', '-- Select (Optional) Account Code --'); --NULL code text
+INSERT INTO settings (name,value) VALUES('debug',''); --this should be a comma separated list of client debug topics to actually log
 
 
 

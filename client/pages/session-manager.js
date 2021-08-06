@@ -27,13 +27,14 @@ import {switchPath} from '../libs/switch-path.js';
 
 import page from '../styles/page.js';
 
+import Debug from '../libs/debug.js';
 
 
 import  '../elements/waiting-indicator.js';
 
 import '/api/user.js';  //create user cookie
 
-const debug = require('debug')('money:session');
+const debug = Debug('session');
 
 
 
@@ -104,7 +105,7 @@ class SessionManager extends LitElement {
           break;
         case 'reset':
           this.authorised = false;
-          configPromise.then(() => { //only using this to wait until globals has been read, since this is the first state
+          configPromise().then(() => { //only using this to wait until globals has been read, since this is the first state
             const authTester = new RegExp(`^(.*; +)?${sessionStorage.getItem('authCookie')}=([^;]+)(.*)?$`);
             const matches = document.cookie.match(authTester);
             if (matches) {
