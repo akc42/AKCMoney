@@ -354,7 +354,7 @@ class AdminAccounts extends LitElement {
     //check name is unique
     for(let i=0; i< this.accounts.length; i++) {
       if (i !== index) {
-        if (this.account[i].name.toLowerCase() === name.toLowerCase()) {
+        if (this.accounts[i].name.toLowerCase() === name.toLowerCase()) {
           found = true; //name not unique
           break;
         }

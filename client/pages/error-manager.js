@@ -94,7 +94,7 @@ class ErrorManager extends LitElement {
 ${e.stack??e.error.stack??e.message}
 has occured`;
     const logpath = `/api/log/${encodeURIComponent('error')}/${encodeURIComponent(message)}`
-    navigator.sendBeacon(logPath);
+    navigator.sendBeacon(logpath);
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }

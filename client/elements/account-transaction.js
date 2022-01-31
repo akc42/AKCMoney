@@ -26,10 +26,13 @@ import tooltip from '../styles/tooltip.js';
 import api from '../libs/post-api.js';
 import submit from '../libs/submit-function.js'
 import {switchPath } from '../libs/switch-path.js';
-const debug = require('debug')('money:transaction');
+
+import Debug from '../libs/debug.js';
+const debug = Debug('account');
+
 import './list-selector.js';
 import './date-format.js';
-import { f } from '../libs/lit-html-fb016e47.js';
+
 /*
      <account-transaction>
 */
