@@ -30,7 +30,71 @@ import page from '../styles/page.js';
 */
 class OffsheetPage extends LitElement {
   static get styles() {
-    return [page, css``];
+    return [page, css`
+      section.page {
+        max-width: 800px;
+      }
+      .header {     
+        padding: 2px;
+        display: grid;
+        grid-gap: 1px;
+        color: var(--table-text-color);
+        grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+        grid-template-areas:
+          "date ref . amount balance ."
+          "description description description description description description";
+  
+        margin: 0px 5px;
+        background-color: var(--table-heading-background);
+        font-weight: bold;
+
+      }
+
+      .header > * {
+        border: 1px solid white;
+      }
+      .info {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: flex-start;
+      }
+      .currency > .name {
+        font-weight: bold;
+      }
+      .currency > .name > span {
+        color: var(--currency-designator-color)
+      }
+      .currency > .description {
+        font-style: italic;
+      }
+      #transactions {
+        background-color: var(--table-odd-color);
+        color: var(--table-text-color);
+        margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
+        display: flex;
+        flex-direction: column;
+
+      }
+      #transactions > div {
+        margin:0;
+        padding: 0;
+      
+      }
+      #transactions > div:nth-child(even):not(.over){
+        background-color: var(--table-even-color);
+      }
+
+      @media (min-width: 500px) {
+
+        .header{
+          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+          grid-template-areas:
+            "date ref description amount balance .";
+          margin-top: 20px;
+        }
+      }
+    `];
   }
   static get properties() {
     return {
@@ -80,71 +144,6 @@ class OffsheetPage extends LitElement {
   }
   render() {
     return html`
-      <style>
-        section.page {
-          max-width: 800px;
-        }
-        .header {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
-          grid-template-areas:
-            "date ref . amount balance ."
-            "description description description description description description";
-    
-          margin: 0px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
-
-        }
-
-        .header > * {
-          border: 1px solid white;
-        }
-        .info {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-around;
-          align-items: flex-start;
-        }
-        .currency > .name {
-          font-weight: bold;
-        }
-        .currency > .name > span {
-          color: var(--currency-designator-color)
-        }
-        .currency > .description {
-          font-style: italic;
-        }
-        #transactions {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-
-        }
-        #transactions > div {
-          margin:0;
-          padding: 0;
-        
-        }
-        #transactions > div:nth-child(even):not(.over){
-          background-color: var(--table-even-color);
-        }
-
-        @media (min-width: 500px) {
-
-          .header{
-            grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
-            grid-template-areas:
-              "date ref description amount balance .";
-            margin-top: 20px;
-          }
-        }
-      </style>
       <section class="page">
         <h1>Off Balance Sheet Transactions</h1>
         <div class="info">
@@ -170,7 +169,7 @@ class OffsheetPage extends LitElement {
               .transaction=${transaction} 
               readonly 
               .acurrency=${transaction.currency}
-              .account=${transaction.amount < 0 ? transaction.src : transaction.dst}
+              .account=${transaction.dstcode === this.code ? transaction.dst : transaction.src}
               accounting
               .repeats=${this.repeats}
               .codes=${this.codes}

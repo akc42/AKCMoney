@@ -327,22 +327,21 @@ class AccountTransaction extends LitElement {
           amount = this.account === this.src ? this.srcamount : this.dstamount 
       }
 
-      
-      if (this.src === this.account && (!this.srcclear || this.readonly) && !this.accounting) {
-        this.cumulative -= amount;
-      } else if ((this.dst === this.account && (!this.dstclear || this.readonly)) || this.accounting) {
-        let factor = 1;
-        if (this.accounting) {
-          let codeKey;
-          if (this.src === this.account) {
-            codeKey = this.srccode;
-          } else {
-            codeKey = this.dstcode
-          }
-          const code = this.codes.find(c => c.id === codeKey);
-          if (code.type === 'A') factor = 3;
+      let factor = 1; 
+      if (this.accounting) {
+        let codeKey;
+        if (this.src === this.account) {
+          codeKey = this.srccode;
+        } else {
+          codeKey = this.dstcode
         }
-        this.cumulative += Math.round(amount/factor);
+        const code = this.codes.find(c => c.id === codeKey);
+        if (code.type === 'A') factor = 3;
+      }
+      if (this.src === this.account && (!this.srcclear || this.readonly)) {
+        this.cumulative -= Math.round(amount/factor);
+      } else if (this.dst === this.account && (!this.dstclear || this.readonly)) {
+        this.cumulative += Math.round(amount / factor);
       }
     }
     if (this.amountEdit) {
