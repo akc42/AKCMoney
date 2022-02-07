@@ -101,7 +101,9 @@
     const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
     const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
       repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
+    debug('prepared repeat insert');
     const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
+    debug('prepared repeat update');
     const getCodes = db.prepare(`SELECT
         c.id AS id, 
         c.type AS type, 
@@ -121,14 +123,14 @@
       CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END,
       description COLLATE NOCASE ASC`);
     const getXactions = db.prepare(`SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
-      t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, account.name AS account
+      t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, a.name AS account
       FROM dfxaction t,
       currency cu, 
       code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) 
       OR (a.name = t.dst AND t.dstcode = c.id)
       WHERE cu.priority = 0 AND t.date BETWEEN ?- CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND ? 
       AND a.domain = ? AND c.id = ? ORDER BY t.date`);
-
+    debug('prepared sql')
     const yearEnd = s.get('year_end');
     const monthEnd = Math.floor(yearEnd / 100) - 1 //Range 0 to 11 for Dates 
     const dayEnd = yearEnd % 100;
