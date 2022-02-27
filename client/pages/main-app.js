@@ -82,7 +82,7 @@ background: linear-gradient(to bottom, #e2e5e6 0%, #e2e5e6 4%, #388fcb 7%, #0073
 box-shadow: 0px -5px 31px 4px var(--shadow-color);
         }
         section {
-          height: calc(100vh - 64px);
+          height: calc(100vh - 65px);
           margin: 0 5px;
           overflow:hidden;
         }

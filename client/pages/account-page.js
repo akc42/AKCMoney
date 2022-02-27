@@ -182,7 +182,6 @@ class AccountPage extends LitElement {
         }
         #parallel {
           max-width: 600px;
-          padding: 10px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -581,10 +580,8 @@ class AccountPage extends LitElement {
           }
           previousTransaction = response.transactions[i];
         }
-        this.transactions = response.transactions;
-      } else {
-        this.transactions = []; 
       }
+      this.transactions = response.transactions;
       this._rebalance();
       await this.updateComplete;
       if (openid > 0) {
