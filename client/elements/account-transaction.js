@@ -391,7 +391,7 @@ class AccountTransaction extends LitElement {
     }
     if (changed.has('readonly')) {
       const wrapper = this.shadowRoot.querySelector('#wrapper');
-      if (wrapperrsy) {
+      if (wrapper) {
         if (this.readonly) {
           let tooltip;
           if (this.dst !== null && this.src !== null) {
