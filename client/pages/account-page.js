@@ -601,55 +601,60 @@ class AccountPage extends LitElement {
     const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
     this._printTime('Current source time', transaction.date);
     //work out the limits that the transaction can fit into
-    const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400);
     let insDay
+    if (this.transactions.length > 0) {
+    const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400);
+
     if (transaction.id === 0) {
-      const now = Math.round(new Date().getTime()/1000);
-      insDay = Math.floor((now - TZOffset) / 86400);
-    } else {
-      insDay = dstDay
-    }
-    //start with begining and end of the destination day
-    let lowerLimit = insDay * 86400;
-    let upperLimit = ((insDay + 1) * 86400) - 1; 
-    this._printTime('Initial Lower Limit', lowerLimit);
-    this._printTime('Initial Upper Limit', upperLimit);
-    if (up) {
-      //moving up so upper limit is just before the transaction we are moving past
-      if (insDay === dstDay) {
-        upperLimit = this.transactions[dst].date - 1;
-        this._printTime('Adjusted Upper Limit', upperLimit);
+        const now = Math.round(new Date().getTime()/1000);
+        insDay = Math.floor((now - TZOffset) / 86400);
+      } else {
+        insDay = dstDay
       }
-      if (dst > 0 ) {
-        const preDay = Math.floor((this.transactions[dst-1].date - TZOffset) / 86400);
-        if (preDay === insDay) {
-          //there is a prior transaction on the same day so we try limit ourselves to after it 
-          lowerLimit = this.transactions[dst - 1].date + 1;
-          if (lowerLimit > upperLimit) lowerlimit = upperLimit;
-          this._printTime('Adjusted Lower Limit', lowerLimit)
-        }
-      }
-    } else {
-      //moving down so lower limit is just after the transaction we are moving past
-      if (insDay === dstDay) {
-        lowerLimit = this.transactions[dst].date + 1;
-        this._printTime('Adjusted Lower Limit', lowerLimit);
-      }
-      if (dst < (this.transactions.length - 1)) {
-        const postDay = Math.floor((this.transactions[dst + 1].date - TZOffset) / 86400);
-        if (postDay === insDay) {
-          //There is a further transaction on the same day, so try to limit ourselves to before it
-          upperLimit = this.transactions[dst + 1].date - 1;
-          if (upperLimit < lowerLimit) upperLimit = lowerLimit;
+      //start with begining and end of the destination day
+      let lowerLimit = insDay * 86400;
+      let upperLimit = ((insDay + 1) * 86400) - 1; 
+      this._printTime('Initial Lower Limit', lowerLimit);
+      this._printTime('Initial Upper Limit', upperLimit);
+      if (up) {
+        //moving up so upper limit is just before the transaction we are moving past
+        if (insDay === dstDay) {
+          upperLimit = this.transactions[dst].date - 1;
           this._printTime('Adjusted Upper Limit', upperLimit);
         }
+        if (dst > 0 ) {
+          const preDay = Math.floor((this.transactions[dst-1].date - TZOffset) / 86400);
+          if (preDay === insDay) {
+            //there is a prior transaction on the same day so we try limit ourselves to after it 
+            lowerLimit = this.transactions[dst - 1].date + 1;
+            if (lowerLimit > upperLimit) lowerlimit = upperLimit;
+            this._printTime('Adjusted Lower Limit', lowerLimit)
+          }
+        }
+      } else {
+        //moving down so lower limit is just after the transaction we are moving past
+        if (insDay === dstDay) {
+          lowerLimit = this.transactions[dst].date + 1;
+          this._printTime('Adjusted Lower Limit', lowerLimit);
+        }
+        if (dst < (this.transactions.length - 1)) {
+          const postDay = Math.floor((this.transactions[dst + 1].date - TZOffset) / 86400);
+          if (postDay === insDay) {
+            //There is a further transaction on the same day, so try to limit ourselves to before it
+            upperLimit = this.transactions[dst + 1].date - 1;
+            if (upperLimit < lowerLimit) upperLimit = lowerLimit;
+            this._printTime('Adjusted Upper Limit', upperLimit);
+          }
+        }
       }
-    }
-    //fit the new transaction half way between our limits.
-    transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
-    this._printTime('Adjusted transaction Time', transaction.date);  
-    const inspoint = up ? dst : dst + 1
-    this.transactions.splice(inspoint, 0, transaction);  //add our new transaction into place    
+      //fit the new transaction half way between our limits.
+      transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
+      this._printTime('Adjusted transaction Time', transaction.date);  
+      const inspoint = up ? dst : dst + 1
+      this.transactions.splice(inspoint, 0, transaction);  //add our new transaction into place  
+    } else {
+      this.transactions.push(transaction);
+    }  
     if (transaction.id !== 0) { //only update date if transaction is in db (not so when we have just created it)
       const response = await api('/xaction_date', {
         id: transaction.id, 
