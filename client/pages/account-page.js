@@ -601,7 +601,7 @@ class AccountPage extends LitElement {
     const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
     this._printTime('Current source time', transaction.date);
     //work out the limits that the transaction can fit into
-    let insDay
+    let insDay,inspoint;
     if (this.transactions.length > 0) {
     const dstDay = Math.floor((this.transactions[dst].date - TZOffset) / 86400);
 
@@ -650,7 +650,7 @@ class AccountPage extends LitElement {
       //fit the new transaction half way between our limits.
       transaction.date = Math.round((lowerLimit + upperLimit)/ 2);
       this._printTime('Adjusted transaction Time', transaction.date);  
-      const inspoint = up ? dst : dst + 1
+      inspoint = up ? dst : dst + 1
       this.transactions.splice(inspoint, 0, transaction);  //add our new transaction into place  
     } else {
       this.transactions.push(transaction);
