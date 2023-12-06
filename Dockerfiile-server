@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.0-experimental
+#
+#   Copyright (c) 2023 Alan Chandler, all rights reserved
+#
+#   This file is part of AKCMoney.
+#
+#   AKCMoney is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   AKCMoney is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+FROM node:lts-alpine3.18 AS build
+WORKDIR /build
+RUN mkdir env
+COPY package.json ./
+RUN --mount=type=cache,target=~.npm npm install
+
+FROM node:lts-alpine3.18 AS server
+LABEL com.hartley-consultants.maintainer="Alan Chandler <alan.chandler@hartley-consultants.com>"
+WORKDIR /app
+COPY --from=build /build/node_modules ./node_modules
+COPY --from=build /build/package.json .
+RUN mkdir -p videos
+RUN mkdir -p pfiles
+RUN mkdir /env
+COPY money.env /env/.env
+##
+## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
+ENV TERM xterm-256color
+EXPOSE 2020
+CMD ["node", "server/server.js"]
