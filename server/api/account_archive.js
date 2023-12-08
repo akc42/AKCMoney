@@ -18,30 +18,28 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-(function() {
-  'use strict';
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-  const debug = require('debug')('money:accountarchive');
-  const db = require('@akc42/sqlite-db');
+const debug = Debug('money:accountarchive');
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const updateAccount = db.prepare('UPDATE account SET dversion = dversion + 1, archived = ? WHERE name = ?');
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+  const updateAccount = db.prepare('UPDATE account SET dversion = dversion + 1, archived = ? WHERE name = ?');
+  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+  
+  db.transaction(() => {
+    const v = getVersion.get(params.name);
+    if (params.dversion === v) {
+      updateAccount.run(params.archive ? 1:0, params.name);
+      responder.addSection('status', 'OK');
+      responder.addSection('accounts', getAccounts.all());
+
+    } else {
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
+    }
     
-    db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (params.dversion === v) {
-        updateAccount.run(params.archive ? 1:0, params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('accounts', getAccounts.all());
-
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
-      }
-      
-    })();
-    debug('request complete')
-  };
-})();
+  })();
+  debug('request complete')
+};

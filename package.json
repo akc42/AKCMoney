@@ -8,8 +8,7 @@
     "pretest": "pm2 start money-test.json",
     "test": "jest -c jest.e2e.config.js",
     "posttest": "pm2 stop money-test-api-server",
-    "test:server": "jest -c jest.config.js",
-    "prepare": "rollup --config"
+    "test:server": "jest -c jest.config.js"
   },
   "repository": {
     "type": "git",
@@ -30,11 +29,10 @@
     "@akc42/app-utils": "^4.0.3",
     "@akc42/distributed-router": "^1.1.2",
     "@akc42/server-utils": "^2.0.3",
-    "@akc42/sqlite-db": "^1.1.2",
+    "@akc42/sqlite-db": "^2.0.0",
     "@rollup/plugin-node-resolve": "^10.0.0",
-    "@webcomponents/webcomponentsjs": "^2.5.0",
     "bcrypt": "^5.0.0",
-    "better-sqlite3": "^7.5.0",
+    "better-sqlite3": "^9.2.2",
     "body-parser": "^1.19.0",
     "chalk": "^4.1.0",
     "content-disposition": "^0.5.3",
@@ -43,7 +41,7 @@
     "finalhandler": "^1.1.2",
     "jwt-simple": "^0.5.6",
     "lit-element": "^2.4.0",
-    "pdfkit": "^0.11.0",
+    "pdfkit": "^0.14.0",
     "require-all": "^3.0.0",
     "rollup": "^2.56.3",
     "router": "^1.3.5",

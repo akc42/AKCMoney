@@ -19,19 +19,26 @@
 #
 
 FROM node:lts-alpine3.18 AS build
-ARG location
 WORKDIR /build
 RUN mkdir sw
-RUN mkdir version
 COPY package.json ./
-COPY scripts/buildlibs.js ./scripts/
-RUN --mount=type=cache,target=~.npm npm install && node scripts/buildlibs.js
+COPY scripts/swupdate.js ./scripts/
+RUN --mount=type=cache,target=~.npm npm install
 
-FROM nginx:1.25.3-alpine3.18 AS client
-LABEL com.hartley-consultants.maintainer="Alan Chandler <alan.chandler@hartley-consultants.com>"
-RUN mkdir -p /usr/share/pas/videos
-COPY nginxconf/default.conf /etc/nginx/conf.d/
-WORKDIR /built
-COPY --from=build /build/libs ./libs
-COPY startclient.sh /bin
-CMD /bin/startclient.sh
+FROM node:lts-alpine3.18 AS server
+LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
+WORKDIR /app
+RUN mkdir /db
+RUN mkdir version
+COPY --from=build /build/node_modules ./node_modules
+COPY --from=build /build/package.json .
+COPY --from=build /build/sw/version.json ./version/
+RUN mkdir /env
+COPY money.env /env/.env
+COPY server ./
+##
+## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
+ENV TERM xterm-256color
+#note this should match what is in the database as that is where this information is defined
+EXPOSE 2010 
+CMD ["node", "server/server.js"]

@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.0-experimental
-#
 #   Copyright (c) 2023 Alan Chandler, all rights reserved
 #
 #   This file is part of AKCMoney.
@@ -17,24 +15,22 @@
 #   You should have received a copy of the GNU General Public License
 #   along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 #
+services:
+  moneyclient:
+    image: docker.chandlerfamily.org.uk/moneyclient
+    container_name: moneyclient
+    ports: 
+      - 6080:80
 
-FROM node:lts-alpine3.18 AS build
-WORKDIR /build
-RUN mkdir env
-COPY package.json ./
-RUN --mount=type=cache,target=~.npm npm install
-
-FROM node:lts-alpine3.18 AS server
-LABEL com.hartley-consultants.maintainer="Alan Chandler <alan.chandler@hartley-consultants.com>"
-WORKDIR /app
-COPY --from=build /build/node_modules ./node_modules
-COPY --from=build /build/package.json .
-RUN mkdir -p videos
-RUN mkdir -p pfiles
-RUN mkdir /env
-COPY money.env /env/.env
-##
-## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
-ENV TERM xterm-256color
-EXPOSE 2020
-CMD ["node", "server/server.js"]
+    restart: unless-stopped
+    depends_on:
+      - moneyserver
+  moneyserver:
+    image: docker.chandlerfamily.org.uk/moneyserver
+    container_name: moneyserver
+    ports: 
+      - 2010:2010
+    restart: unless-stopped
+    volumes:
+      - "/volume1/docker/money/db"
+    tty: true

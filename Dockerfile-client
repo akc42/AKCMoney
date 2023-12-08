@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.0-experimental
+#
+#   Copyright (c) 2023 Alan Chandler, all rights reserved
+#
+#   This file is part of AKCMoney.
+#
+#   AKCMoney is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   AKCMoney is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+FROM node:lts-alpine3.18 AS build
+ARG location
+WORKDIR /build
+RUN mkdir sw
+COPY package.json ./
+COPY client/service-worker.js .
+COPY scripts/buildlibs.js scripts/swupdate.js ./scripts/
+RUN --mount=type=cache,target=~.npm npm install && node scripts/buildlibs.js && node scripts/swupdate.js
+
+FROM nginx:1.25.3-alpine3.18 AS client
+LABEL com.hartley-consultants.maintainer="Alan Chandler <alan.chandler@hartley-consultants.com>"
+COPY nginx/default.conf /etc/nginx/conf.d/
+WORKDIR /built
+COPY --from=build /build/libs ./libs
+COPY --from=build /build/sw ./sw
+WORKDIR /usr/share/nginx/html
+COPY client ./
+COPY startclient.sh /bin
+CMD /bin/startclient.sh
