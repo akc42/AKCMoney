@@ -17,24 +17,21 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:sorterdata');
 
-  const debug = require('debug')('money:sorterdata');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getAccounts = db.prepare(`SELECT a.name, a.domain, p.sort FROM account a, user u 
-      LEFT JOIN capability c ON c.domain = a.domain AND c.uid = u.uid 
-      LEFT JOIN priority p ON p.account = a.name AND p.uid = u.uid  AND p.domain = ? 
-      WHERE a.archived = 0 AND u.uid = ? AND (u.isAdmin = 1 OR c.domain IS NOT NULL) 
-      ORDER BY p.sort ASC NULLS LAST, CASE WHEN a.domain = ? THEN 0 ELSE 1 END, 
-      CASE WHEN u.account = a.name THEN 0 ELSE 1 END, a.domain, a.name`);    
-    db.transaction(() => {
-      responder.addSection('accounts', getAccounts.all(params.domain, user.uid, params.domain));
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getAccounts = db.prepare(`SELECT a.name, a.domain, p.sort FROM account a, user u 
+    LEFT JOIN capability c ON c.domain = a.domain AND c.uid = u.uid 
+    LEFT JOIN priority p ON p.account = a.name AND p.uid = u.uid  AND p.domain = ? 
+    WHERE a.archived = 0 AND u.uid = ? AND (u.isAdmin = 1 OR c.domain IS NOT NULL) 
+    ORDER BY p.sort ASC NULLS LAST, CASE WHEN a.domain = ? THEN 0 ELSE 1 END, 
+    CASE WHEN u.account = a.name THEN 0 ELSE 1 END, a.domain, a.name`);    
+  db.transaction(() => {
+    responder.addSection('accounts', getAccounts.all(params.domain, user.uid, params.domain));
+  })();
+  debug('request complete')
+};

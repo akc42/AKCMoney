@@ -17,22 +17,19 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:accounts');
 
-  const debug = require('debug')('money:accounts');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user,p ,responder) {
-    debug('new request from', user.name,);
-    const dc = db.prepare('SELECT name FROM currency WHERE priority = 0').pluck();
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
-    db.transaction(() => {
-      responder.addSection('currency', dc.get())
-      responder.addSection('accounts', getAccounts.all());
-      
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user,p ,responder) {
+  debug('new request from', user.name,);
+  const dc = db.prepare('SELECT name FROM currency WHERE priority = 0').pluck();
+  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+  db.transaction(() => {
+    responder.addSection('currency', dc.get())
+    responder.addSection('accounts', getAccounts.all());
+    
+  })();
+  debug('request complete')
+};

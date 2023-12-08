@@ -17,25 +17,22 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:sortersave');
 
-  const debug = require('debug')('money:sortersave');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with domain', params.domain );
-    const deletePriorities = db.prepare('DELETE FROM priority WHERE uid = ? AND domain = ?');
-    const insertPriority = db.prepare('INSERT INTO priority(uid,domain,account,sort) VALUES (?,?,?,?)')
-    db.transaction(() => {
-      deletePriorities.run(user.uid, params.domain);
-      for(const account of params.accounts) {
-        debug('insert new priority', account.name, account.sort);
-        insertPriority.run(user.uid,params.domain,account.name,account.sort);
-      }
-      
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with domain', params.domain );
+  const deletePriorities = db.prepare('DELETE FROM priority WHERE uid = ? AND domain = ?');
+  const insertPriority = db.prepare('INSERT INTO priority(uid,domain,account,sort) VALUES (?,?,?,?)')
+  db.transaction(() => {
+    deletePriorities.run(user.uid, params.domain);
+    for(const account of params.accounts) {
+      debug('insert new priority', account.name, account.sort);
+      insertPriority.run(user.uid,params.domain,account.name,account.sort);
+    }
+    
+  })();
+  debug('request complete')
+};

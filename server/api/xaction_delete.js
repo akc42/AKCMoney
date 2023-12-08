@@ -17,29 +17,26 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:xactiondelete');
 
-  const debug = require('debug')('money:xactiondelete');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name );
-    const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
-    const deleteXaction = db.prepare('DELETE FROM xaction WHERE id = ?');
-    db.transaction(() => {
-      const version = getXactionVersion.get(params.tid);
-      debug('db version', version, 'params version', params.version, 'xaction', params.tid);
-      if (version === params.version) {
-        const {changes} = deleteXaction.run(params.tid);
-        debug('delete count', changes);
-        if (changes === 1) responder.addSection('status', 'OK'); else responder.addSection('status', 'Wrong Count');
-      } else {
-        responder.addSection('status', 'Fail');
-      }
-    })();
-    debug('request complete');
-    
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name );
+  const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
+  const deleteXaction = db.prepare('DELETE FROM xaction WHERE id = ?');
+  db.transaction(() => {
+    const version = getXactionVersion.get(params.tid);
+    debug('db version', version, 'params version', params.version, 'xaction', params.tid);
+    if (version === params.version) {
+      const {changes} = deleteXaction.run(params.tid);
+      debug('delete count', changes);
+      if (changes === 1) responder.addSection('status', 'OK'); else responder.addSection('status', 'Wrong Count');
+    } else {
+      responder.addSection('status', 'Fail');
+    }
+  })();
+  debug('request complete');
+  
+};

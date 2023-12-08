@@ -17,27 +17,24 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:currencydisplay');
 
-  const debug = require('debug')('money:currencydisplay');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-    const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, display = ?, priority = ? WHERE name = ?');
-    db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === params.version) {
-        responder.addSection('status', 'OK');
-        updateCurrency.run(params.display, params.priority, params.name);
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
-      }
-      
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
+  const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, display = ?, priority = ? WHERE name = ?');
+  db.transaction(() => {
+    const v = getVersion.get(params.name);
+    if (v === params.version) {
+      responder.addSection('status', 'OK');
+      updateCurrency.run(params.display, params.priority, params.name);
+    } else {
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
+    }
+    
+  })();
+  debug('request complete')
+};

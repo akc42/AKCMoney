@@ -17,20 +17,17 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:domains');
 
-  const debug = require('debug')('money:domains');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user,p ,responder) {
-    debug('new request from', user.name);
-   
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-    db.transaction(() => {
-      responder.addSection('domains', getDomains.all());
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user,p ,responder) {
+  debug('new request from', user.name);
+  
+  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+  db.transaction(() => {
+    responder.addSection('domains', getDomains.all());
+  })();
+  debug('request complete')
+};

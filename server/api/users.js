@@ -17,21 +17,18 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:users');
 
-  const debug = require('debug')('money:users');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name);
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
-    ORDER BY u.name, u.uid`)
-    
-    db.transaction(() => {
-      responder.addSection('users', getUsers.all());
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name);
+  const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+  ORDER BY u.name, u.uid`)
+  
+  db.transaction(() => {
+    responder.addSection('users', getUsers.all());
+  })();
+  debug('request complete')
+};

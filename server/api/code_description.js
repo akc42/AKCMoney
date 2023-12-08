@@ -17,32 +17,29 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:codedescription');
 
-  const debug = require('debug')('money:codedescription');
-  const db = require('@akc42/sqlite-db');
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM code WHERE id = ?').pluck();
+  const updateDescription = db.prepare('UPDATE code SET version = version + 1, description = ? WHERE id = ?');
+  const getCodes = db.prepare(`SELECT * FROM code 
+    ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+    description COLLATE NOCASE ASC`);
+  db.transaction(() => {
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM code WHERE id = ?').pluck();
-    const updateDescription = db.prepare('UPDATE code SET version = version + 1, description = ? WHERE id = ?');
-    const getCodes = db.prepare(`SELECT * FROM code 
-      ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
-      description COLLATE NOCASE ASC`);
-    db.transaction(() => {
+    const v = getVersion.get(params.id);
+    if (v === params.version) {
+      updateDescription.run(params.description, params.id);
+      responder.addSection('status', 'OK');
+      responder.addSection('codes', getCodes.all());
+    } else {
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
+    }
 
-      const v = getVersion.get(params.id);
-      if (v === params.version) {
-        updateDescription.run(params.description, params.id);
-        responder.addSection('status', 'OK');
-        responder.addSection('codes', getCodes.all());
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
-      }
-
-    })();
-    debug('request complete')
-  };
-})();
+  })();
+  debug('request complete')
+};

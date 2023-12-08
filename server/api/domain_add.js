@@ -17,29 +17,26 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:domainadd');
 
-  const debug = require('debug')('money:domainadd');
-  const db = require('@akc42/sqlite-db');
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
+  const insertDomain = db.prepare(`INSERT INTO domain(name, description) VALUES(?,?)`);
+  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+  db.transaction(() => {
+    const v = getVersion.get(params.name);
+    if (v === undefined) {
+      insertDomain.run(params.name, params.description);
+      responder.addSection('status','OK');
+      responder.addSection('domains', getDomains.all());
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-    const insertDomain = db.prepare(`INSERT INTO domain(name, description) VALUES(?,?)`);
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-    db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === undefined) {
-        insertDomain.run(params.name, params.description);
-        responder.addSection('status','OK');
-        responder.addSection('domains', getDomains.all());
-
-      } else {
-        responder.addSection('status', `Name already in use ${params.name}`)
-      }
-    })();
-    debug('request complete')
-  };
-})();
+    } else {
+      responder.addSection('status', `Name already in use ${params.name}`)
+    }
+  })();
+  debug('request complete')
+};

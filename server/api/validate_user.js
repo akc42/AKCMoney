@@ -17,22 +17,20 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:validate');
 
-  const debug = require('debug')('money:validate');
-  const db = require('@akc42/sqlite-db');
-  module.exports = async function(user, params, responder, genCook) {
-    debug('new request from', user.name );
-    const updatedUser = db.prepare(`SELECT * FROM user WHERE uid = ?`).get(user.uid);
-    updatedUser.password = !!updatedUser.password; //hide actual value
-    updatedUser.remember = user.remember; //Not a database field
-    if (user.version !== updatedUser.version || user.name !== updatedUser.name || 
-      user.password !== updatedUser.password || user.account !== updatedUser.account || user.domain !== updatedUser.domain ||
-      user.isAdmin !== updatedUser.isAdmin) {
-        genCook(updatedUser); //Need to make a new cookie as the value has changed
-    }
-    responder.addSection('user', updatedUser);
-  };
-})();
+export default async function(user, params, responder, genCook) {
+  debug('new request from', user.name );
+  const updatedUser = db.prepare(`SELECT * FROM user WHERE uid = ?`).get(user.uid);
+  updatedUser.password = !!updatedUser.password; //hide actual value
+  updatedUser.remember = user.remember; //Not a database field
+  if (user.version !== updatedUser.version || user.name !== updatedUser.name || 
+    user.password !== updatedUser.password || user.account !== updatedUser.account || user.domain !== updatedUser.domain ||
+    user.isAdmin !== updatedUser.isAdmin) {
+      genCook(updatedUser); //Need to make a new cookie as the value has changed
+  }
+  responder.addSection('user', updatedUser);
+};

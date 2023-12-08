@@ -17,28 +17,25 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:codeadd');
 
-  const debug = require('debug')('money:codeadd');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const insertCode = db.prepare(`INSERT INTO code(description, type) VALUES(?,?)`);
-    const getCodes = db.prepare(`SELECT * FROM code 
-      ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
-      description COLLATE NOCASE ASC`);
-    db.transaction(() => {
-      if (params.description.length > 0) {
-        insertCode.run(params.description, params.type);
-        responder.addSection('status', 'OK');
-        responder.addSection('codes', getCodes.all());
-      } else {
-        responder.addSection('status', 'Description length must be greater than zero')
-      }
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const insertCode = db.prepare(`INSERT INTO code(description, type) VALUES(?,?)`);
+  const getCodes = db.prepare(`SELECT * FROM code 
+    ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+    description COLLATE NOCASE ASC`);
+  db.transaction(() => {
+    if (params.description.length > 0) {
+      insertCode.run(params.description, params.type);
+      responder.addSection('status', 'OK');
+      responder.addSection('codes', getCodes.all());
+    } else {
+      responder.addSection('status', 'Description length must be greater than zero')
+    }
+  })();
+  debug('request complete')
+};

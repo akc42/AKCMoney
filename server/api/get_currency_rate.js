@@ -17,21 +17,18 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:getcurrencyrate');
 
-  const debug = require('debug')('money:getcurrencyrate');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getRate = db.prepare('SELECT rate, version FROM currency WHERE name = ?');
-    db.transaction(() => {
-      const {rate,version} = getRate.get(params.name);
-      responder.addSection('rate', rate);
-      responder.addSection('version', version);
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getRate = db.prepare('SELECT rate, version FROM currency WHERE name = ?');
+  db.transaction(() => {
+    const {rate,version} = getRate.get(params.name);
+    responder.addSection('rate', rate);
+    responder.addSection('version', version);
+  })();
+  debug('request complete')
+};

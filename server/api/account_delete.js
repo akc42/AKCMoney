@@ -17,29 +17,25 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
+const debug = Debug('money:accountdelete');
 
-(function() {
-  'use strict';
-
-  const debug = require('debug')('money:accountdelete');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const deleteAccount = db.prepare('DELETE FROM account WHERE name = ?');
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
-    db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === params.dversion) {
-        deleteAccount.run(params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('accounts', getAccounts.all());
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
-      }
-      
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+  const deleteAccount = db.prepare('DELETE FROM account WHERE name = ?');
+  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+  db.transaction(() => {
+    const v = getVersion.get(params.name);
+    if (v === params.dversion) {
+      deleteAccount.run(params.name);
+      responder.addSection('status', 'OK');
+      responder.addSection('accounts', getAccounts.all());
+    } else {
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
+    }
+    
+  })();
+  debug('request complete')
+};

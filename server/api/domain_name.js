@@ -17,34 +17,31 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:domainname');
 
-  const debug = require('debug')('money:domainname');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-    const updateName = db.prepare('UPDATE domain SET version = version + 1, name = ? WHERE name = ?');
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-    db.transaction(() => {
-      //first check new name does not exist
-      const v = getVersion.get(params.new);
-      if (v === undefined) {
-        const v = getVersion.get(params.old);
-        if (v === params.version) {
-          updateName.run(params.new, params.old);
-          responder.addSection('status', 'OK');
-          responder.addSection('domains', getDomains.all());
-        } else {
-          responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
-        }
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
+  const updateName = db.prepare('UPDATE domain SET version = version + 1, name = ? WHERE name = ?');
+  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+  db.transaction(() => {
+    //first check new name does not exist
+    const v = getVersion.get(params.new);
+    if (v === undefined) {
+      const v = getVersion.get(params.old);
+      if (v === params.version) {
+        updateName.run(params.new, params.old);
+        responder.addSection('status', 'OK');
+        responder.addSection('domains', getDomains.all());
       } else {
-        responder.addSection('status', 'Duplicate Name Error')
+        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
       }
-    })();
-    debug('request complete')
-  };
-})();
+    } else {
+      responder.addSection('status', 'Duplicate Name Error')
+    }
+  })();
+  debug('request complete')
+};

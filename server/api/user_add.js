@@ -17,28 +17,25 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:useradd');
 
-  const debug = require('debug')('money:useradd');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const insertUser = db.prepare('INSERT INTO user(name, isAdmin) VALUES(?,?)');
-    const addCapability = db.prepare('INSERT INTO capability(uid,domain) VALUES(?,?)');
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
-    ORDER BY u.name, u.uid`);
-    db.transaction(() => {
-      const { lastInsertRowid } = insertUser.run(params.name, params.isAdmin);
-      if (params.isAdmin !== 1) {
-        for (const domain of params.domains) {
-          addCapability.run(lastInsertRowid, domain);
-        }
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const insertUser = db.prepare('INSERT INTO user(name, isAdmin) VALUES(?,?)');
+  const addCapability = db.prepare('INSERT INTO capability(uid,domain) VALUES(?,?)');
+  const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+  ORDER BY u.name, u.uid`);
+  db.transaction(() => {
+    const { lastInsertRowid } = insertUser.run(params.name, params.isAdmin);
+    if (params.isAdmin !== 1) {
+      for (const domain of params.domains) {
+        addCapability.run(lastInsertRowid, domain);
       }
-      responder.addSection('users', getUsers.all())
-    })();
-    debug('request complete')
-  };
-})();
+    }
+    responder.addSection('users', getUsers.all())
+  })();
+  debug('request complete')
+};

@@ -17,36 +17,33 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:username');
 
-  const debug = require('debug')('money:username');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const checkName = db.prepare('SELECT COUNT(*) FROM user WHERE name = ?').pluck();
-    const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
-    const updateUser = db.prepare('UPDATE user SET version = version + 1, name = ? WHERE uid = ?');
-    const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
-    ORDER BY u.name, u.uid`);
-    db.transaction(() => {
-      const v = getVersion.get(params.uid);
-      if (v === params.version) {
-        const no = checkName.get(params.name);
-        if (no === 0) {
-          updateUser.run(params.name, params.uid);
-          responder.addSection('status', 'OK');
-          responder.addSection('users', getUsers.all())
-        } else {
-          responder.addSection('status', `User Name name ${params.name} is not unique`);
-        }
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const checkName = db.prepare('SELECT COUNT(*) FROM user WHERE name = ?').pluck();
+  const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
+  const updateUser = db.prepare('UPDATE user SET version = version + 1, name = ? WHERE uid = ?');
+  const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
+  ORDER BY u.name, u.uid`);
+  db.transaction(() => {
+    const v = getVersion.get(params.uid);
+    if (v === params.version) {
+      const no = checkName.get(params.name);
+      if (no === 0) {
+        updateUser.run(params.name, params.uid);
+        responder.addSection('status', 'OK');
+        responder.addSection('users', getUsers.all())
       } else {
-        responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
+        responder.addSection('status', `User Name name ${params.name} is not unique`);
       }
-      
-    })();
-    debug('request complete')
-  };
-})();
+    } else {
+      responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
+    }
+    
+  })();
+  debug('request complete')
+};

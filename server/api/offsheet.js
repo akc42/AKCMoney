@@ -17,43 +17,40 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:offsheet');
 
-  const debug = require('debug')('money:offsheet');
-  const db = require('@akc42/sqlite-db');
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with codeid', params.code );
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with codeid', params.code );
+  const getXactions = db.prepare(`SELECT
+          t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
+          CASE 
+              WHEN t.src = a.name THEN -dfamount
+              ELSE dfamount 
+          END AS amount,
+          t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
+      FROM  
+          user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
+          INNER JOIN account a ON 
+              (t.src = a.name AND t.srccode = c.id) 
+              OR (t.dst = a.name AND t.dstcode = c.id) 
+          LEFT JOIN capability p ON 
+              p.uid = u.uid 
+              AND p.domain = a.domain 
+      WHERE 
+          u.uid = ? 
+          AND (u.isAdmin = 1 OR p.uid IS NOT NULL) 
+          AND c.id = ?
+          AND cur.priority = 0
+      ORDER BY 
+          t.Date
+  `);
+  db.transaction(() => {
+    responder.addSection('transactions', getXactions.all(user.uid, params.code));
+  })();  
 
-    const getXactions = db.prepare(`SELECT
-            t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
-            CASE 
-                WHEN t.src = a.name THEN -dfamount
-                ELSE dfamount 
-            END AS amount,
-            t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
-        FROM  
-            user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
-            INNER JOIN account a ON 
-                (t.src = a.name AND t.srccode = c.id) 
-                OR (t.dst = a.name AND t.dstcode = c.id) 
-            LEFT JOIN capability p ON 
-                p.uid = u.uid 
-                AND p.domain = a.domain 
-        WHERE 
-            u.uid = ? 
-            AND (u.isAdmin = 1 OR p.uid IS NOT NULL) 
-            AND c.id = ?
-            AND cur.priority = 0
-        ORDER BY 
-            t.Date
-    `);
-    db.transaction(() => {
-      responder.addSection('transactions', getXactions.all(user.uid, params.code));
-    })();  
-
-    debug('request complete');
-  };
-})();
+  debug('request complete');
+};

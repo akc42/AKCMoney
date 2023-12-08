@@ -17,23 +17,20 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+ const debug = Debug('money:domain_range');
 
-  const debug = require('debug')('money:domain_range');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const range = db.prepare(`SELECT MAX(t.date) as maxdate, MIN(t.date) As mindate FROM xaction t
-      LEFT JOIN account sa ON sa.name = t.src LEFT JOIN account da ON sa.name = t.dst  
-      WHERE sa.domain = ? OR da.domain = ?`);
-    db.transaction(() => {
-      const {mindate, maxdate} = range.get(params.domain, params.domain);
-      responder.addSection('min', mindate);
-      responder.addSection('max', maxdate);
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const range = db.prepare(`SELECT MAX(t.date) as maxdate, MIN(t.date) As mindate FROM xaction t
+    LEFT JOIN account sa ON sa.name = t.src LEFT JOIN account da ON sa.name = t.dst  
+    WHERE sa.domain = ? OR da.domain = ?`);
+  db.transaction(() => {
+    const {mindate, maxdate} = range.get(params.domain, params.domain);
+    responder.addSection('min', mindate);
+    responder.addSection('max', maxdate);
+  })();
+  debug('request complete')
+};

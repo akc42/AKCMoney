@@ -17,30 +17,27 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:accountdomain');
 
-  const debug = require('debug')('money:accountdomain');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const updateDomain = db.prepare('UPDATE account SET dversion = dversion + 1, domain = ? WHERE name = ?');
-    const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
-    db.transaction(() => {
-      //first version is still the same
-      const v = getVersion.get(params.name);
-      if (v === params.dversion) {
-        updateDomain.run(params.domain, params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('accounts', getAccounts.all())
-      } else {
-        responder.addSection('status',`Version Error Disk:${v}, Param:${params.dversion}`)
-      }
-    
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+  const updateDomain = db.prepare('UPDATE account SET dversion = dversion + 1, domain = ? WHERE name = ?');
+  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+  db.transaction(() => {
+    //first version is still the same
+    const v = getVersion.get(params.name);
+    if (v === params.dversion) {
+      updateDomain.run(params.domain, params.name);
+      responder.addSection('status', 'OK');
+      responder.addSection('accounts', getAccounts.all())
+    } else {
+      responder.addSection('status',`Version Error Disk:${v}, Param:${params.dversion}`)
+    }
+  
+  })();
+  debug('request complete')
+};

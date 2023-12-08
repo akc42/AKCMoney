@@ -17,26 +17,24 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:standing');
 
-  const debug = require('debug')('money:standing');
-  const db = require('@akc42/sqlite-db');
+export default async function(user, params, responder) {
+  debug('new request from', user.name );
+  const getCurrencies= db.prepare('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC');
+  const getCodes = db.prepare(`SELECT * FROM code 
+    ORDER BY CASE type WHEN 'C' THEN 0 WHEN 'O' THEN 2 ELSE 1 END, type, description COLLATE NOCASE ASC`);
+  const getRepeats = db.prepare('SELECT rkey,description FROM repeat ORDER BY priority');
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name );
-    const getCurrencies= db.prepare('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC');
-    const getCodes = db.prepare(`SELECT * FROM code 
-      ORDER BY CASE type WHEN 'C' THEN 0 WHEN 'O' THEN 2 ELSE 1 END, type, description COLLATE NOCASE ASC`);
-    const getRepeats = db.prepare('SELECT rkey,description FROM repeat ORDER BY priority');
+  db.transaction(() => {
+    debug('add currency and codes');
+    responder.addSection('currencies', getCurrencies.all());
+    responder.addSection('codes', getCodes.all());
+    responder.addSection('repeats', getRepeats.all());
+  })();
+  debug('request complete');
+};
 
-    db.transaction(() => {
-      debug('add currency and codes');
-      responder.addSection('currencies', getCurrencies.all());
-      responder.addSection('codes', getCodes.all());
-      responder.addSection('repeats', getRepeats.all());
-    })();
-    debug('request complete');
-  };
-})();

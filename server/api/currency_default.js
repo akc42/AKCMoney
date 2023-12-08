@@ -17,32 +17,29 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:currencydefault');
 
-  const debug = require('debug')('money:currencydefault');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-    const getDefault = db.prepare('SELECT Count(*) FROM currency WHERE priority = 0').pluck();
-    const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, rate = 1.0, display = 1, priority = 0 WHERE name = ?');
-    db.transaction(() => {
-      const defCount = getDefault.get();
-      if (defCount === 0) {
-        const v = getVersion.get(params.name);
-        if (v === params.version) {
-          responder.addSection('status', 'OK');
-          updateCurrency.run(params.name);
-        } else {
-          responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
-        }
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
+  const getDefault = db.prepare('SELECT Count(*) FROM currency WHERE priority = 0').pluck();
+  const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, rate = 1.0, display = 1, priority = 0 WHERE name = ?');
+  db.transaction(() => {
+    const defCount = getDefault.get();
+    if (defCount === 0) {
+      const v = getVersion.get(params.name);
+      if (v === params.version) {
+        responder.addSection('status', 'OK');
+        updateCurrency.run(params.name);
       } else {
-        responder.addSection('status', 'Still another currency with priority 0');
+        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
       }
-    })();
-    debug('request complete')
-  };
-})();
+    } else {
+      responder.addSection('status', 'Still another currency with priority 0');
+    }
+  })();
+  debug('request complete')
+};

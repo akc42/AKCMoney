@@ -18,35 +18,34 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-(function() {
-  'use strict';
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
+const debug = Debug('money:accountbalance');
 
-  const debug = require('debug')('money:accountbalance');
-  const db = require('@akc42/sqlite-db');
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'account', params.account, 'balance', params.balance);
-    const getVersion = db.prepare('SELECT bversion FROM account WHERE name = ?').pluck();
-    const updateBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
-      date = (strftime('%s','now')) WHERE name = ?`);
-    const updateBalanceDate = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
-      date = ? WHERE name = ?`);
-    db.transaction(() => {
-      const bversion = getVersion.get(params.account);
-      if (bversion === params.bversion) {
-        debug('correct version, do update');
-        if (params.date === 0) {
-          updateBalance.run(params.balance, params.account);
-        } else {
-          updateBalanceDate.run(params.balance, params.date, params.account);
-        }
-        responder.addSection('status', 'OK');
-        responder.addSection('bversion', bversion + 1);
+
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'account', params.account, 'balance', params.balance);
+  const getVersion = db.prepare('SELECT bversion FROM account WHERE name = ?').pluck();
+  const updateBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
+    date = (strftime('%s','now')) WHERE name = ?`);
+  const updateBalanceDate = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
+    date = ? WHERE name = ?`);
+  db.transaction(() => {
+    const bversion = getVersion.get(params.account);
+    if (bversion === params.bversion) {
+      debug('correct version, do update');
+      if (params.date === 0) {
+        updateBalance.run(params.balance, params.account);
       } else {
-        debug('versions do not match, param bversion:',params.bversion, 'database dversion', bversion);
-        responder.addSection('status', 'Fail');
+        updateBalanceDate.run(params.balance, params.date, params.account);
       }
-    })();
-    debug('Request Complete');
-  };
-})();
+      responder.addSection('status', 'OK');
+      responder.addSection('bversion', bversion + 1);
+    } else {
+      debug('versions do not match, param bversion:',params.bversion, 'database dversion', bversion);
+      responder.addSection('status', 'Fail');
+    }
+  })();
+  debug('Request Complete');
+};

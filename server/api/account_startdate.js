@@ -17,28 +17,25 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:accountstartdate');
 
-  const debug = require('debug')('money:accountstartdate');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'account', params.account, 'startdate', params.startdate);
-    const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-    const updateSD = db.prepare('UPDATE account SET dversion = dversion + 1, startdate = ? WHERE name = ?');
-    db.transaction(() => {
-      const dversion = getVersion.get(params.account);
-      if (dversion === params.dversion) {
-        debug('correct version, do update');
-        updateSD.run(params.startdate, params.account);
-        responder.addSection('status', 'OK');
-      } else {
-        debug('versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
-        responder.addSection('status', 'Fail');
-      }
-    })();
-    debug('Request Complete');
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'account', params.account, 'startdate', params.startdate);
+  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
+  const updateSD = db.prepare('UPDATE account SET dversion = dversion + 1, startdate = ? WHERE name = ?');
+  db.transaction(() => {
+    const dversion = getVersion.get(params.account);
+    if (dversion === params.dversion) {
+      debug('correct version, do update');
+      updateSD.run(params.startdate, params.account);
+      responder.addSection('status', 'OK');
+    } else {
+      debug('versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
+      responder.addSection('status', 'Fail');
+    }
+  })();
+  debug('Request Complete');
+};

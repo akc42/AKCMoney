@@ -17,30 +17,27 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:domaindescription');
 
-  const debug = require('debug')('money:domaindescription');
-  const db = require('@akc42/sqlite-db');
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
+  const updateDescription = db.prepare('UPDATE domain SET version = version + 1, description = ? WHERE name = ?');
+  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+  db.transaction(() => {
 
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-    const updateDescription = db.prepare('UPDATE domain SET version = version + 1, description = ? WHERE name = ?');
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-    db.transaction(() => {
+    const v = getVersion.get(params.name);
+    if (v === params.version) {
+      updateDescription.run(params.description, params.name);
+      responder.addSection('status', 'OK');
+      responder.addSection('domains', getDomains.all());
+    } else {
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
+    }
 
-      const v = getVersion.get(params.name);
-      if (v === params.version) {
-        updateDescription.run(params.description, params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('domains', getDomains.all());
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
-      }
-
-    })();
-    debug('request complete')
-  };
-})();
+  })();
+  debug('request complete')
+};

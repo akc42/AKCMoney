@@ -17,29 +17,26 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:domaindelete');
 
-  const debug = require('debug')('money:domaindelete');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name, 'with params', params );
-    const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-    const deleteDomain = db.prepare('DELETE FROM domain WHERE name = ?');
-    const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-    db.transaction(() => {
-      const v = getVersion.get(params.name);
-      if (v === params.version) {
-        deleteDomain.run(params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('domains', getDomains.all());
-      } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      }
-      
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name, 'with params', params );
+  const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
+  const deleteDomain = db.prepare('DELETE FROM domain WHERE name = ?');
+  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
+  db.transaction(() => {
+    const v = getVersion.get(params.name);
+    if (v === params.version) {
+      deleteDomain.run(params.name);
+      responder.addSection('status', 'OK');
+      responder.addSection('domains', getDomains.all());
+    } else {
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
+    }
+    
+  })();
+  debug('request complete')
+};

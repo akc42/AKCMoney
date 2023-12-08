@@ -17,23 +17,20 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:codes');
 
-  const debug = require('debug')('money:codes');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user,p ,responder) {
-    debug('new request from', user.name);
-    const getTypes = db.prepare('SELECT * FROM codetype ORDER BY type');
-    const getCodes = db.prepare(`SELECT * FROM code 
-      ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
-      description COLLATE NOCASE ASC`);
-    db.transaction(() => {
-      responder.addSection('codes', getCodes.all());
-      responder.addSection('types', getTypes.all());
-    })();
-    debug('request complete')
-  };
-})();
+export default async function(user,p ,responder) {
+  debug('new request from', user.name);
+  const getTypes = db.prepare('SELECT * FROM codetype ORDER BY type');
+  const getCodes = db.prepare(`SELECT * FROM code 
+    ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+    description COLLATE NOCASE ASC`);
+  db.transaction(() => {
+    responder.addSection('codes', getCodes.all());
+    responder.addSection('types', getTypes.all());
+  })();
+  debug('request complete')
+};

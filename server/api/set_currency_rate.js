@@ -17,30 +17,27 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import Debug from 'debug';
+import db from '@akc42/sqlite-db';
 
-(function() {
-  'use strict';
+const debug = Debug('money:setcurrency');
 
-  const debug = require('debug')('money:setcurrency');
-  const db = require('@akc42/sqlite-db');
-
-  module.exports = async function(user, params, responder) {
-    debug('new request from', user.name , 'with params', params);
-    const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-    const updateRate = db.prepare('UPDATE currency SET version = version + 1, rate = ? WHERE name = ?');
-    db.transaction(() => {
-      const version = getVersion.get(params.name);
-      if (version === params.version) {
-        updateRate.run(params.rate, params.name);
-        responder.addSection('status', 'OK');
-        responder.addSection('name', params.name)
-        responder.addSection('rate', params.rate);
-        responder.addSection('versions', version + 1 );
-      } else {
-        debug('db version', version, 'api version', params.version);
-        responder.addSection('status', 'fail');
-      }
-    })()
-    
-  };
-})();
+export default async function(user, params, responder) {
+  debug('new request from', user.name , 'with params', params);
+  const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
+  const updateRate = db.prepare('UPDATE currency SET version = version + 1, rate = ? WHERE name = ?');
+  db.transaction(() => {
+    const version = getVersion.get(params.name);
+    if (version === params.version) {
+      updateRate.run(params.rate, params.name);
+      responder.addSection('status', 'OK');
+      responder.addSection('name', params.name)
+      responder.addSection('rate', params.rate);
+      responder.addSection('versions', version + 1 );
+    } else {
+      debug('db version', version, 'api version', params.version);
+      responder.addSection('status', 'fail');
+    }
+  })()
+  
+};
