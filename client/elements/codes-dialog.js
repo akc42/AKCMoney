@@ -20,6 +20,7 @@
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
 import domHost  from '../libs/dom-host.js';
+import config from '../libs/config.js';
 import './material-icon.js';
 import './dialog-box.js';
 
@@ -97,7 +98,7 @@ class CodesDialog extends LitElement {
       <dialog-box id="codesmenu" @overlay-closed=${this._closing} closeOnClick>
         <div class="listcontainer">
           <button type="button" role="menuitem" @click=${this._nocodeSelected}>
-            <span>${sessionStorage.getItem('nullCode')}</span>
+            <span>${config.nullCode}</span>
           </button>
           ${cache(this.codes.filter(c => 
               this.request.key.filter === 'N' || (this.request.key.filter === 'S' && c.type !== 'R') || 
@@ -142,7 +143,7 @@ class CodesDialog extends LitElement {
     e.stopPropagation();
     this.code = {id: 0, type: ''};
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', {
-      detail: { key: {key: 0, filter: this.request.filter}, visual: sessionStorage.getItem('nullCode') }
+      detail: { key: {key: 0, filter: this.request.filter}, visual: config.nullCode}
     }));
     this.dialog.close();
 

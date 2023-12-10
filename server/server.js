@@ -21,9 +21,9 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import {fileURLToPath } from 'node:url';
 import Debug from 'debug';
-import Db from '@akc42/sqlite-db';
+import dbStartup from '@akc42/sqlite-db';
 import chalk from 'chalk';
-import {logger,Responder} from '@akc/server-utils'; 
+import {logger,Responder} from '@akc42/server-utils'; 
 import bodyParser  from 'body-parser';
 import  Router from 'router';
 import jwt  from 'jwt-simple';
@@ -33,20 +33,18 @@ import { v4 }  from 'uuid';
 import serverDestroy from 'server-destroy';
 import finalhandler from 'finalhandler';
 import bcrypt from 'bcrypt';
-import {fileURLToPath } from 'node:url';
+
+
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '/env/.env'});
+const filePath = fileURLToPath(new URL('../money.env', import.meta.url))
 
+dotenv.config({ path: filePath});
 
 const debug = Debug('money:server');
 const debugapi = Debug('money:api');
 const debuguser = Debug('money:user');
 const debugauth = Debug('money:auth');
-
-
-  
- 
 
 async function loadServers(relPath) {
   const dir = fileURLToPath(new URL (relPath, import.meta.url));
@@ -55,47 +53,54 @@ async function loadServers(relPath) {
   const files = dirents.filter(dirent => !dirent.isDirectory()).filter(dirent => dirent.name.toLowerCase().slice(-3) === '.js')
     .map(dirent => dirent.name);
   const reply = {};
-  await Promise.all(files.map(async f => import(`./${relPath}/${f}`)
-    .then((m) => reply[f.slice(0,-3)] = m.default)
-    .catch(err => logger('error', `Failed to load ${relPath}/${f} with error ${err}`))));
+  for (const file of files) {
+    try {
+      const exp = await import(`./${relPath}/${file}`);
+      reply[file.slice(0,-3)] = exp.default;
+    } catch(err) {
+      await logger('error', `Failed to load ${file} with error ${err}`);
+    }
+  }
+  debugapi('load server reply', reply);
   return reply;
 };
 
-function forbidden(req,res, message) {
+async function forbidden(req,res, message) {
   debug('In "forbidden"');
-  logger(req.headers['x-forwarded-for'],'auth', message, 'with request url of',req.originalUrl);
+  await logger(req.headers['x-forwarded-for'],'auth', message, 'with request url of',req.originalUrl);
   res.statusCode = 403;
   res.end('---403---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail
 
 }
-function errored(req,res,error) {
+async function errored(req,res,error) {
   debug('In "Errored"');
   const message = `Error${error.message ? ': ' + error.message: '' } ${error.stack? ': ' + error.stack: ''}`;
-  logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
+  await logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
   res.statusCode = 500;
   res.end('---500---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail.
 
 }
 
-function finalErr (err,req) {
-  logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
+async function finalErr (err,req) {
+  await logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
 }
 
-function generateCookie(payload, key, expires) {
-  const date = new Date();
-  if (expires) {
-    date.setTime(date.getTime() + (expires * 60 * 60 * 1000));
-    payload.exp = Math.round(date.getTime() / 1000);
-  }
-  debugauth('generated cookie', key, ' expires ', expires ? date.toGMTString() : 0);
-  return `${key}=${jwt.encode(payload, serverConfig.tokenKey)}; expires=${expires ? date.toGMTString() : 0}; Path=/`;
-}
 
 
 
 try {
 
-  const db = Db(fileURLToPath(new URL('../db',process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(DATABASE_INIT_FILE, import.meta.url)));
+
+  const pjsonfile = fileURLToPath(new URL('../package.json', import.meta.url))
+  const { mtime } = await fs.stat(pjsonfile); 
+  const pcontents = await fs.readFile(pjsonfile)
+  const pjson = JSON.parse(pcontents);
+  const version = 'v'+ pjson.version;
+  const year = new Date(mtime).getUTCFullYear();
+  
+  
+  
+  const db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_FILE, import.meta.url)));
   let server;
   
   const serverConfig = {};
@@ -111,9 +116,9 @@ try {
     const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `update_to_settings.sql`), { encoding: 'utf8' });
     db.exec(update);        
   }
-  //try and open the database, so that we can see if it us upto date
-  const version = db.prepare(`SELECT value FROM settings WHERE name = 'version'`).pluck();
-  const dbVersion = version.get();
+  //try and open the database, so that we can see if it is up to date
+  const dversion = db.prepare(`SELECT value FROM settings WHERE name = 'version'`).pluck();
+  const dbVersion = dversion.get();
 
   const moneyVersion = parseInt(process.env.DATABASE_DB_VERSION,10);
   debug('database is at version ', dbVersion, ' we require ', moneyVersion);
@@ -142,6 +147,30 @@ try {
     db.pragma('foreign_keys = ON');
     debug('Committed Updates, ready to go')
   }
+  let amnestyDate;
+  if (process.env.MONEY_TRACKING !== 'no' ) {
+    const logcount = db.prepare('SELECT COUNT(*) FROM Login_Log').pluck().get();
+    if (logcount === 0) {
+      debug('log count was zero')
+      //first run 
+      const setMarker = db.prepare(`INSERT INTO Login_Log (track_uid, isSuccess) VALUES ('New Server',1)`)
+      setMarker.run();
+      //What we have done is give given user.js functions 24 hours to get their house in order before missing tokens from an
+      //ip address we've seen before.  Essentially an amnesty on not having a tracking token on a previously seen ip.
+      amnestyDate = new Date();
+      amnestyDate.setDate(amnestyDate.getDate() + 1);
+    } else {
+      debug('log count was', logcount)
+      const firstTime =db.prepare('SELECT Time FROM Login_log WHERE Lid = 1').pluck().get()
+      amnestyDate = new Date(firstTime * 1000);
+    }
+    amnestyDate.setDate(amnestyDate.getDate() + 1);
+    debug('amnesty date', amnestyDate);
+  }
+
+
+
+
   /*
     Get the few important settings that we need in our server, but also take the opportunity to get back what we need for
     our config route
@@ -150,7 +179,7 @@ try {
   const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
   const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
   db.transaction(() => {
-    serverConfig.trackCookie = s.get('track_cookie');
+    if (process.env.MONEY_TRACKING !== 'no') serverConfig.trackCookie = s.get('track_cookie');
     serverConfig.authCookie = s.get('auth_cookie');
     serverConfig.tokenKey = `AKCMoney${s.get('token_key').toString()}`;
     serverConfig.serverPort = s.get('server_port');
@@ -160,6 +189,18 @@ try {
     clientConfig.defaultCurrency = name;
     clientConfig.defaultCurrencyDescription = description;
   })();
+
+  function generateCookie(payload, key, expires) {
+    const date = new Date();
+    if (expires) {
+      date.setTime(date.getTime() + (expires * 60 * 60 * 1000));
+      payload.exp = Math.round(date.getTime() / 1000);
+    }
+  
+    debugauth('generated cookie', key, ' expires ', expires ? date.toGMTString() : 0);
+    return `${key}=${jwt.encode(payload, serverConfig.tokenKey)}; expires=${expires ? date.toGMTString() : 0}; Path=/`;
+  }
+  
 
   debug('read config variables');
 
@@ -193,23 +234,24 @@ try {
     })();
 //        const payload = { uid: 1, name: 'alan', password: false, isAdmin: 1, account: 'Bank - Current', domain: 'Personal' }; //TEMP
 //        res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //TEMP
-    versionPromise.then(info => {
+
       //we might have already done this but it doesn't matter
-      clientConfig.version = info.version; 
-      clientConfig.copyrightYear = info.year;
-      res.end(JSON.stringify(clientConfig));
-      debugapi('returned version', info.version,'and year', info.year);
-    });
+    clientConfig.version = version; 
+    clientConfig.copyrightYear = year;
+    res.end(JSON.stringify(clientConfig));
+    debugapi('returned version', version,'and year', year);
+  
   })
   /*
     the next is a special route used to identify users to keep track of failed password attempts
   */
   debug('setting up user.js response')
   api.get('/user.js', (req,res) => {
-    debuguser('got /api/user.js request')
+    
     const token = req.headers['if-none-match'];
     const modify = req.headers['if-modified-since'];
     const ip = req.headers['x-forwarded-for'];  //note this is ip Address Now, it might be different later. Is a useful indication for misuse.
+    debuguser('got /api/user.js request from ip',ip, 'token', token,'modify', modify )
     /*
       Special function to make a response to this request
     */
@@ -233,65 +275,83 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       `);
     }
     // main checking
-    if (token !== undefined && token.length > 0) {
-      //we have previously set this up as an e-tag and now the browser is asking us whether it has changed
-      debuguser('tracking token found as ', token);
-      try {
-        if (process.env.MONEY_TRACKING === 'yes') {
+    debuguser('tracking is set to',process.env.MONEY_TRACKING )
+    if (process.env.MONEY_TRACKING !== 'no') {
+      if (token !== undefined && token.length > 0) {
+        //we have previously set this up as an e-tag and now the browser is asking us whether it has changed
+        debuguser('tracking token found as ', token);
+        try {
           //we want to decode this to check it hasn't been tampered wth
           const payload = jwt.decode(token, serverConfig.tokenKey);
           debuguser('Decoded tracking token as payload', payload);
+          res.statusCode = 304;
+        } catch(e) {
+          // someone has been messing with things so we make a new one, but mark it as corrupt, so when its used we know
+          makeResponse(res, 'Corrupt');
         }
-        res.statusCode = 304;
-      } catch(e) {
-        // someone has been messing with things so we make a new one, but mark it as corrupt, so when its used we know
-        makeResponse(res, 'Corrupt');
+      } else {
+        //user should have had a token if its after the amnesty date and his ip has been used before
+        if (new Date() > amnestyDate) {
+          debuguser('after amnesty date of', amnestyDate)
+          const checkip = db.prepare('SELECT COUNT(*) FROM Login_log WHERE ipAddress = ? OR track_ip = ?').pluck();
+          const count = checkip.get(ip,ip);
+          debuguser('count of', count, 'previous logins from', ip);
+          if (count > 0) {
+            forbidden(req,res,'Missing token');
+            return;
+          }
+
+        } 
+        //not set this up before, so lets create a uid and set it up
+        makeResponse(res, v4()); //unique id from uuid.v4
       }
-    } else if (modify !== undefined && modify.length > 0) {
-      debuguser('tracking modify has a date so 304 it');
-      res.StatusCode = 304;
     } else {
-      //not set this up before, so lets create a uid and set it up
-      makeResponse(res, v4()); //unique id from uuid.v4
+      res.writeHead(200, {
+        'Cache-Control': 'private, max-age=31536000, s-max-age=31536000, must-revalidate',
+        'Content-Type': 'application/javascript'
+      })
     }
     res.end();
     debuguser('/api/user.js response complete');
   });
 
-  if (process.env.MONEY_TRACKING === 'yes') {
     /*
         From this point on, all calls expect the user to have a trackCookie cookie.
     */
     debug('Setting up to Check Cookies from further in');
     api.use((req, res, next) => {
-      debuguser('checking tracking cookie');
-      const cookies = req.headers.cookie;
-      if (!cookies) {
-        debuguser('did not find any cookies')
-        forbidden(req, res, 'No Cookie');
-        return;
-      }
-      const userTester = new RegExp(`^(.*; +)?${serverConfig.trackCookie}=([^;]+)(.*)?$`);
-      const matches = cookies.match(userTester);
-      if (matches) {
-        debuguser('Cookie found')
-        const token = matches[2];
-        try {
-          const payload = jwt.decode(token, serverConfig.tokenKey);  //this will throw if the token is corrupt
-          if (payload.uid === 'Corrupt') throw new Error('Corrupted Tracker Reused');
-          req.track = payload;
-          debuguser('completed checking cookie')
-          next();
-        } catch (error) {
-          debuguser('invalid tracking cookie')
-          forbidden(req, res, 'Invalid Track Token: Error: ' + error.toString());
+      if (process.env.MONEY_TRACKING !== 'no') {
+        debuguser('checking tracking cookie');
+        const cookies = req.headers.cookie;
+        if (cookies) {
+          const userTester = new RegExp(`^(.*; +)?${serverConfig.trackCookie}=([^;]+)(.*)?$`);
+          const matches = cookies.match(userTester);
+          if (matches) {
+            debuguser('Cookie found')
+            const token = matches[2];
+            try {
+              const payload = jwt.decode(token, serverConfig.authCookie);  //this will throw if the token is corrupt
+              if (payload.uid === 'Corrupt') throw new Error('Corrupted Tracker Reused');
+              req.track = payload;
+              debuguser('completed checking cookie')
+              next();
+            } catch (error) {
+              debuguser('invalid tracking cookie')
+              forbidden(req, res, 'Invalid Track Token: Error: ' + error.toString());
+            }
+          } else {
+            debuguser('did not find tracking cookie')
+            forbidden(req, res, 'Invalid Cookie');
+          }
+        } else {
+          debuguser('did not find tracking cookie')
+          forbidden(req, res, 'Invalid Cookie');
         }
       } else {
-        debuguser('did not find tracking cookie')
-        forbidden(req, res, 'Invalid Cookie');
-      }
-    });
-  }
+        next(); //not tracking so immediately on to next
+      } 
+    })
+  
   /*
     We now only support posts request with json encoded bodies so we parse the body
   */
@@ -323,14 +383,14 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         success = await bcrypt.compare(req.body.pwd, user.password);
       }
     }
-    debugauth('login was ', success, 'Write log entry');
-    const loginEntry = db.prepare(`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES (?,?,?,?,?)`);
-    if (process.env.MONEY_TRACKING === 'yes') {
+    if (process.env.MONEY_TRACKING !== 'no') {
+      debugauth('login was ', success, 'Write log entry');
+      const loginEntry = db.prepare(`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES (?,?,?,?,?)`);
+      if (process.env.MONEY_TRACKING !== 'no') {
         loginEntry.run(req.headers['x-forwarded-for'], req.track.uid, req.track.ip, req.body.name, success ? 1 : 0);
-    } else {
-      loginEntry.run(req.headers['x-forwarded-for'], null, null, req.body.name, success ? 1 : 0);
+      }
     }
-      if (success) {
+    if (success) {
       user.password = !!user.password; //turn password into a boolean as to whether it exists;
       user.remember = req.body.remember !== undefined && user.password;
       res.setHeader('Set-Cookie', generateCookie(user, serverConfig.authCookie, user.remember ? serverConfig.tokenExpires:false)); //refresh cookie to the new value 
@@ -340,8 +400,41 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
     }
     debugauth('login all done');
   });
+  /*
+    validate user
+  */
+  debug('setting up validate user api');
+  api.post('/validate_user', async (req,res) => {
+    debugauth('validate_user')
+    const cookies = req.headers.cookie;
+    const responder = new Responder(res)
+    const authTester = new RegExp(`^(.*; +)?${serverConfig.authCookie}=([^;]+)(.*)?$`);
+    const matches = cookies.match(authTester);
+   
+    if (cookies && matches) {
 
-
+      try {
+        const user = jwt.decode(matches[2], serverConfig.tokenKey);  //this will throw if the cookie is expired or otherwise invalid
+        debuguser('user info from cookie', user);
+        const newCookie = generateCookie(user, serverConfig.authCookie,user.remember ? serverConfig.tokenExpires:false); //refresh cookie to the new value 
+        res.setHeader('Set-Cookie',newCookie ); 
+        responder.addSection('status', 'OK');
+        responder.addSection('user', user);
+        debugauth('User', user.displayName, 'Validated', 'ip address',req.headers['x-real-ip']);
+      } catch (error) {
+        await logger(req.headers['x-real-ip'], 'log', 'User', req.body.name,'Session Expired');
+        res.setHeader('Set-Cookie', 'PASv5=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT');
+        responder.addSection('status', 'Expired');
+      }
+    } else {
+      await logger(req.headers['x-real-ip'], 'log', 'User', req.body.name,'Session Token Missing');
+      responder.addSection('status', 'Off');
+    }
+    responder.end();
+  });
+  /*
+    Anything past here user MUST be validated
+  */
   debug('Setting up to Check Auth Cookie');
   api.use((req, res, next) => {
     debugauth('Check Auth Cookie');
@@ -384,7 +477,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   
   debug('Setting Up Main API');
 
-  const apis = loadServers(__dirname, 'api');
+  const apis = await loadServers('api');
   for (const a in apis) {
     debugapi(`Setting up /api/${a} route`);
     api.post(`/${a}`, async (req, res) => {
@@ -405,7 +498,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       }
     });
   }
-  const pdfs = loadServers(__dirname, 'pdf');
+  const pdfs = await loadServers('pdf');
   for (const p in pdfs) {
     debugapi(`Setting up /api/pdf/${p} route`);
     pdf.post(`/${p}`, async (req, res) => {
@@ -447,7 +540,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       if (doc !== undefined) doc.end();
     });
   }
-  const csvs = loadServers(__dirname, 'csv');
+  const csvs = await loadServers('csv');
   for (const c in csvs) {
     debugapi(`Setting up /api/csv/${c} route`);s
     csv.get(`/${c}`, async (req, res) => {
@@ -481,10 +574,10 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   });
   server.listen(serverConfig.serverPort, '0.0.0.0');
   serverDestroy(server);        
-  versionPromise.then(info => {
-    logger('app', `Release ${info.version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
-    if (process.send) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
-  });
+
+  await logger('app', `Release ${version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
+  if (process.send) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
+
     
 
 } catch(e) {

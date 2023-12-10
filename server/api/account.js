@@ -18,13 +18,12 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
-import { insertRepeats } from '../utils';
-
-
+import { insertRepeats } from '../utils.js';
+import DB from '@akc42/sqlite-db';
+const db = DB();
 const debug = Debug('money:account');
 
-export async function (user, params, responder) {
+export default async function (user, params, responder) {
   debug('new request from', user.name, 'account ',params.account,'tid', params.tid);
   const getAccount = db.prepare(`SELECT a.name AS name, bversion, dversion,balance,date, a.domain AS domain, 
     a.currency, a.startdate,c.description AS cdesc, c.rate 
@@ -52,7 +51,6 @@ export async function (user, params, responder) {
     LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
     LEFT JOIN currency tc ON tc.name = t.currency  
     WHERE a.name = ? AND CASE WHEN t.src = a.name THEN t.srcclear ELSE t.dstclear END = 0 ORDER BY t.date`)
-
 
   db.transaction(() => {
     const repeatTime = Math.round(new Date().getTime() / 1000) + s.get('repeat_days') * 86400;
@@ -118,5 +116,6 @@ export async function (user, params, responder) {
       responder.addSection('Account',{name: ''});
     }
   })();
+
   debug('request complete');
 };

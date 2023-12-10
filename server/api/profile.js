@@ -18,9 +18,9 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
 import bcrypt from 'bcrypt';
-
+import DB from '@akc42/sqlite-db';
+const db = DB();
 const debug = Debug('money:profile');
 
 export default async function(user, params, responder, genCook) {

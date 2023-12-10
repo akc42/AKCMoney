@@ -42,7 +42,7 @@ export function  nullIfZeroLength (str) {
   if (str === undefined) return null;
   return str.length > 0 ? str : null;
 }
-export function  booleanToDbValue(b) => {
+export function  booleanToDbValue(b) {
   if (b === undefined) return 0;
   return b? 1:0;
 }

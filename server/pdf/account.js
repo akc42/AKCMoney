@@ -18,12 +18,12 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
+import path from 'node:path';
 import { dbDateToString,blankIfNull } from '../utils.js';
-
+import DB from '@akc42/sqlite-db';
+const db = DB();
 const debug = Debug('money:pdfaccount');
 
-const path = require('path');
 const LEFT_EDGE = 72;
 const RIGHT_EDGE = 523;
 const DATE_WIDTH = 63;
@@ -52,7 +52,7 @@ const AMOUNT_AREA_WIDTH = AMOUNT_WIDTH + 2 * (TEXT_MARGIN-1);
 debug('DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
 
 
-module.exports = async function(user, params, doc) {
+export default async function(user, params, doc) {
   debug('new request from', user.name, 'with params', params );
   const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
   const getAccount = db.prepare('SELECT startdate, currency, balance, date FROM account WHERE name = ?');

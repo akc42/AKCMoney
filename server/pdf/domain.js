@@ -18,10 +18,10 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
 import path from 'node:path';
-import  { insertRepeats, dbDateToString, blankIfNull } from '../utils';
-
+import  { insertRepeats, dbDateToString, blankIfNull } from '../utils.js';
+import DB from '@akc42/sqlite-db';
+const db = DB();
 const debug = Debug('money:pdfdomain');
 
 const LEFT_EDGE = 72;
@@ -93,7 +93,7 @@ const codeHeader = (code, doc, profit) => {
 
 }; 
 
-module.exports = async function(user, params, doc) {
+export default async function(user, params, doc) {
 
   debug('new request from', user.name, 'with params', params);
   debug('date width', doc.widthOfString('28 Aug 2028'));

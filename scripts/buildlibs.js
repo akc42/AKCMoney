@@ -39,6 +39,7 @@ const inputOptions = {
     'node_modules/lit/directives/template-content.js',
     'node_modules/lit/directives/unsafe-html.js',
     'node_modules/lit/directives/until.js',
+    'node_modules/@akc42/app-utils/config.js',
     'node_modules/@akc42/app-utils/route.js',
     'node_modules/@akc42/app-utils/location.js',
     'node_modules/@akc42/app-utils/app-keys.js',
@@ -52,7 +53,7 @@ const inputOptions = {
   plugins: [nodeResolve()]
 };
 const outputOptions = {
-  dir: 'libs',
+  dir: 'client/libs',
   format: 'esm',
   sourcemap: true
 };

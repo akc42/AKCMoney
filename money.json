@@ -17,7 +17,7 @@
       "env": {
         "DEBUG_COLORS": true,
         "LOG_NO_DATE" : "yes",
-        "MONEY_TRACKING": "yes"
+        "DEBUG":"money:*"
       }
 
     }

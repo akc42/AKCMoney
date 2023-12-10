@@ -22,7 +22,7 @@ import {cache} from '../libs/cache.js';
 
 import api from '../libs/post-api.js';
 import AppKeys from '../libs/app-keys.js';
-import configPromise from '../libs/config-promise.js';
+import config from '../libs/config.js';
 import {switchPath} from '../libs/switch-path.js';
 
 import '../elements/material-icon.js';
@@ -278,8 +278,6 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     super();
     this.authorised = false;
     this.user = {uid: 0, isAdmin: false, account: '', domain: ''}
-    this.version = 'v4.0.0'
-    this.copyrightYear = '2021';
     this.accounts = [];
     this.account = '';
     this.domains = [];
@@ -292,10 +290,6 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.page = '';
     this.domainYear = 0;
     this.code = 0;
-    configPromise().then(() => {
-      this.version = sessionStorage.getItem('version');
-      this.copyrightYear = sessionStorage.getItem('copyrightYear');
-    });
     this._keyPressed = this._keyPressed.bind(this);
 
   }
@@ -356,7 +350,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
         this.user = JSON.parse(sessionStorage.getItem('user'));
         if ((this.user.account ?? '').length > 0) this.account = this.user.account;
         if((this.user.domain ?? '').length > 0) this.domain = this.user.domain;
-        api('/standing').then(response => {
+        api('standing').then(response => {
           this.codes = response.codes;
           this.repeats = response.repeats;
           this.currencies = response.currencies;
@@ -502,9 +496,9 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
           ${cache(this.domain.length > 0 ? html`<div id="currentdomain">Domain: ${this.domain}</div>`:html`<div id="logo"></div>`)}
         </div>
         <div id="appinfo">
-          <div id="version">${this.version}</div>
+          <div id="version">${config.version}</div>
           <div id="copy">
-            <div id="copyyear">&copy; 2009-${this.copyrightYear}</div>
+            <div id="copyyear">&copy; 2009-${config.copyrightYear}</div>
             <div id="owner">Alan Chandler</div>
           </div>
         </div>

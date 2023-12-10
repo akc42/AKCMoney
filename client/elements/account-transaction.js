@@ -20,6 +20,7 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 import {classMap} from '../libs/class-map.js';
+import config from '../libs/config.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
 import tooltip from '../styles/tooltip.js';
@@ -422,7 +423,7 @@ class AccountTransaction extends LitElement {
       codeKey = {key:this.srccode, filter: this.sameDomain? 'S': 'N'};
       if (!this.readonly) {
         if (this.dst === null) {
-          visual = sessionStorage.getItem('nullAccount');
+          visual = config.nullAccount;
         } else {
           const account = this.accounts.find(a => a.name === this.dst);
           visual = `${account.name} (${account.domain})`;
@@ -432,7 +433,7 @@ class AccountTransaction extends LitElement {
       codeKey = {key:this.dstcode, filter: this.sameDomain?'D': 'N'};
       if (!this.readonly) {
         if (this.src === null) {
-          visual = sessionStorage.getItem('nullAccount');
+          visual = config.nullAccount;
         } else {
           const account = this.accounts.find(a => a.name === this.src);
           visual = `${account.name} (${account.domain})`;
@@ -441,13 +442,13 @@ class AccountTransaction extends LitElement {
     }
     if (codeKey.key === null) {
       codeType = '';
-      codeVisual = sessionStorage.getItem('nullCode');
+      codeVisual = config.nullCode;
     } else {
       const code = this.codes.find(c => c.id === codeKey.key)
       if (code === undefined) {
         debug('codeKey', codeKey)
         codeType = '';
-        codeVisual = sessionStorage.getItem('nullCode');
+        codeVisual = config.nullCode;
       } else {
         codeVisual = code.description;
         codeType = code.type;

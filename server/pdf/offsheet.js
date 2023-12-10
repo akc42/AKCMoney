@@ -18,9 +18,9 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
 import { dbDateToString,blankIfNull } from '../utils.js';
-
+import DB from '@akc42/sqlite-db';
+const db = DB();
 const debug = Debug('money:pdfoffsheet');
 
 const LEFT_EDGE = 72;
@@ -70,7 +70,7 @@ const transactionsHeader = doc => {
   doc.y = y+14;
 }
 
-module.exports = async function(user, params, doc) {
+export default async function(user, params, doc) {
   debug('new request from', user.name, 'with params', params );
   const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
   const getCode = db.prepare('SELECT description FROM code WHERE id = ?').pluck();

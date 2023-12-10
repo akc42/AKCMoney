@@ -18,7 +18,6 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
 import contentDisposition from 'content-disposition';
 
 const debug = Debug('money:responder');

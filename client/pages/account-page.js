@@ -524,7 +524,7 @@ class AccountPage extends LitElement {
     let openid = tid ?? 0;
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     this.transactions = [];
-    const response = await api('/account', { account: name , tid: openid})
+    const response = await api('account', { account: name , tid: openid})
     this.account = response.account;
     if (this.account.name.length > 0) {
       this.startDate = response.startdate;
@@ -656,7 +656,7 @@ class AccountPage extends LitElement {
       this.transactions.push(transaction);
     }  
     if (transaction.id !== 0) { //only update date if transaction is in db (not so when we have just created it)
-      const response = await api('/xaction_date', {
+      const response = await api('xaction_date', {
         id: transaction.id, 
         version: transaction.version, 
         date: transaction.date,

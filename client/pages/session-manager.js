@@ -22,7 +22,7 @@
 import { LitElement, html } from '../libs/lit-element.js';
 
 import api from '../libs/post-api.js';
-import configPromise from '../libs/config-promise.js';
+import config from '../libs/config.js';
 import {switchPath} from '../libs/switch-path.js';
 
 import page from '../styles/page.js';
@@ -99,33 +99,30 @@ class SessionManager extends LitElement {
         case 'logoff':
           this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
           //remove the cookie
-          document.cookie = `${sessionStorage.getItem('authCookie')}=;expires=Thu, 01 Jan 1970 00:00:01 GMT; Path=/`;
+          document.cookie = `${config.authCookie}=;expires=Thu, 01 Jan 1970 00:00:01 GMT; Path=/`;
           switchPath('/');
           this.state = 'reset';
           break;
         case 'reset':
-          this.authorised = false;
-          configPromise().then(() => { //only using this to wait until globals has been read, since this is the first state
-            const authTester = new RegExp(`^(.*; +)?${sessionStorage.getItem('authCookie')}=([^;]+)(.*)?$`);
-            const matches = document.cookie.match(authTester);
-            if (matches) {
-              performance.mark('start_user_validate');
-              api('validate_user',{}).then(response => {
-                this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
-                performance.mark('end_user_validate');
-                performance.measure('user_validate', 'start_user_validate', 'end_user_validate');
-                if (response.user !== undefined) {
-                  sessionStorage.setItem('user', JSON.stringify(response.user));
-                  this.state = 'authorised';
-                } else {
-                  this.state = 'login';
-                }
-              });
-            } else {
-              this.state = 'login'
-            }
-          });
-
+          this.authorised = false;  
+          const authTester = new RegExp(`^(.*; +)?${config.authCookie}=([^;]+)(.*)?$`);
+          const matches = document.cookie.match(authTester);
+          if (matches) {
+            performance.mark('start_user_validate');
+            api('validate_user',{}).then(response => {
+              this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
+              performance.mark('end_user_validate');
+              performance.measure('user_validate', 'start_user_validate', 'end_user_validate');
+              if (response.user !== undefined) {
+                sessionStorage.setItem('user', JSON.stringify(response.user));
+                this.state = 'authorised';
+              } else {
+                this.state = 'login';
+              }
+            });
+          } else {
+            this.state = 'login'
+          }
       }
     }
     super.updated(changed);

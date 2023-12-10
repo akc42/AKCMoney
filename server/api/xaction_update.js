@@ -18,9 +18,9 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
-import {nullIfZeroLength, booleanToDbValue, nullOrAmount, nullOrNumber} from '../utils';
-
+import {nullIfZeroLength, booleanToDbValue, nullOrAmount, nullOrNumber} from '../utils.js';
+import DB from '@akc42/sqlite-db';
+const db = DB();
 const debug = Debug('money:xactionupdate');
 
 export default async function(user, params, responder) {

@@ -19,6 +19,7 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import Route from '../libs/route.js';
+import config from '../libs/config.js';
 
 import '../elements/account-transaction.js';
 import api from '../libs/post-api.js';
@@ -102,8 +103,6 @@ class OffsheetPage extends LitElement {
       code: {type: Number},
       title: {type: String},
       transactions: {type: Array},
-      currencyCode: {type: String},
-      currencyDescription: {type: String},
       codes: {type: Array},
       repeats: {type: Array}
     };
@@ -113,18 +112,9 @@ class OffsheetPage extends LitElement {
     this.route = {active: false};
     this.code = 0;
     this.transactions = [];
-    this.currencyCode = 'GBP';
-    this.currencyDescription = 'United Kingdom, Pounds'
     this.router = new Route('/','page:offsheet');
   }
-  connectedCallback() {
-    super.connectedCallback();
-    this.currencyCode = sessionStorage.getItem('defaultCurrency');
-    this.currencyDescription = sessionStorage.getItem('defaultCUrrencyDescription');
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
+
   update(changed) {
     super.update(changed);
   }
@@ -149,8 +139,8 @@ class OffsheetPage extends LitElement {
         <div class="info">
           <div class="code"><strong>Accounting Code:</strong> ${this.title}</div>
           <div class="currency">
-            <div class="name">Default Currency:<span>${this.currencyCode}</span></div>
-            <div class="description">${this.currencyDescription}</div>
+            <div class="name">Default Currency:<span>${config.defaultCurrency}</span></div>
+            <div class="description">${config.defaultCurrencyDescription}</div>
           </div>
           <div class="normal">All Transactions have been normalised to the default currency</div>
         </div>

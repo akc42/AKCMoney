@@ -19,6 +19,7 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
+import config from '../libs/config.js';
 
 
 
@@ -80,7 +81,7 @@ class ErrorManager extends LitElement {
         `:html`
           <p>We are sorry but something has gone wrong with the operation of the site.  The problem has been logged
           with the server and it will be dealt with soon.</p>
-          <p>Nevertheless, you may wish to e-mail the web master (<a href="mailto:${sessionStorage.getItem('webmaster')}">${sessionStorage.getItem('webmaster')}</a>) to let
+          <p>Nevertheless, you may wish to e-mail the web master (<a href="mailto:${config.webmaster}">${config.webmaster}</a>) to let
           them know that there has been an issue.</p>             
           <button @click=${this._reset}>Restart</button>
         `)}

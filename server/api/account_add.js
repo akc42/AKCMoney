@@ -19,7 +19,8 @@
 */
 
 import Debug from 'debug';
-import db from '@akc42/sqlite-db';
+import DB from '@akc42/sqlite-db';
+const db = DB();
 
 const debug = Debug('money:accountadd');
 

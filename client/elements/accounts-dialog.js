@@ -20,6 +20,7 @@
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
 import {classMap} from '../libs/class-map.js';
+import config from '../libs/config.js';
 import domHost  from '../libs/dom-host.js';
 import './material-icon.js';
 import './dialog-box.js';
@@ -79,7 +80,7 @@ class AccountsDialog extends LitElement {
           ${!this.mainMenu ? html`
               <button type="button" role="menuitem"
                 @click=${this._noAccountSelected}>
-                <span>${sessionStorage.getItem('nullAccount')}</span>
+                <span>${config.nullAccount}</span>
               </button>
               <hr class="sep"/>
           ` : ''}
@@ -132,7 +133,7 @@ class AccountsDialog extends LitElement {
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('accounts-reply', {
       detail: {
         key: null,
-        visual: sessionStorage.getItem('nullAccount')
+        visual: config.nullAccount
       }
     }));
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('item-selected', {
