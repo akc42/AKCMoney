@@ -20,25 +20,20 @@
 
 FROM node:lts-alpine3.18 AS build
 WORKDIR /build
-RUN mkdir sw
 COPY package.json ./
-COPY scripts/swupdate.js ./scripts/
 RUN --mount=type=cache,target=~.npm npm install
 
 FROM node:lts-alpine3.18 AS server
 LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
-WORKDIR /app
+RUN mkdir /env
 RUN mkdir /db
-RUN mkdir version
+WORKDIR /app
 COPY --from=build /build/node_modules ./node_modules
 COPY --from=build /build/package.json .
-COPY --from=build /build/sw/version.json ./version/
-RUN mkdir /env
-COPY money.env /env/.env
-COPY server ./
+COPY server/ ./server/
 ##
 ## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
 ENV TERM xterm-256color
 #note this should match what is in the database as that is where this information is defined
 EXPOSE 2010 
-CMD ["node", "server/server.js"]
+CMD ["node", "/app/server/server.js"]

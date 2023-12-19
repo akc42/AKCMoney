@@ -35,12 +35,6 @@ import finalhandler from 'finalhandler';
 import bcrypt from 'bcrypt';
 
 
-import dotenv from 'dotenv';
-
-const filePath = fileURLToPath(new URL('../money.env', import.meta.url))
-
-dotenv.config({ path: filePath});
-
 const debug = Debug('money:server');
 const debugapi = Debug('money:api');
 const debuguser = Debug('money:user');
@@ -58,7 +52,7 @@ async function loadServers(relPath) {
       const exp = await import(`./${relPath}/${file}`);
       reply[file.slice(0,-3)] = exp.default;
     } catch(err) {
-      await logger('error', `Failed to load ${file} with error ${err}`);
+      logger('error', `Failed to load ${file} with error ${err}`);
     }
   }
   debugapi('load server reply', reply);
@@ -67,7 +61,7 @@ async function loadServers(relPath) {
 
 async function forbidden(req,res, message) {
   debug('In "forbidden"');
-  await logger(req.headers['x-forwarded-for'],'auth', message, 'with request url of',req.originalUrl);
+  logger(req.headers['x-forwarded-for'],'auth', message, 'with request url of',req.originalUrl);
   res.statusCode = 403;
   res.end('---403---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail
 
@@ -75,17 +69,17 @@ async function forbidden(req,res, message) {
 async function errored(req,res,error) {
   debug('In "Errored"');
   const message = `Error${error.message ? ': ' + error.message: '' } ${error.stack? ': ' + error.stack: ''}`;
-  await logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
+  logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
   res.statusCode = 500;
   res.end('---500---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail.
 
 }
 
 async function finalErr (err,req) {
-  await logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
+  logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
 }
 
-
+let server;
 
 
 try {
@@ -101,7 +95,7 @@ try {
   
   
   const db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_FILE, import.meta.url)));
-  let server;
+ 
   
   const serverConfig = {};
   /*
@@ -422,12 +416,12 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         responder.addSection('user', user);
         debugauth('User', user.displayName, 'Validated', 'ip address',req.headers['x-real-ip']);
       } catch (error) {
-        await logger(req.headers['x-real-ip'], 'log', 'User', req.body.name,'Session Expired');
+        logger(req.headers['x-real-ip'], 'log', 'User', req.body.name,'Session Expired');
         res.setHeader('Set-Cookie', 'PASv5=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT');
         responder.addSection('status', 'Expired');
       }
     } else {
-      await logger(req.headers['x-real-ip'], 'log', 'User', req.body.name,'Session Token Missing');
+      logger(req.headers['x-real-ip'], 'log', 'User', req.body.name,'Session Token Missing');
       responder.addSection('status', 'Off');
     }
     responder.end();
@@ -575,7 +569,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   server.listen(serverConfig.serverPort, '0.0.0.0');
   serverDestroy(server);        
 
-  await logger('app', `Release ${version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
+  logger('app', `Release ${version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
   if (process.send) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
 
     

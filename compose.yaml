@@ -21,7 +21,6 @@ services:
     container_name: moneyclient
     ports: 
       - 6080:80
-
     restart: unless-stopped
     depends_on:
       - moneyserver
@@ -31,6 +30,13 @@ services:
     ports: 
       - 2010:2010
     restart: unless-stopped
+    environment:
+      - DEBUG_COLORS=true
+      - DEBUG=money:*
+      - DATABASE_DB=/db/money.db
+      - DATABASE_DB_VERSION=1
+      - DATABASE_INIT_FILE=db-init/database.sql
+      - MONEY_TRACKING=no
     volumes:
-      - "/volume1/docker/money/db"
+      - /volume1/docker/money/db:/db
     tty: true

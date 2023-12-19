@@ -17,7 +17,11 @@
       "env": {
         "DEBUG_COLORS": true,
         "LOG_NO_DATE" : "yes",
-        "DEBUG":"money:*"
+        "DEBUG":"money:*",
+        "DATABASE_DB":"../db/money.db",
+        "DATABASE_DB_VERSION":"1",
+        "DATABASE_INIT_FILE":"db-init/database.sql",
+        "MONEY_TRACKING":"no"
       }
 
     }

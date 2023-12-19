@@ -25,7 +25,6 @@ const db = DB();
 const debug = Debug('money:standing');
 
 export default async function(user, params, responder) {
-  console.log('database is', db);
   debug('new request from', user.name );
   const getCurrencies= db.prepare('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC');
   const getCodes = db.prepare(`SELECT * FROM code 

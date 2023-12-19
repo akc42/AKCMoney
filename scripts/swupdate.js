@@ -66,7 +66,6 @@ const vcontents = {
     version: version
 }
 await update(fileURLToPath(new URL('../sw/service-worker.js', import.meta.url)), 'version = ',version);
-await fs.writeFile(new URL('../sw/version.json', import.meta.url), JSON.stringify(vcontents));
 
 
 

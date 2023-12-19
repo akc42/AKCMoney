@@ -23,7 +23,7 @@ ARG location
 WORKDIR /build
 RUN mkdir sw
 COPY package.json ./
-COPY client/service-worker.js .
+COPY client/service-worker.js ./sw/
 COPY scripts/swupdate.js ./scripts/
 RUN --mount=type=cache,target=~.npm npm install && node scripts/swupdate.js
 

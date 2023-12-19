@@ -25,7 +25,6 @@ const debug = Debug('money:offsheetlist');
 
 export default async function(user, params, responder) {
   debug('new request from', user.name, 'with params', params );
-  console.log('database is', db);
   const getList = db.prepare(`SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
           SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
           OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid 
