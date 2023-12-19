@@ -248,6 +248,7 @@ class AccountPage extends LitElement {
     this.zeroLocked = true;
     this.selectedIndex = null;
     this.selectedClear = false;
+    this.reconcileInProgress = false;
 
   }
 
@@ -753,6 +754,9 @@ class AccountPage extends LitElement {
   }
   async _reconcile(e) {
     e.stopPropagation();
+    if (this.reconcileInProgress) return;
+    this.reconcileInProgress = true;
+    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     let sdate = 0;
     let updateNeeded = false;
     for (let i = 0; i < this.transactions.length; i++) {
@@ -774,6 +778,7 @@ class AccountPage extends LitElement {
         if (response.status === 'OK') {
           this.transactions[i] = response.transaction;
           updateNeeded = true;
+          await new Promise(accept => setTimeout(accept,100)); //wait 10th sec to allow some breathing;
         } else {
           this.dialog.show();
           break;
@@ -801,6 +806,8 @@ class AccountPage extends LitElement {
         this.dialog.show();
       }
     }
+    this.reconcileInProgress = false;
+    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
   }
   _reload(e) {
     e.stopPropagation();
