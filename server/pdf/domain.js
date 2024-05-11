@@ -73,7 +73,7 @@ const codeHeader = (code, doc, profit) => {
   doc.fillColor('black').strokeColor('black');
   if (code.description !== 'Profit') {
     doc.image(
-      path.resolve(__dirname, '../assets/', `${code.type}_codes.png`),
+      path.resolve(path.resolve(new URL('../assets', import.meta.url).pathname, `${code.type}_codes.png`),
       CODE_POSITION, y,
       { width: CODE_SIZE, height: CODE_SIZE }
     );

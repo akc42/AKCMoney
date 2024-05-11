@@ -198,14 +198,14 @@ export default async function(user, params, doc) {
       }
       if (transaction.src === params.account && transaction.stype !== null) {
         doc.image(
-          path.resolve(__dirname,'../assets/',`${transaction.stype}_codes.png`), 
+          path.resolve(path.resolve(new URL('../assets', import.meta.url).pathname,`${transaction.stype}_codes.png`), 
           CODE_POSITION, y,
           { width: CODE_SIZE, height: CODE_SIZE }
         );
 
       } else if (transaction.dst === params.account && transaction.dtype !== null) {
         doc.image(
-          path.resolve(__dirname, '../assets/', `${transaction.dtype}_codes.png`), 
+          path.resolve(new URL('../assets', import.meta.url).pathname, `${transaction.dtype}_codes.png`), 
           CODE_POSITION, y, 
           { width: CODE_SIZE, height: CODE_SIZE }
         );
