@@ -97,4 +97,4 @@ self.addEventListener('fetch', (event) => {
   }
 });
 //line below updated new version built
-version = 'v4.1.7';
+version =  'v4.2.2'
