@@ -107,7 +107,7 @@ try {
   if (dbSettingsTable === 0) {
     debug('update version to have settings table');
     //we don't yet have a settings table
-    const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `update_to_settings.sql`), { encoding: 'utf8' });
+    const update = fs.readFileSync(path.resolve(new URL('db-init', import.meta.url).pathname, `update_to_settings.sql`), { encoding: 'utf8' });
     db.exec(update);        
   }
   //try and open the database, so that we can see if it is up to date
@@ -122,16 +122,16 @@ try {
     const upgradeVersions = db.transaction(() => {
       
       for (let version = dbVersion; version < moneyVersion; version++) {
-        if (fs.existsSync(path.resolve(__dirname, 'db-init', `pre-upgrade_${version}.sql`))) {
+        if (fs.existsSync(path.resolve(new URL('db-init', import.meta.url).pathname, `pre-upgrade_${version}.sql`))) {
           //if there is a site specific update we need to do before running upgrade do it
-          const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `pre-upgrade_${version}.sql`), { encoding: 'utf8' });
+          const update = fs.readFileSync(path.resolve(new URL('db-init',import.meta.url).pathname, `pre-upgrade_${version}.sql`), { encoding: 'utf8' });
           db.exec(update);
         }
-        const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `upgrade_${version}.sql`),{ encoding: 'utf8' });
+        const update = fs.readFileSync(path.resolve(new URL('db-init',import.meta.url).pathname, `upgrade_${version}.sql`),{ encoding: 'utf8' });
         db.exec(update);
-        if (fs.existsSync(path.resolve(__dirname, 'db-init', `post-upgrade_${version}.sql`))) {
+        if (fs.existsSync(path.resolve(new URL('db-init',import.meta.url).pathname,`post-upgrade_${version}.sql`))) {
           //if there is a site specific update we need to do after running upgrade do it
-          const update = fs.readFileSync(path.resolve(__dirname, 'db-init', `post-upgrade_${version}.sql`), { encoding: 'utf8' });
+          const update = fs.readFileSync(path.resolve(new URL('db-init',import.meta.url).pathname, `post-upgrade_${version}.sql`), { encoding: 'utf8' });
           db.exec(update);
         }
       }
