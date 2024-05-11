@@ -65,7 +65,7 @@ const version = 'v'+ pjson.version;
 const vcontents = {
     version: version
 }
-await update(fileURLToPath(new URL('../client/service-worker.js', import.meta.url)), 'version = ',version);
+await update(fileURLToPath(new URL('../sw/service-worker.js', import.meta.url)), 'version = ',version);
 
 
 
