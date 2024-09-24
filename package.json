@@ -41,7 +41,7 @@
     "jwt-simple": "^0.5.6",
     "lit": "^3.1.0",
     "pdfkit": "^0.14.0",
-    "rollup": "^4.7.0",
+    "rollup": "^4.22.4",
     "router": "^2.0.0",
     "server-destroy": "^1.0.1",
     "uuid": "^9.0.1"
