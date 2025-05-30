@@ -34,7 +34,7 @@ import serverDestroy from 'server-destroy';
 import finalhandler from 'finalhandler';
 import bcrypt from 'bcrypt';
 import url from 'node:url';
-import CSVResponder from './csvresponder';
+import CSVResponder from './csvresponder.js';
 
 const debug = Debug('money:server');
 const debugapi = Debug('money:api');
