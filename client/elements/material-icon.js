@@ -25,7 +25,7 @@ link.rel = 'stylesheet';
 link.type = 'text/css';
 link.crossOrigin = 'anonymous';
 //eslint-disable-next-line max-len
-link.href =  'https://fonts.googleapis.com/icon?family=Material+Icons&display=swap';
+link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap';
 document.head.appendChild(link);
 
 class MaterialIcon extends LitElement {

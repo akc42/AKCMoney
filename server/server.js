@@ -85,16 +85,11 @@ let server;
 
 try {
 
-
-  const pjsonfile = fileURLToPath(new URL('../package.json', import.meta.url))
-  const { mtime } = await fs.stat(pjsonfile); 
-  const pcontents = await fs.readFile(pjsonfile)
-  const pjson = JSON.parse(pcontents);
-  const version = 'v'+ pjson.version;
+  const version = await fs.readFile(process.env.MONEY_VERSION_FILE, 'utf-8')
+  const { mtime } = await fs.stat(process.env.MONEY_VERSION_FILE); 
   const year = new Date(mtime).getUTCFullYear();
-  
-  
-  
+  debug('starting server with verion', version)
+    
   const db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_FILE, import.meta.url)));
  
   

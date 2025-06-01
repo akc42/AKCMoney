@@ -1,3 +1,4 @@
+appinfo
 client/libs
 server/db-init/pre-upgrade_*.sql
 server/db-init/post-upgrade_*.sql
@@ -18,5 +19,4 @@ keys
 .DS_Store
 npm-debug.log
 .vscode/launch.json
-release.info
-release.sh
+compose.yaml

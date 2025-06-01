@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.0-experimental
 #
-#   Copyright (c) 2023 Alan Chandler, all rights reserved
+#   Copyright (c) 2025 Alan Chandler, all rights reserved
 #
 #   This file is part of AKCMoney.
 #
@@ -18,22 +18,6 @@
 #   along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-FROM node:lts-alpine3.18 AS build
-ARG location
-WORKDIR /build
-RUN mkdir sw
-COPY package.json ./
-COPY client/service-worker.js ./sw/
-COPY scripts/swupdate.js ./scripts/
-RUN --mount=type=cache,target=~.npm npm install && node scripts/swupdate.js
-
-FROM nginx:1.25.3-alpine3.18 AS client
-LABEL com.hartley-consultants.maintainer="Alan Chandler <alan.chandler@hartley-consultants.com>"
+FROM nginx:mainline-alpine-slim 
+LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
 COPY nginx/default.conf /etc/nginx/conf.d/
-WORKDIR /built
-
-COPY --from=build /build/sw ./sw
-WORKDIR /usr/share/nginx/html
-COPY client ./
-COPY startclient.sh /bin
-CMD /bin/startclient.sh
