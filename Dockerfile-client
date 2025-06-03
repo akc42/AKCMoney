@@ -21,19 +21,17 @@
 FROM node:lts-alpine3.18 AS build
 ARG location
 WORKDIR /build
-RUN mkdir sw
+
 COPY package.json ./
-COPY client/service-worker.js ./sw/
+COPY client/service-worker.js ./client/
 COPY scripts/swupdate.js ./scripts/
 RUN --mount=type=cache,target=~.npm npm install && node scripts/swupdate.js
 
 FROM nginx:1.25.3-alpine3.18 AS client
 LABEL com.hartley-consultants.maintainer="Alan Chandler <alan.chandler@hartley-consultants.com>"
 COPY nginx/default.conf /etc/nginx/conf.d/
-WORKDIR /built
-
-COPY --from=build /build/sw ./sw
 WORKDIR /usr/share/nginx/html
 COPY client ./
+COPY --from=build /build/client/service-worker.js .
 COPY startclient.sh /bin
 CMD /bin/startclient.sh
