@@ -17,7 +17,7 @@
 #
 services:
   moneyclient:
-    image: docker.chandlerfamily.org.uk/mondevclient
+    image: docker.chandlerfamily.org.uk/moneyclient
     container_name: moneyclient
     ports: 
       - 6080:80
@@ -25,11 +25,11 @@ services:
       - moneynet
     restart: unless-stopped
     volumes:
-      - /home/alan/dev/money/client:/usr/share/nginx/html:ro
+      - /volume1/money/client:/usr/share/nginx/html:ro
     depends_on:
       - moneyserver
   moneyserver:
-    image: docker.chandlerfamily.org.uk/mondevserver
+    image: docker.chandlerfamily.org.uk/moneyserver
     container_name: moneyserver
     ports: 
       - 2010:2010
@@ -38,16 +38,16 @@ services:
     restart: unless-stopped
     environment:
       - DEBUG_COLORS=true
-      - DEBUG=money:*
+      - DEBUG=
       - DATABASE_DB=/db/money.db
       - DATABASE_DB_VERSION=1
       - DATABASE_INIT_FILE=db-init/database.sql
       - MONEY_TRACKING=no
       - MONEY_VERSION_FILE=../appinfo/version
     volumes:
-      - /home/alan/dev/money/appinfo:/app/appinfo
-      - /home/alan/dev/money/server:/app/server
-      - /home/alan/dev/money/db:/db
+      - /volume1/docker/money/appinfo:/appinfo
+      - /volume1/money/server:/app
+      - /volume1/docker/money/db:/db
     tty: true
 networks:
   moneynet:

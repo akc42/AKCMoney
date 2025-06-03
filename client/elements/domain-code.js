@@ -240,7 +240,7 @@ class DomainCode extends LitElement {
         newAmount = originalAmount - currentEndBalance
       }
       newAmount *= swap ? -1 : 1;
-      api(`/${swap ? 'xaction_swap_zero' : 'xaction_amount'}`, {
+      api(`${swap ? 'xaction_swap_zero' : 'xaction_amount'}`, {
         id: e.currentTarget.tid,
         version: e.currentTarget.version,
         amount: newAmount,

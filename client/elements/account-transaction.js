@@ -349,7 +349,7 @@ class AccountTransaction extends LitElement {
       if (changed.has('amount') && changed.get('amount') !== undefined && !changed.has('tid')) {
         this.amountEdit = false;
         //only do this if its the same transaction that the amount has changed in.
-        api('/xaction_amount',{
+        api('xaction_amount',{
           id: this.tid,
           version: this.version,
           amount: this.amount,

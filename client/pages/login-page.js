@@ -136,7 +136,7 @@ class LoginPage extends LitElement {
           <p>Please enter your username and password to access this accounting system.</p>
           <p>If you do not wish to be remembered on this computer after you close the browser please uncheck the &#8220;<em>Remember Me</em>&#8221; check box</p>
         </div>
-        <form id="login" action="/login" @submit=${submit} @form-response=${this._login}>
+        <form id="login" action="login" @submit=${submit} @form-response=${this._login}>
           <div id="errormessage" class="error" role="alert" hidden>
             <material-icon>cancel</material-icon><span>Invalid Credentials, please try again</span>
           </div>
