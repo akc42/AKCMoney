@@ -1,6 +1,6 @@
 {
   "name": "@akc42/money",
-  "version": "4.2.4",
+  "version": "4.2.5",
   "description": "Money Management Application",
   "main": "server/server.js",
   "type": "module",
