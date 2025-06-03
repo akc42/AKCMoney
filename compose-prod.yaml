@@ -38,15 +38,14 @@ services:
     restart: unless-stopped
     environment:
       - DEBUG_COLORS=true
-      - DEBUG=
       - DATABASE_DB=/db/money.db
       - DATABASE_DB_VERSION=1
       - DATABASE_INIT_FILE=db-init/database.sql
       - MONEY_TRACKING=no
       - MONEY_VERSION_FILE=../appinfo/version
     volumes:
-      - /volume1/docker/money/appinfo:/appinfo
-      - /volume1/money/server:/app
+      - /volume1/docker/money/appinfo:/app/appinfo
+      - /volume1/money/server:/app/server
       - /volume1/docker/money/db:/db
     tty: true
 networks:
