@@ -738,7 +738,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   }
   _standingReread(e) {
     e.stopPropagation();
-    api('/standing').then(response => {
+    api('standing').then(response => {
       this.codes = response.codes;
       this.repeats = response.repeats;
       this.currencies = response.currencies;

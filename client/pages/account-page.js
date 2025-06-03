@@ -552,7 +552,7 @@ class AccountPage extends LitElement {
               previousTime = Math.max(transaction.date - 60, Math.floor(previousTime/86400) * 86400 - TZOffset);
               if( previousTransaction.date !== previousTime) {
                 previousTransaction.date = previousTime;
-                const reply = await api('/xaction_date', {
+                const reply = await api('xaction_date', {
                   id: previousTransaction.id,
                   version: previousTransaction.version,
                   date: previousTransaction.date,
@@ -566,7 +566,7 @@ class AccountPage extends LitElement {
                 }
               }
             }  
-            const reply = await api('/xaction_date', {
+            const reply = await api('xaction_date', {
               id: transaction.id,
               version: transaction.version,
               date: transaction.date,
