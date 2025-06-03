@@ -32,7 +32,9 @@ RUN mkdir /db
 WORKDIR /app
 COPY --from=build /build/node_modules ./node_modules
 COPY --from=build /build/package.json .
+RUN mkdir -p server
+RUN mkdir -p appinfo
 ## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
 ENV TERM xterm-256color
 EXPOSE 2010
-CMD ["node", "server.js"]
+CMD ["node", "server/server.js"]

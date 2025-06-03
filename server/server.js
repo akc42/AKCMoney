@@ -85,8 +85,8 @@ let server;
 
 try {
 
-  const version = await fs.readFile(process.env.MONEY_VERSION_FILE, 'utf-8')
-  const { mtime } = await fs.stat(process.env.MONEY_VERSION_FILE); 
+  const version = await fs.readFile(fileURLToPath(new URL(process.env.MONEY_VERSION_FILE ,import.meta.url)), 'utf-8')
+  const { mtime } = await fs.stat(fileURLToPath(new URL(process.env.MONEY_VERSION_FILE ,import.meta.url))); 
   const year = new Date(mtime).getUTCFullYear();
   debug('starting server with verion', version)
     
@@ -381,11 +381,13 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       }
     }
     if (success) {
+      debug('login success so set cookie and return user')
       user.password = !!user.password; //turn password into a boolean as to whether it exists;
       user.remember = req.body.remember !== undefined && user.password;
       res.setHeader('Set-Cookie', generateCookie(user, serverConfig.authCookie, user.remember ? serverConfig.tokenExpires:false)); //refresh cookie to the new value 
       res.end(JSON.stringify(user));
     } else {
+      debugauth('incorrect password')
       res.end(JSON.stringify({}));
     }
     debugauth('login all done');
@@ -579,32 +581,25 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
 
 function close() {
 // My process has received a SIGINT signal
-
-    if (server) {
-      logger('app', 'Starting money Server ShutDown Sequence');
-      try {
-        const tmp = server;
-        server = null;
-        //we might have to stop more stuff later, so leave as a possibility
-        tmp.destroy(() => {
-          logger('app', 'money  Server ShutDown Complete');
-          db.close();
-          if (!module.parent) {
-            debug('process exit');
-            process.exit(0);  //only exit if we were the starting script. It will close database automatically.
-          }
-          debug('test server closed');
-        });
-        
-      } catch (err) {
-        logger('error', `Trying to close caused error:${err}`);
-      }
-    } else {
-      accept(true);
+  if (server) {
+    logger('app', 'Starting money Server ShutDown Sequence');
+    try {
+      const tmp = server;
+      server = null;
+      //we might have to stop more stuff later, so leave as a possibility
+      tmp.destroy(() => {
+        logger('app', 'money  Server ShutDown Complete');
+        db.close();
+        if (!require.main) {
+          debug('process exit');
+          process.exit(0);  //only exit if we were the starting script. It will close database automatically.
+        }
+        debug('test server closed');
+      });
+    } catch (err) {
+      logger('error', `Trying to close caused error:${err}`);
     }
-
-
-  
+  }
 }
 
   

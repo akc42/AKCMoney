@@ -45,6 +45,7 @@
     "rollup": "^4.22.4",
     "router": "^2.0.0",
     "server-destroy": "^1.0.1",
+    "supports-color": "^10.0.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

@@ -24,7 +24,6 @@ const link = document.createElement('link');
 link.rel = 'stylesheet';
 link.type = 'text/css';
 link.crossOrigin = 'anonymous';
-//eslint-disable-next-line max-len
 link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap';
 document.head.appendChild(link);
 
@@ -32,7 +31,7 @@ class MaterialIcon extends LitElement {
   static get styles() {
     return css`
       :host{
-        font-family:"Material Icons";
+        font-family:"Material Symbols Outlined";
         font-weight:normal;
         font-style:normal;
         font-size:var(--icon-size, 24px);
