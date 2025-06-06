@@ -21,7 +21,7 @@
 process.env.DATABASE_DB = 'money-test.db';
 process.env.DATABASE_DB_PIN = "no" ;
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../', 'money.env') });
+
 process.env.MONEY_DOMAIN = 'mondev.chandlerfamily.org.uk'; //set for testing
 const db = require('@akc42/sqlite-db');
 const PlaywrightEnvironment = require('jest-playwright-preset/lib/PlaywrightEnvironment').default

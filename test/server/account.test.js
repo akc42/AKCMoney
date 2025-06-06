@@ -20,7 +20,7 @@
 
 process.env.DATABASE_DB = 'money-test.db';
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../..', 'money.env') });
+
 const db = require('@akc42/sqlite-db');
 
 describe('account add api', () => {

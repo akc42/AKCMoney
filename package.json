@@ -27,31 +27,29 @@
   },
   "homepage": "https://github.com/akc42/AKCMoney#readme",
   "dependencies": {
-    "@akc42/app-utils": "^4.1.1",
-    "@akc42/server-utils": "^3.2.0",
+    "@akc42/app-utils": "^4.2.1",
+    "@akc42/server-utils": "^3.3.0",
     "@akc42/sqlite-db": "2.0.2",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "bcrypt": "^6.0.0",
+    "body-parser": "^2.2.0",
     "content-disposition": "^0.5.4",
     "debug": "^4.3.4",
-    "dotenv": "^16.3.1",
-    "finalhandler": "^1.2.0",
+    "finalhandler": "^2.1.0",
     "jwt-simple": "^0.5.6",
-    "lit": "^3.1.0",
-    "npm": "^11.4.1",
-    "pdfkit": "^0.14.0",
-    "rollup": "^4.22.4",
-    "router": "^2.0.0",
+    "lit": "^3.3.0",
+    "pdfkit": "^0.17.1",
+    "rollup": "^4.41.1",
+    "router": "^2.2.0",
     "server-destroy": "^1.0.1",
     "supports-color": "^10.0.0",
-    "uuid": "^9.0.1"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "expect-playwright": "^0.8.0",
     "jest": "^29.7.0",
     "jest-playwright": "0.0.1",
     "jest-playwright-preset": "^4.0.0",
-    "playwright": "^1.40.1"
+    "playwright": "^1.52.0"
   }
 }
