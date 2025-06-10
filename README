@@ -1,3 +1,24 @@
+
+Copyright (c) 2009-2025 Alan Chandler
+
+This file is part of AKCMoney.
+
+AKCMoney is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+AKCMoney is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with AKCMoney (file LICENCE).  If not, see
+<http://www.gnu.org/licenses/>. 
+
+
+
 AKCMoney is an application to Manage Money, either for a private
 individual or a small business, or in the later releases both.  
 
@@ -23,45 +44,20 @@ as profits declared and dividents paid which are separately accounted for
 cumulatively over time to ensure that only the profits actually achieved are
 paid out in dividends) 
 
-I have been using v3 of this application for the past 6 years and although it does 
-everything that I want, there are little issues which detract.  For instance scolling
-down a long list of transactions looses the menu and action buttons from the top, or
-trying to clear lots of transactions because the whole account has been reconcilled has to be
-done one transaction at a time, or manually calculating a new figure to make the end balance
-of an account zero could be automated (used when I need to calculate monthly repayments when I
-have borrowed from elsewhere).
+I have been using versions of this application for the past 16 years to manage my own money and that of my business (in
+separate Domains). I've been able to slowly add features I've needed
 
-So I am working towards the 4th release of this software.  Moving on from php into a 
-nodejs based server application with a custom elements (using lit-element) front end.
-
-This will allow me to address those small niggles, but at the same time make the application
-more mobile friendly so that I can also do work on my mobile phone.
-
-Although the README has not been updated in a while, the transistion to javascript (v4) has been completed somewhile ago.  
-Also the application has been through a couple of iterations using docker containers for the client and server parts of
-the application.  Release 4.3.0 saw the restructuring of that approach so that the containers only had the frameworks
-for the application built into them and the rest (client and server code) was mapped to using the docker volume facilities to code directories on the appropriate server. For development that is my local development machine, for production it is a synology NAS.  
+The transistion to javascript (v4) and custom elements has been completed somewhile ago. Also the application has been
+through a couple of iterations using docker containers for the client and server parts of the application.  Release
+4.3.0 saw the restructuring of that approach so that the containers only had the frameworks for the application built
+into them and the rest (client and server code) was mapped to using the docker volume facilities to code directories on
+the appropriate server. For development that is my local development machine, for production it is a synology NAS.  
 
 
 
 
-One final point to make - I want to explore using jest and playwright for both server and client
-testing.  It may not work out, but I need to find out if I can make it work for another of my projects.
+One final point to make - I want to explore using jest and playwright for both server and client testing.  It may not
+work out, but I need to find out if I can make it work for another of my projects. Any code in the test directory is (at
+the moment) unlikely to work.
 
-Copyright (c) 2009-2025 Alan Chandler
 
-This file is part of AKCMoney.
-
-AKCMoney is free software: you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation, either version 3 of the License, or (at your
-option) any later version.
-
-AKCMoney is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with AKCMoney (file supporting/COPYING.txt).  If not, see
-<http://www.gnu.org/licenses/>.
