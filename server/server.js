@@ -81,7 +81,7 @@ async function finalErr (err,req) {
 }
 
 let server;
-
+let db;
 
 try {
 
@@ -90,7 +90,7 @@ try {
   const year = new Date(mtime).getUTCFullYear();
   debug('starting server with verion', version)
     
-  const db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_FILE, import.meta.url)));
+  db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_FILE, import.meta.url)));
  
   
   const serverConfig = {};
@@ -576,7 +576,8 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   logger('error', 'Initialisation Failed with error ' + e.message + '\n' + e.stack);
   close();
 }
-  
+ 
+
   
 
 function close() {
@@ -588,13 +589,11 @@ function close() {
       server = null;
       //we might have to stop more stuff later, so leave as a possibility
       tmp.destroy(() => {
-        logger('app', 'money  Server ShutDown Complete');
-        db.close();
-        if (!require.main) {
-          debug('process exit');
-          process.exit(0);  //only exit if we were the starting script. It will close database automatically.
-        }
-        debug('test server closed');
+        logger('app', 'Money Server ShutDown Complete');
+        if(db) db.close(); //only of we managed to open it
+        debug('process exit');
+        process.exit(0);  //only exit if we were the starting script. It will close database automatically.
+        
       });
     } catch (err) {
       logger('error', `Trying to close caused error:${err}`);
@@ -602,4 +601,4 @@ function close() {
   }
 }
 
-  
+process.on('SIGTERM', close)
