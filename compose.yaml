@@ -17,7 +17,7 @@
 #
 services:
   moneyclient:
-    image: docker.chandlerfamily.org.uk/mondevclient
+    image: docker.chandlerfamily.org.uk/moneyclient
     container_name: moneyclient
     ports: 
       - 6080:80
@@ -29,7 +29,7 @@ services:
     depends_on:
       - moneyserver
   moneyserver:
-    image: docker.chandlerfamily.org.uk/mondevserver
+    image: docker.chandlerfamily.org.uk/moneyserver
     container_name: moneyserver
     ports: 
       - 2010:2010
@@ -37,8 +37,9 @@ services:
       - moneynet
     restart: unless-stopped
     environment:
-      - DEBUG_COLORS=true
-      - DEBUG=money:*
+      - CLIENT_DEBUG=main-app
+      - SERVER_DEBUG=server:api:user:auth
+      - DEBUG_CACHE_SIZE=50
       - DATABASE_DB=/db/money.db
       - DATABASE_DB_VERSION=1
       - DATABASE_INIT_FILE=db-init/database.sql

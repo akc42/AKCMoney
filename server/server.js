@@ -20,10 +20,9 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import {fileURLToPath } from 'node:url';
-import Debug from 'debug';
+import {logger,Debug, setDebugConfig, dumpDebugCache, Responder} from '@akc42/server-utils';
 import dbStartup from '@akc42/sqlite-db';
 import chalk from 'chalk';
-import {logger,Responder} from '@akc42/server-utils'; 
 import bodyParser  from 'body-parser';
 import  Router from 'router';
 import jwt  from 'jwt-simple';
@@ -35,11 +34,11 @@ import finalhandler from 'finalhandler';
 import bcrypt from 'bcrypt';
 import url from 'node:url';
 import CSVResponder from './csvresponder.js';
-
-const debug = Debug('money:server');
-const debugapi = Debug('money:api');
-const debuguser = Debug('money:user');
-const debugauth = Debug('money:auth');
+setDebugConfig(process.env.SERVER_DEBUG??'',process.env.DEBUG_CACHE_SIZE??50)
+const debug = Debug('server');
+const debugapi = Debug('api');
+const debuguser = Debug('user');
+const debugauth = Debug('auth');
 
 async function loadServers(relPath) {
   const dir = fileURLToPath(new URL (relPath, import.meta.url));
@@ -56,7 +55,7 @@ async function loadServers(relPath) {
       logger('error', `Failed to load ${file} with error ${err}`);
     }
   }
-  debugapi('load server reply', reply);
+  debugapi('load server reply', JSON.stringify(Object.keys(reply)));
   return reply;
 };
 
@@ -71,10 +70,19 @@ async function errored(req,res,error) {
   debug('In "Errored"');
   const message = `Error${error.message ? ': ' + error.message: '' } ${error.stack? ': ' + error.stack: ''}`;
   logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
+  dumpDebugCache();
   res.statusCode = 500;
   res.end('---500---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail.
 
 }
+process.on('unhandledRejection', (err) => {
+  logger('error', `Unhandled Rejection with error ${err.stack || err.toString()}`);
+  dumpDebugCache();
+}); 
+process.on('uncaughtException', (err) => {
+  logger('error', `Uncaught Exception with error ${err.stack || err.toString()}`);
+  dumpDebugCache();
+});
 
 async function finalErr (err,req) {
   logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
@@ -165,7 +173,7 @@ try {
     Get the few important settings that we need in our server, but also take the opportunity to get back what we need for
     our config route
   */
-  const clientConfig= {};
+  const clientConfig= {debug: process.env.CLIENT_DEBUG??''};
   const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
   const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
   db.transaction(() => {
@@ -523,11 +531,13 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         );
 
       } catch (e) {
-        debugapi('error in pdf',e);
+        logger('error','error in pdf',e);
         if (doc !== undefined) {
           doc.fillColor('red').fontSize(14).font('Helvetica-Bold');
           doc.text('SERVER ERROR - CANNOT COMPLETE PDF', {width: 172, align: 'center'});
         }
+        logger(req.headers['x-forwarded-for'],'error', 'PDF function ', p , 'failed with error', e.stack);
+        dumpDebugCache();
       }
       if (doc !== undefined) doc.end();
     });
