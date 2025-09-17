@@ -35,7 +35,7 @@ import bcrypt from 'bcrypt';
 import url from 'node:url';
 import CSVResponder from './csvresponder.js';
 
-setDebugConfig(process.env.SERVER_DEBUG??'',process.env.DEBUG_CACHE_SIZE??50)
+
 const debug = Debug('server');
 const debugapi = Debug('api');
 const debuguser = Debug('user');
@@ -105,17 +105,9 @@ try {
   const serverConfig = {};
   /*
     start off a process to ensure the database is in the latest format
-
-    Step 1: see if we have a settings table or not
   */
-  const dbSettingsTable = db.prepare(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'settings'`).pluck().get();
-  if (dbSettingsTable === 0) {
-    debug('update version to have settings table');
-    //we don't yet have a settings table
-    const update = fs.readFileSync(path.resolve(new URL('db-init', import.meta.url).pathname, `update_to_settings.sql`), { encoding: 'utf8' });
-    db.exec(update);        
-  }
-  //try and open the database, so that we can see if it is up to date
+
+  //read version to see if it is up to date
   const dversion = db.prepare(`SELECT value FROM settings WHERE name = 'version'`).pluck();
   const dbVersion = dversion.get();
 
@@ -166,18 +158,18 @@ try {
     amnestyDate.setDate(amnestyDate.getDate() + 1);
     debug('amnesty date', amnestyDate);
   }
-
-
-
-
   /*
     Get the few important settings that we need in our server, but also take the opportunity to get back what we need for
     our config route
   */
-  const clientConfig= {debug: process.env.CLIENT_DEBUG??''};
+  const clientConfig= {};
   const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
   const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
   db.transaction(() => {
+    const serverdebug = s.get('server_debug')??'';
+    if (serverdebug.length > 0) {
+      setDebugConfig(serverdebug,s.get('debug_cache'));
+    }
     if (process.env.MONEY_TRACKING !== 'no') serverConfig.trackCookie = s.get('track_cookie');
     serverConfig.authCookie = s.get('auth_cookie');
     serverConfig.tokenKey = `AKCMoney${s.get('token_key').toString()}`;
@@ -220,6 +212,10 @@ try {
     debugapi('config request');
     //do this every client start up because then we can change them without restarting server
     db.transaction(() => {
+      const serverdebug = s.get('server_debug')??'';
+      if (serverdebug.length > 0) {
+        setDebugConfig(serverdebug,s.get('debug_cache'));
+      }
       clientConfig.clientLog = s.get('client_log');
       clientConfig.clientUid = s.get('client_uid');
       clientConfig.minPassLength = s.get('min_pass_len');
@@ -229,7 +225,7 @@ try {
       clientConfig.yearEnd = s.get('year_end');
       clientConfig.nullAccount = s.get('null_account');
       clientConfig.nullCode = s.get('null_code');
-      clientConfig.debug = s.get('debug_config') ?? '';
+      clientConfig.debug = s.get('debug') ?? '';
     })();
 //        const payload = { uid: 1, name: 'alan', password: false, isAdmin: 1, account: 'Bank - Current', domain: 'Personal' }; //TEMP
 //        res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //TEMP
@@ -357,6 +353,26 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
 
   api.use(bodyParser.json());
   /*
+    Client Debug Support
+  */
+  debug('setting up debug api');
+  api.post('/debuglog/:topic', async (req,res) =>{
+    const topic = req.params.topic;
+    debugapi('debug topic', topic);
+    if (typeof topic === 'string' && topic.length > 0 && /^([a-zA-Z]+)/.test(topic) ) { 
+      // no longer limit, because in a dump we want all 
+      const ip = req.headers['x-forwarded-for'];
+      const comment = req.body.message ?? '';
+
+      const gap = req.body.gap ?? null; //seemlessly leave out gap if it isn't provided  
+      const message = `${chalk.greenBright(topic)} ${comment}${gap ? chalk.whiteBright.bgBlack(' +' + gap + 'ms'):''}`;
+      logger(ip, 'log', message);       
+      res.end();
+    } else {
+      forbidden(req,res, 'Invalid Debug Topic');
+    }
+  });
+  /*
     A simple log api
   */
   debug('set up logging api')
@@ -366,6 +382,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
     logger(ip,'log',message );
     res.end();
   });
+
   /*
     User Login
   */
@@ -560,13 +577,15 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       } catch (e) {
         errored(req, res, e);
       }
-
     });
   }
-
-
   debug('Creating Web Server');
   server = http.createServer((req,res) => {
+    if (typeof req.headers['x-forwarded-for'] === 'undefined') {
+      req.headers['x-forwarded-for'] = '127.0.0.1';  //direct call from a local process so mark it such
+    } else if (req.headers['x-forwarded-for'].includes(',')) {
+      req.headers['x-forwarded-for'] = req.headers['x-forwarded-for'].substring(0,req.headers['x-forwarded-for'].indexOf(','));
+    }
     //standard values (although status code might get changed and other headers added);
     res.satusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -577,19 +596,12 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   });
   server.listen(serverConfig.serverPort, '0.0.0.0');
   serverDestroy(server);        
-
   logger('app', `Release ${version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
   if (process.send) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
-
-    
-
 } catch(e) {
   logger('error', 'Initialisation Failed with error ' + e.message + '\n' + e.stack);
   close();
 }
- 
-
-  
 
 function close() {
 // My process has received a SIGINT signal
@@ -604,12 +616,10 @@ function close() {
         if(db) db.close(); //only of we managed to open it
         debug('process exit');
         process.exit(0);  //only exit if we were the starting script. It will close database automatically.
-        
       });
     } catch (err) {
       logger('error', `Trying to close caused error:${err}`);
     }
   }
 }
-
 process.on('SIGTERM', close)

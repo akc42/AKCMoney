@@ -1,5 +1,5 @@
 
--- 	Copyright (c) 2009 - 2020 Alan Chandler
+-- 	Copyright (c) 2009 - 2025 Alan Chandler
 --  This file is part of AKCMoney.
 
 --    AKCMoney is free software: you can redistribute it and/or modify
@@ -30,11 +30,11 @@ CREATE TABLE codeType (
     description character varying
 );
 
-INSERT INTO codeType VALUES ('C','Direct Costs'); -- Direct Costs incurred by the business
-INSERT INTO codeType VALUES ('R','Revenue'); -- Revenues Due
-INSERT INTO codeType VALUES ('A','Computer Asset'); --Capital purchase of Computer Asset
-INSERT INTO codeType VALUES ('B','Balancing Account');  --Holds personal costs that are to be re-embersed by the business
-INSERT INTO codeType VALUES ('O','Off Balance Sheet');  --Items that should not appear in domain accounting
+INSERT INTO codeType VALUES ('C','Direct Costs') -- Direct Costs incurred by the business
+, ('R','Revenue') -- Revenues Due
+, ('A','Capital Asset') --Capital purchase of Computer Asset
+, ('B','Balancing Account')  --Holds personal costs that are to be re-embersed by the business
+, ('O','Off Balance Sheet');  --Items that should not appear in domain accounting
 
 -- account codes define the accounting code associated with this account 
 
@@ -42,25 +42,30 @@ CREATE TABLE code (
     id integer PRIMARY KEY,
     version bigint DEFAULT 1 NOT NULL,
     type char(1) NOT NULL REFERENCES codeType(type),          
-    description character varying
+    description character varying,
+    depreciateyear integer
 );
 
 
-INSERT INTO code (type,description) VALUES ( 'C','Operational Cost'); -- such as hosting fees, insurance, phone 
-INSERT INTO code (type,description) VALUES ( 'C', 'Billable Costs'); -- costs incurred which will be invoiced from clients
-INSERT INTO code (type,description) VALUES ( 'C', 'General Mileage @40p per mile'); --Mileage Not Billable from Clients
-INSERT INTO code (type,description) VALUES ( 'C', 'Customer Related Mileage @40p per mile'); --Mileage Costed at 40p but only Billed at 20p
-INSERT INTO code (type,description) VALUES ( 'C', 'Salaries'); --Salaries and Related Costs (Tax and NI)
-INSERT INTO code (type,description) VALUES ( 'C', 'Advertising and Marketing Services'); --Advertising Costs
-INSERT INTO code (type,description) VALUES ( 'C', 'Office Cost'); --Stationary, Postage etc
-INSERT INTO code (type,description) VALUES ('C','Professional Membership Fees'); -- Fees for British Computer Society and PCG
-INSERT INTO code (type,description) VALUES ( 'C', 'General Costs'); -- costs not included elsewhere
-INSERT INTO code (type,description) VALUES ( 'R', 'Invoices for Professional Service');
-INSERT INTO code (type,description) VALUES ('R', 'Invoices for Web Design and Hosting'); 
-INSERT INTO code (type,description) VALUES ('A','Computer Equipment'); --Depreciable Computer Equipment
-INSERT INTO code (type,description) VALUES ('B','Outstanding Expenses'); --Personally Incurred Expenses (to be re-embersed by the Business)
-INSERT INTO code (type,description) VALUES ('B','Loans'); --loans made to the company
-INSERT INTO code (type,description) VALUES ('O','Profit and Dividends'); -- Off Balance Sheet Items we want to track
+INSERT INTO code (type,description) VALUES ( 'C','Operational Cost') -- such as hosting fees, insurance, phone 
+, ( 'C', 'Billable Costs') -- costs incurred which will be invoiced from clients
+, ( 'C', 'General Mileage @40p per mile') --Mileage Not Billable from Clients
+, ( 'C', 'Customer Related Mileage @40p per mile') --Mileage Costed at 40p but only Billed at 20p
+, ( 'C', 'Salaries') --Salaries and Related Costs (Tax and NI)
+, ( 'C', 'Advertising and Marketing Services') --Advertising Costs
+, ( 'C', 'Office Cost') --Stationary, Postage etc
+, ('C','Professional Membership Fees') -- Fees for British Computer Society and PCG
+, ( 'C', 'General Costs') -- costs not included elsewhere
+, ( 'R', 'Invoices for Professional Service')
+, ('R', 'Invoices for Web Design and Hosting') 
+, ('A','Computer Equipment') --Depreciable Computer Equipment
+, ('A', 'Motor Vehicles') -- Cars
+, ('B','Outstanding Expenses') --Personally Incurred Expenses (to be re-embersed by the Business)
+, ('B','Loans') --loans made to the company
+, ('O','Profit and Dividends'); -- Off Balance Sheet Items we want to track
+
+UPDATE code SET depreciateyear = 3 WHERE description = 'Computer Equipment';
+UPDATE code set depreciateyear = 5 WHERE description = 'Motor Vehicles';
 
 -- Define valid Repeat Values for Transactions
 
@@ -70,14 +75,14 @@ CREATE TABLE repeat (
     priority integer 
 );
 
-INSERT INTO repeat VALUES (0, 'No Repeat',0);
-INSERT INTO repeat VALUES (1, 'Weekly',1);
-INSERT INTO repeat VALUES (2, 'Fortnightly',2);
-INSERT INTO repeat VALUES (3, 'Monthly',4);
-INSERT INTO repeat VALUES (4, 'Monthly (at End)',5);
-INSERT INTO repeat VALUES (5, 'Quarterly',6);
-INSERT INTO repeat VALUES (6, 'Yearly',7);
-INSERT INTO repeat VALUES (7, 'Four Weekly',3);
+INSERT INTO repeat VALUES (0, 'No Repeat',0),
+(1, 'Weekly',1),
+(2, 'Fortnightly',2),
+(3, 'Monthly',4),
+(4, 'Monthly (at End)',5),
+(5, 'Quarterly',6),
+(6, 'Yearly',7),
+(7, 'Four Weekly',3);
 
 CREATE TABLE currency (
     name character(3) PRIMARY KEY, -- standard international symbol for currency
@@ -89,180 +94,180 @@ CREATE TABLE currency (
 );
 
 
-INSERT INTO currency VALUES ('THB', 1, 0, NULL, 'Thailand, Baht', 1);
-INSERT INTO currency VALUES ('TJS', 1, 0, NULL, 'Tajikistan, Somoni', 1);
-INSERT INTO currency VALUES ('TMM', 1, 0, NULL, 'Turkmenistan, Manats', 1);
-INSERT INTO currency VALUES ('TND', 1, 0, NULL, 'Tunisia, Dinars', 1);
-INSERT INTO currency VALUES ('TOP', 1, 0, NULL, 'Tonga, Pa''anga', 1);
-INSERT INTO currency VALUES ('TRL', 1, 0, NULL, 'Turkey, Liras [being phased out]', 1);
-INSERT INTO currency VALUES ('TRY', 1, 0, NULL, 'Turkey, New Lira', 1);
-INSERT INTO currency VALUES ('TTD', 1, 0, NULL, 'Trinidad and Tobago, Dollars', 1);
-INSERT INTO currency VALUES ('TVD', 1, 0, NULL, 'Tuvalu, Tuvalu Dollars', 1);
-INSERT INTO currency VALUES ('TWD', 1, 0, NULL, 'Taiwan, New Dollars', 1);
-INSERT INTO currency VALUES ('TZS', 1, 0, NULL, 'Tanzania, Shillings', 1);
-INSERT INTO currency VALUES ('UAH', 1, 0, NULL, 'Ukraine, Hryvnia', 1);
-INSERT INTO currency VALUES ('UGX', 1, 0, NULL, 'Uganda, Shillings', 1);
-INSERT INTO currency VALUES ('UYU', 1, 0, NULL, 'Uruguay, Pesos', 1);
-INSERT INTO currency VALUES ('UZS', 1, 0, NULL, 'Uzbekistan, Sums', 1);
-INSERT INTO currency VALUES ('VEB', 1, 0, NULL, 'Venezuela, Bolivares', 1);
-INSERT INTO currency VALUES ('VND', 1, 0, NULL, 'Viet Nam, Dong', 1);
-INSERT INTO currency VALUES ('VUV', 1, 0, NULL, 'Vanuatu, Vatu', 1);
-INSERT INTO currency VALUES ('WST', 1, 0, NULL, 'Samoa, Tala', 1);
-INSERT INTO currency VALUES ('XAU', 1, 0, NULL, 'Gold, Ounces', 1);
-INSERT INTO currency VALUES ('XAF', 1, 0, NULL, 'Communaut&eacute; Financi&egrave;re Africaine BEAC, Francs', 1);
-INSERT INTO currency VALUES ('XAG', 1, 0, NULL, 'Silver, Ounces', 1);
-INSERT INTO currency VALUES ('XCD', 1, 0, NULL, 'East Caribbean Dollars', 1);
-INSERT INTO currency VALUES ('XDR', 1, 0, NULL, 'International Monetary Fund (IMF) Special Drawing Rights', 1);
-INSERT INTO currency VALUES ('XOF', 1, 0, NULL, 'Communaut&eacute; Financi&egrave;re Africaine BCEAO, Francs', 1);
-INSERT INTO currency VALUES ('XPD', 1, 0, NULL, 'Palladium Ounces', 1);
-INSERT INTO currency VALUES ('XPF', 1, 0, NULL, 'Comptoirs Fran&ccedil;ais du Pacifique Francs', 1);
-INSERT INTO currency VALUES ('XPT', 1, 0, NULL, 'Platinum, Ounces', 1);
-INSERT INTO currency VALUES ('YER', 1, 0, NULL, 'Yemen, Rials', 1);
-INSERT INTO currency VALUES ('ZAR', 1, 0, NULL, 'South Africa, Rand', 1);
-INSERT INTO currency VALUES ('ZMK', 1, 0, NULL, 'Zambia, Kwacha', 1);
-INSERT INTO currency VALUES ('ZWD', 1, 0, NULL, 'Zimbabwe, Zimbabwe Dollars', 1);
-INSERT INTO currency VALUES ('AED', 1, 0, NULL, 'United Arab Emirates, Dirhams', 1);
-INSERT INTO currency VALUES ('AFA', 1, 0, NULL, 'Afghanistan, Afghanis', 1);
-INSERT INTO currency VALUES ('ALL', 1, 0, NULL, 'Albania, Leke', 1);
-INSERT INTO currency VALUES ('AMD', 1, 0, NULL, 'Armenia, Drams', 1);
-INSERT INTO currency VALUES ('ANG', 1, 0, NULL, 'Netherlands Antilles, Guilders (also called Florins)', 1);
-INSERT INTO currency VALUES ('AOA', 1, 0, NULL, 'Angola, Kwanza', 1);
-INSERT INTO currency VALUES ('ARS', 1, 0, NULL, 'Argentina, Pesos', 1);
-INSERT INTO currency VALUES ('AWG', 1, 0, NULL, 'Aruba, Guilders (also called Florins)', 1);
-INSERT INTO currency VALUES ('AZM', 1, 0, NULL, 'Azerbaijan, Manats', 1);
-INSERT INTO currency VALUES ('BAM', 1, 0, NULL, 'Bosnia and Herzegovina, Convertible Marka', 1);
-INSERT INTO currency VALUES ('BBD', 1, 0, NULL, 'Barbados, Dollars', 1);
-INSERT INTO currency VALUES ('BDT', 1, 0, NULL, 'Bangladesh, Taka', 1);
-INSERT INTO currency VALUES ('BGN', 1, 0, NULL, 'Bulgaria, Leva', 1);
-INSERT INTO currency VALUES ('BHD', 1, 0, NULL, 'Bahrain, Dinars', 1);
-INSERT INTO currency VALUES ('BIF', 1, 0, NULL, 'Burundi, Francs', 1);
-INSERT INTO currency VALUES ('BMD', 1, 0, NULL, 'Bermuda, Dollars', 1);
-INSERT INTO currency VALUES ('BND', 1, 0, NULL, 'Brunei Darussalam, Dollars', 1);
-INSERT INTO currency VALUES ('BOB', 1, 0, NULL, 'Bolivia, Bolivianos', 1);
-INSERT INTO currency VALUES ('BRL', 1, 0, NULL, 'Brazil, Brazil Real', 1);
-INSERT INTO currency VALUES ('BSD', 1, 0, NULL, 'Bahamas, Dollars', 1);
-INSERT INTO currency VALUES ('BTN', 1, 0, NULL, 'Bhutan, Ngultrum', 1);
-INSERT INTO currency VALUES ('BWP', 1, 0, NULL, 'Botswana, Pulas', 1);
-INSERT INTO currency VALUES ('BYR', 1, 0, NULL, 'Belarus, Rubles', 1);
-INSERT INTO currency VALUES ('BZD', 1, 0, NULL, 'Belize, Dollars', 1);
-INSERT INTO currency VALUES ('CAD', 1, 0, NULL, 'Canada, Dollars', 1);
-INSERT INTO currency VALUES ('CDF', 1, 0, NULL, 'Congo/Kinshasa, Congolese Francs', 1);
-INSERT INTO currency VALUES ('CHF', 1, 0, NULL, 'Switzerland, Francs', 1);
-INSERT INTO currency VALUES ('CLP', 1, 0, NULL, 'Chile, Pesos', 1);
-INSERT INTO currency VALUES ('CNY', 1, 0, NULL, 'China, Yuan Renminbi', 1);
-INSERT INTO currency VALUES ('COP', 1, 0, NULL, 'Colombia, Pesos', 1);
-INSERT INTO currency VALUES ('CRC', 1, 0, NULL, 'Costa Rica, Colones', 1);
-INSERT INTO currency VALUES ('CSD', 1, 0, NULL, 'Serbia, Dinars', 1);
-INSERT INTO currency VALUES ('CUP', 1, 0, NULL, 'Cuba, Pesos', 1);
-INSERT INTO currency VALUES ('CVE', 1, 0, NULL, 'Cape Verde, Escudos', 1);
-INSERT INTO currency VALUES ('CYP', 1, 0, NULL, 'Cyprus, Pounds', 1);
-INSERT INTO currency VALUES ('DJF', 1, 0, NULL, 'Djibouti, Francs', 1);
-INSERT INTO currency VALUES ('ISK', 1, 0, NULL, 'Iceland, Kronur', 1);
-INSERT INTO currency VALUES ('DOP', 1, 0, NULL, 'Dominican Republic, Pesos', 1);
-INSERT INTO currency VALUES ('DZD', 1, 0, NULL, 'Algeria, Algeria Dinars', 1);
-INSERT INTO currency VALUES ('EEK', 1, 0, NULL, 'Estonia, Krooni', 1);
-INSERT INTO currency VALUES ('EGP', 1, 0, NULL, 'Egypt, Pounds', 1);
-INSERT INTO currency VALUES ('ERN', 1, 0, NULL, 'Eritrea, Nakfa', 1);
-INSERT INTO currency VALUES ('ETB', 1, 0, NULL, 'Ethiopia, Birr', 1);
-INSERT INTO currency VALUES ('FJD', 1, 0, NULL, 'Fiji,Dollars', 1);
-INSERT INTO currency VALUES ('FKP', 1, 0, NULL, 'Falkland Islands (Malvinas), Pounds', 1);
-INSERT INTO currency VALUES ('GEL', 1, 0, NULL, 'Georgia, Lari', 1);
-INSERT INTO currency VALUES ('GGP', 1, 0, NULL, 'Guernsey, Pounds', 1);
-INSERT INTO currency VALUES ('GHC', 1, 0, NULL, 'Ghana, Cedis', 1);
-INSERT INTO currency VALUES ('GIP', 1, 0, NULL, 'Gibraltar, Pounds', 1);
-INSERT INTO currency VALUES ('GMD', 1, 0, NULL, 'Gambia, Dalasi', 1);
-INSERT INTO currency VALUES ('GNF', 1, 0, NULL, 'Guinea, Francs', 1);
-INSERT INTO currency VALUES ('GTQ', 1, 0, NULL, 'Guatemala, Quetzales', 1);
-INSERT INTO currency VALUES ('GYD', 1, 0, NULL, 'Guyana, Dollars', 1);
-INSERT INTO currency VALUES ('HKD', 1, 0, NULL, 'Hong Kong, Dollars', 1);
-INSERT INTO currency VALUES ('HNL', 1, 0, NULL, 'Honduras, Lempiras', 1);
-INSERT INTO currency VALUES ('HRK', 1, 0, NULL, 'Croatia, Kuna', 1);
-INSERT INTO currency VALUES ('HTG', 1, 0, NULL, 'Haiti, Gourdes', 1);
-INSERT INTO currency VALUES ('HUF', 1, 0, NULL, 'Hungary, Forint', 1);
-INSERT INTO currency VALUES ('IDR', 1, 0, NULL, 'Indonesia, Rupiahs', 1);
-INSERT INTO currency VALUES ('ILS', 1, 0, NULL, 'Israel, New Shekels', 1);
-INSERT INTO currency VALUES ('IMP', 1, 0, NULL, 'Isle of Man, Pounds', 1);
-INSERT INTO currency VALUES ('INR', 1, 0, NULL, 'India, Rupees', 1);
-INSERT INTO currency VALUES ('IQD', 1, 0, NULL, 'Iraq, Dinars', 1);
-INSERT INTO currency VALUES ('IRR', 1, 0, NULL, 'Iran, Rials', 1);
-INSERT INTO currency VALUES ('JEP', 1, 0, NULL, 'Jersey, Pounds', 1);
-INSERT INTO currency VALUES ('JMD', 1, 0, NULL, 'Jamaica, Dollars', 1);
-INSERT INTO currency VALUES ('JOD', 1, 0, NULL, 'Jordan, Dinars', 1);
-INSERT INTO currency VALUES ('JPY', 1, 0, NULL, 'Japan, Yen', 1);
-INSERT INTO currency VALUES ('KES', 1, 0, NULL, 'Kenya, Shillings', 1);
-INSERT INTO currency VALUES ('KGS', 1, 0, NULL, 'Kyrgyzstan, Soms', 1);
-INSERT INTO currency VALUES ('KHR', 1, 0, NULL, 'Cambodia, Riels', 1);
-INSERT INTO currency VALUES ('KMF', 1, 0, NULL, 'Comoros, Francs', 1);
-INSERT INTO currency VALUES ('KPW', 1, 0, NULL, 'Korea (North), Won', 1);
-INSERT INTO currency VALUES ('KRW', 1, 0, NULL, 'Korea (South), Won', 1);
-INSERT INTO currency VALUES ('KWD', 1, 0, NULL, 'Kuwait, Dinars', 1);
-INSERT INTO currency VALUES ('KYD', 1, 0, NULL, 'Cayman Islands, Dollars', 1);
-INSERT INTO currency VALUES ('KZT', 1, 0, NULL, 'Kazakhstan, Tenge', 1);
-INSERT INTO currency VALUES ('LAK', 1, 0, NULL, 'Laos, Kips', 1);
-INSERT INTO currency VALUES ('LBP', 1, 0, NULL, 'Lebanon, Pounds', 1);
-INSERT INTO currency VALUES ('LKR', 1, 0, NULL, 'Sri Lanka, Rupees', 1);
-INSERT INTO currency VALUES ('LRD', 1, 0, NULL, 'Liberia, Dollars', 1);
-INSERT INTO currency VALUES ('LSL', 1, 0, NULL, 'Lesotho, Maloti', 1);
-INSERT INTO currency VALUES ('LTL', 1, 0, NULL, 'Lithuania, Litai', 1);
-INSERT INTO currency VALUES ('LVL', 1, 0, NULL, 'Latvia, Lati', 1);
-INSERT INTO currency VALUES ('LYD', 1, 0, NULL, 'Libya, Dinars', 1);
-INSERT INTO currency VALUES ('MAD', 1, 0, NULL, 'Morocco, Dirhams', 1);
-INSERT INTO currency VALUES ('MDL', 1, 0, NULL, 'Moldova, Lei', 1);
-INSERT INTO currency VALUES ('MGA', 1, 0, NULL, 'Madagascar, Ariary', 1);
-INSERT INTO currency VALUES ('MKD', 1, 0, NULL, 'Macedonia, Denars', 1);
-INSERT INTO currency VALUES ('MMK', 1, 0, NULL, 'Myanmar (Burma), Kyats', 1);
-INSERT INTO currency VALUES ('MNT', 1, 0, NULL, 'Mongolia, Tugriks', 1);
-INSERT INTO currency VALUES ('MOP', 1, 0, NULL, 'Macau, Patacas', 1);
-INSERT INTO currency VALUES ('MRO', 1, 0, NULL, 'Mauritania, Ouguiyas', 1);
-INSERT INTO currency VALUES ('MTL', 1, 0, NULL, 'Malta, Liri', 1);
-INSERT INTO currency VALUES ('MUR', 1, 0, NULL, 'Mauritius, Rupees', 1);
-INSERT INTO currency VALUES ('MVR', 1, 0, NULL, 'Maldives (Maldive Islands), Rufiyaa', 1);
-INSERT INTO currency VALUES ('MWK', 1, 0, NULL, 'Malawi, Kwachas', 1);
-INSERT INTO currency VALUES ('MXN', 1, 0, NULL, 'Mexico, Pesos', 1);
-INSERT INTO currency VALUES ('MYR', 1, 0, NULL, 'Malaysia, Ringgits', 1);
-INSERT INTO currency VALUES ('MZM', 1, 0, NULL, 'Mozambique, Meticais', 1);
-INSERT INTO currency VALUES ('NAD', 1, 0, NULL, 'Namibia, Dollars', 1);
-INSERT INTO currency VALUES ('NGN', 1, 0, NULL, 'Nigeria, Nairas', 1);
-INSERT INTO currency VALUES ('NIO', 1, 0, NULL, 'Nicaragua, Cordobas', 1);
-INSERT INTO currency VALUES ('NPR', 1, 0, NULL, 'Nepal, Nepal Rupees', 1);
-INSERT INTO currency VALUES ('NZD', 1, 0, NULL, 'New Zemoneyd, Dollars', 1);
-INSERT INTO currency VALUES ('OMR', 1, 0, NULL, 'Oman, Rials', 1);
-INSERT INTO currency VALUES ('PAB', 1, 0, NULL, 'Panama, Balboa', 1);
-INSERT INTO currency VALUES ('PEN', 1, 0, NULL, 'Peru, Nuevos Soles', 1);
-INSERT INTO currency VALUES ('PGK', 1, 0, NULL, 'Papua New Guinea, Kina', 1);
-INSERT INTO currency VALUES ('PHP', 1, 0, NULL, 'Philippines, Pesos', 1);
-INSERT INTO currency VALUES ('PKR', 1, 0, NULL, 'Pakistan, Rupees', 1);
-INSERT INTO currency VALUES ('PLN', 1, 0, NULL, 'Poland, Zlotych', 1);
-INSERT INTO currency VALUES ('PYG', 1, 0, NULL, 'Paraguay, Guarani', 1);
-INSERT INTO currency VALUES ('QAR', 1, 0, NULL, 'Qatar, Rials', 1);
-INSERT INTO currency VALUES ('RON', 1, 0, NULL, 'Romania, New Lei', 1);
-INSERT INTO currency VALUES ('RUB', 1, 0, NULL, 'Russia, Rubles', 1);
-INSERT INTO currency VALUES ('RWF', 1, 0, NULL, 'Rwanda, Rwanda Francs', 1);
-INSERT INTO currency VALUES ('SAR', 1, 0, NULL, 'Saudi Arabia, Riyals', 1);
-INSERT INTO currency VALUES ('SBD', 1, 0, NULL, 'Solomon Islands, Dollars', 1);
-INSERT INTO currency VALUES ('SCR', 1, 0, NULL, 'Seychelles, Rupees', 1);
-INSERT INTO currency VALUES ('SDD', 1, 0, NULL, 'Sudan, Dinars', 1);
-INSERT INTO currency VALUES ('SGD', 1, 0, NULL, 'Singapore, Dollars', 1);
-INSERT INTO currency VALUES ('SHP', 1, 0, NULL, 'Saint Helena, Pounds', 1);
-INSERT INTO currency VALUES ('SIT', 1, 0, NULL, 'Slovenia, Tolars', 1);
-INSERT INTO currency VALUES ('SKK', 1, 0, NULL, 'Slovakia, Koruny', 1);
-INSERT INTO currency VALUES ('SLL', 1, 0, NULL, 'Sierra Leone, Leones', 1);
-INSERT INTO currency VALUES ('SOS', 1, 0, NULL, 'Somalia, Shillings', 1);
-INSERT INTO currency VALUES ('SPL', 1, 0, NULL, 'Seborga, Luigini', 1);
-INSERT INTO currency VALUES ('SRD', 1, 0, NULL, 'Suriname, Dollars', 1);
-INSERT INTO currency VALUES ('STD', 1, 0, NULL, 'S&atilde;o Tome and Principe, Dobras', 1);
-INSERT INTO currency VALUES ('SVC', 1, 0, NULL, 'El Salvador, Colones', 1);
-INSERT INTO currency VALUES ('SYP', 1, 0, NULL, 'Syria, Pounds', 1);
-INSERT INTO currency VALUES ('SZL', 1, 0, NULL, 'Swaziland, Emmoneygeni', 1);
-INSERT INTO currency VALUES ('CZK', 1, 0, NULL, 'Czech Republic, Koruny', 1);
+INSERT INTO currency VALUES ('THB', 1, 0, NULL, 'Thailand, Baht', 1),
+('TJS', 1, 0, NULL, 'Tajikistan, Somoni', 1),
+('TMM', 1, 0, NULL, 'Turkmenistan, Manats', 1),
+('TND', 1, 0, NULL, 'Tunisia, Dinars', 1),
+('TOP', 1, 0, NULL, 'Tonga, Pa''anga', 1),
+('TRL', 1, 0, NULL, 'Turkey, Liras [being phased out]', 1),
+('TRY', 1, 0, NULL, 'Turkey, New Lira', 1),
+('TTD', 1, 0, NULL, 'Trinidad and Tobago, Dollars', 1),
+('TVD', 1, 0, NULL, 'Tuvalu, Tuvalu Dollars', 1),
+('TWD', 1, 0, NULL, 'Taiwan, New Dollars', 1),
+('TZS', 1, 0, NULL, 'Tanzania, Shillings', 1),
+('UAH', 1, 0, NULL, 'Ukraine, Hryvnia', 1),
+('UGX', 1, 0, NULL, 'Uganda, Shillings', 1),
+('UYU', 1, 0, NULL, 'Uruguay, Pesos', 1),
+('UZS', 1, 0, NULL, 'Uzbekistan, Sums', 1),
+('VEB', 1, 0, NULL, 'Venezuela, Bolivares', 1),
+('VND', 1, 0, NULL, 'Viet Nam, Dong', 1),
+('VUV', 1, 0, NULL, 'Vanuatu, Vatu', 1),
+('WST', 1, 0, NULL, 'Samoa, Tala', 1),
+('XAU', 1, 0, NULL, 'Gold, Ounces', 1),
+('XAF', 1, 0, NULL, 'Communaut&eacute, Financi&egrave,re Africaine BEAC, Francs', 1),
+('XAG', 1, 0, NULL, 'Silver, Ounces', 1),
+('XCD', 1, 0, NULL, 'East Caribbean Dollars', 1),
+('XDR', 1, 0, NULL, 'International Monetary Fund (IMF) Special Drawing Rights', 1),
+('XOF', 1, 0, NULL, 'Communaut&eacute, Financi&egrave,re Africaine BCEAO, Francs', 1),
+('XPD', 1, 0, NULL, 'Palladium Ounces', 1),
+('XPF', 1, 0, NULL, 'Comptoirs Fran&ccedil,ais du Pacifique Francs', 1),
+('XPT', 1, 0, NULL, 'Platinum, Ounces', 1),
+('YER', 1, 0, NULL, 'Yemen, Rials', 1),
+('ZAR', 1, 0, NULL, 'South Africa, Rand', 1),
+('ZMK', 1, 0, NULL, 'Zambia, Kwacha', 1),
+('ZWD', 1, 0, NULL, 'Zimbabwe, Zimbabwe Dollars', 1),
+('AED', 1, 0, NULL, 'United Arab Emirates, Dirhams', 1),
+('AFA', 1, 0, NULL, 'Afghanistan, Afghanis', 1),
+('ALL', 1, 0, NULL, 'Albania, Leke', 1),
+('AMD', 1, 0, NULL, 'Armenia, Drams', 1),
+('ANG', 1, 0, NULL, 'Netherlands Antilles, Guilders (also called Florins)', 1),
+('AOA', 1, 0, NULL, 'Angola, Kwanza', 1),
+('ARS', 1, 0, NULL, 'Argentina, Pesos', 1),
+('AWG', 1, 0, NULL, 'Aruba, Guilders (also called Florins)', 1),
+('AZM', 1, 0, NULL, 'Azerbaijan, Manats', 1),
+('BAM', 1, 0, NULL, 'Bosnia and Herzegovina, Convertible Marka', 1),
+('BBD', 1, 0, NULL, 'Barbados, Dollars', 1),
+('BDT', 1, 0, NULL, 'Bangladesh, Taka', 1),
+('BGN', 1, 0, NULL, 'Bulgaria, Leva', 1),
+('BHD', 1, 0, NULL, 'Bahrain, Dinars', 1),
+('BIF', 1, 0, NULL, 'Burundi, Francs', 1),
+('BMD', 1, 0, NULL, 'Bermuda, Dollars', 1),
+('BND', 1, 0, NULL, 'Brunei Darussalam, Dollars', 1),
+('BOB', 1, 0, NULL, 'Bolivia, Bolivianos', 1),
+('BRL', 1, 0, NULL, 'Brazil, Brazil Real', 1),
+('BSD', 1, 0, NULL, 'Bahamas, Dollars', 1),
+('BTN', 1, 0, NULL, 'Bhutan, Ngultrum', 1),
+('BWP', 1, 0, NULL, 'Botswana, Pulas', 1),
+('BYR', 1, 0, NULL, 'Belarus, Rubles', 1),
+('BZD', 1, 0, NULL, 'Belize, Dollars', 1),
+('CAD', 1, 0, NULL, 'Canada, Dollars', 1),
+('CDF', 1, 0, NULL, 'Congo/Kinshasa, Congolese Francs', 1),
+('CHF', 1, 0, NULL, 'Switzerland, Francs', 1),
+('CLP', 1, 0, NULL, 'Chile, Pesos', 1),
+('CNY', 1, 0, NULL, 'China, Yuan Renminbi', 1),
+('COP', 1, 0, NULL, 'Colombia, Pesos', 1),
+('CRC', 1, 0, NULL, 'Costa Rica, Colones', 1),
+('CSD', 1, 0, NULL, 'Serbia, Dinars', 1),
+('CUP', 1, 0, NULL, 'Cuba, Pesos', 1),
+('CVE', 1, 0, NULL, 'Cape Verde, Escudos', 1),
+('CYP', 1, 0, NULL, 'Cyprus, Pounds', 1),
+('DJF', 1, 0, NULL, 'Djibouti, Francs', 1),
+('ISK', 1, 0, NULL, 'Iceland, Kronur', 1),
+('DOP', 1, 0, NULL, 'Dominican Republic, Pesos', 1),
+('DZD', 1, 0, NULL, 'Algeria, Algeria Dinars', 1),
+('EEK', 1, 0, NULL, 'Estonia, Krooni', 1),
+('EGP', 1, 0, NULL, 'Egypt, Pounds', 1),
+('ERN', 1, 0, NULL, 'Eritrea, Nakfa', 1),
+('ETB', 1, 0, NULL, 'Ethiopia, Birr', 1),
+('FJD', 1, 0, NULL, 'Fiji,Dollars', 1),
+('FKP', 1, 0, NULL, 'Falkland Islands (Malvinas), Pounds', 1),
+('GEL', 1, 0, NULL, 'Georgia, Lari', 1),
+('GGP', 1, 0, NULL, 'Guernsey, Pounds', 1),
+('GHC', 1, 0, NULL, 'Ghana, Cedis', 1),
+('GIP', 1, 0, NULL, 'Gibraltar, Pounds', 1),
+('GMD', 1, 0, NULL, 'Gambia, Dalasi', 1),
+('GNF', 1, 0, NULL, 'Guinea, Francs', 1),
+('GTQ', 1, 0, NULL, 'Guatemala, Quetzales', 1),
+('GYD', 1, 0, NULL, 'Guyana, Dollars', 1),
+('HKD', 1, 0, NULL, 'Hong Kong, Dollars', 1),
+('HNL', 1, 0, NULL, 'Honduras, Lempiras', 1),
+('HRK', 1, 0, NULL, 'Croatia, Kuna', 1),
+('HTG', 1, 0, NULL, 'Haiti, Gourdes', 1),
+('HUF', 1, 0, NULL, 'Hungary, Forint', 1),
+('IDR', 1, 0, NULL, 'Indonesia, Rupiahs', 1),
+('ILS', 1, 0, NULL, 'Israel, New Shekels', 1),
+('IMP', 1, 0, NULL, 'Isle of Man, Pounds', 1),
+('INR', 1, 0, NULL, 'India, Rupees', 1),
+('IQD', 1, 0, NULL, 'Iraq, Dinars', 1),
+('IRR', 1, 0, NULL, 'Iran, Rials', 1),
+('JEP', 1, 0, NULL, 'Jersey, Pounds', 1),
+('JMD', 1, 0, NULL, 'Jamaica, Dollars', 1),
+('JOD', 1, 0, NULL, 'Jordan, Dinars', 1),
+('JPY', 1, 0, NULL, 'Japan, Yen', 1),
+('KES', 1, 0, NULL, 'Kenya, Shillings', 1),
+('KGS', 1, 0, NULL, 'Kyrgyzstan, Soms', 1),
+('KHR', 1, 0, NULL, 'Cambodia, Riels', 1),
+('KMF', 1, 0, NULL, 'Comoros, Francs', 1),
+('KPW', 1, 0, NULL, 'Korea (North), Won', 1),
+('KRW', 1, 0, NULL, 'Korea (South), Won', 1),
+('KWD', 1, 0, NULL, 'Kuwait, Dinars', 1),
+('KYD', 1, 0, NULL, 'Cayman Islands, Dollars', 1),
+('KZT', 1, 0, NULL, 'Kazakhstan, Tenge', 1),
+('LAK', 1, 0, NULL, 'Laos, Kips', 1),
+('LBP', 1, 0, NULL, 'Lebanon, Pounds', 1),
+('LKR', 1, 0, NULL, 'Sri Lanka, Rupees', 1),
+('LRD', 1, 0, NULL, 'Liberia, Dollars', 1),
+('LSL', 1, 0, NULL, 'Lesotho, Maloti', 1),
+('LTL', 1, 0, NULL, 'Lithuania, Litai', 1),
+('LVL', 1, 0, NULL, 'Latvia, Lati', 1),
+('LYD', 1, 0, NULL, 'Libya, Dinars', 1),
+('MAD', 1, 0, NULL, 'Morocco, Dirhams', 1),
+('MDL', 1, 0, NULL, 'Moldova, Lei', 1),
+('MGA', 1, 0, NULL, 'Madagascar, Ariary', 1),
+('MKD', 1, 0, NULL, 'Macedonia, Denars', 1),
+('MMK', 1, 0, NULL, 'Myanmar (Burma), Kyats', 1),
+('MNT', 1, 0, NULL, 'Mongolia, Tugriks', 1),
+('MOP', 1, 0, NULL, 'Macau, Patacas', 1),
+('MRO', 1, 0, NULL, 'Mauritania, Ouguiyas', 1),
+('MTL', 1, 0, NULL, 'Malta, Liri', 1),
+('MUR', 1, 0, NULL, 'Mauritius, Rupees', 1),
+('MVR', 1, 0, NULL, 'Maldives (Maldive Islands), Rufiyaa', 1),
+('MWK', 1, 0, NULL, 'Malawi, Kwachas', 1),
+('MXN', 1, 0, NULL, 'Mexico, Pesos', 1),
+('MYR', 1, 0, NULL, 'Malaysia, Ringgits', 1),
+('MZM', 1, 0, NULL, 'Mozambique, Meticais', 1),
+('NAD', 1, 0, NULL, 'Namibia, Dollars', 1),
+('NGN', 1, 0, NULL, 'Nigeria, Nairas', 1),
+('NIO', 1, 0, NULL, 'Nicaragua, Cordobas', 1),
+('NPR', 1, 0, NULL, 'Nepal, Nepal Rupees', 1),
+('NZD', 1, 0, NULL, 'New Zemoneyd, Dollars', 1),
+('OMR', 1, 0, NULL, 'Oman, Rials', 1),
+('PAB', 1, 0, NULL, 'Panama, Balboa', 1),
+('PEN', 1, 0, NULL, 'Peru, Nuevos Soles', 1),
+('PGK', 1, 0, NULL, 'Papua New Guinea, Kina', 1),
+('PHP', 1, 0, NULL, 'Philippines, Pesos', 1),
+('PKR', 1, 0, NULL, 'Pakistan, Rupees', 1),
+('PLN', 1, 0, NULL, 'Poland, Zlotych', 1),
+('PYG', 1, 0, NULL, 'Paraguay, Guarani', 1),
+('QAR', 1, 0, NULL, 'Qatar, Rials', 1),
+('RON', 1, 0, NULL, 'Romania, New Lei', 1),
+('RUB', 1, 0, NULL, 'Russia, Rubles', 1),
+('RWF', 1, 0, NULL, 'Rwanda, Rwanda Francs', 1),
+('SAR', 1, 0, NULL, 'Saudi Arabia, Riyals', 1),
+('SBD', 1, 0, NULL, 'Solomon Islands, Dollars', 1),
+('SCR', 1, 0, NULL, 'Seychelles, Rupees', 1),
+('SDD', 1, 0, NULL, 'Sudan, Dinars', 1),
+('SGD', 1, 0, NULL, 'Singapore, Dollars', 1),
+('SHP', 1, 0, NULL, 'Saint Helena, Pounds', 1),
+('SIT', 1, 0, NULL, 'Slovenia, Tolars', 1),
+('SKK', 1, 0, NULL, 'Slovakia, Koruny', 1),
+('SLL', 1, 0, NULL, 'Sierra Leone, Leones', 1),
+('SOS', 1, 0, NULL, 'Somalia, Shillings', 1),
+('SPL', 1, 0, NULL, 'Seborga, Luigini', 1),
+('SRD', 1, 0, NULL, 'Suriname, Dollars', 1),
+('STD', 1, 0, NULL, 'S&atilde,o Tome and Principe, Dobras', 1),
+('SVC', 1, 0, NULL, 'El Salvador, Colones', 1),
+('SYP', 1, 0, NULL, 'Syria, Pounds', 1),
+('SZL', 1, 0, NULL, 'Swaziland, Emmoneygeni', 1),
+('CZK', 1, 0, NULL, 'Czech Republic, Koruny', 1),
 --displayable at priority 0 defines GBP to be the default currency (see also the dfxaction view, if you wish to change it)
-INSERT INTO currency VALUES ('GBP', 1, 1, 0, 'United Kingdom, Pounds',1); 
-INSERT INTO currency VALUES ('SEK', 1, 0, NULL, 'Sweden, Kronor', 1);
-INSERT INTO currency VALUES ('AUD', 1, 0, NULL, 'Australia, Dollars', 1);
-INSERT INTO currency VALUES ('DKK', 1, 0, NULL, 'Denmark, Kroner', 1);
-INSERT INTO currency VALUES ('NOK', 1, 0, NULL, 'Norway, Krone', 1);
-INSERT INTO currency VALUES ('EUR', 0.85, 1, 1, 'Euro Member Countries,Euro', 1);
-INSERT INTO currency VALUES ('USD', 0.636, 1, 2, 'United States of America, Dollars', 1);
+('GBP', 1, 1, 0, 'United Kingdom, Pounds',1), 
+('SEK', 1, 0, NULL, 'Sweden, Kronor', 1),
+('AUD', 1, 0, NULL, 'Australia, Dollars', 1),
+('DKK', 1, 0, NULL, 'Denmark, Kroner', 1),
+('NOK', 1, 0, NULL, 'Norway, Krone', 1),
+('EUR', 0.85, 1, 1, 'Euro Member Countries,Euro', 1),
+('USD', 0.636, 1, 2, 'United States of America, Dollars', 1);
 
 
 -- domain is an area of the accounts that is a whole.  Used primarily so we can do special things to transactions between domains
@@ -370,24 +375,25 @@ CREATE TABLE settings (
   value integer -- although an integer can store strings.
 );
 -- Basic settings not alterable in different configs.
-INSERT INTO settings (name,value) VALUES('version',1); --version of this configuration
-INSERT INTO settings (name,value) VALUES('creation_date', strftime('%s','now'));  -- record the date the database is first installed;
-INSERT INTO settings (name,value) VALUES('token_key', 'newTokenKey'); --key used to encrypt/decrypt cookie token (new value set during db create)
-INSERT INTO settings (name,value) VALUES('repeat_days', 90); -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
-INSERT INTO settings (name,value) VALUES('year_end', 1231); -- Month and Date (100* MM + DD) as a numeric of financial year end.
-INSERT INTO settings (name,value) VALUES('client_log',':error:'); --if none empty string should specify colon separated function areas client should log or 'all' for every thing 
-INSERT INTO settings (name,value) VALUES('client_uid', 0); --if non zero this uid logs everything
-INSERT INTO settings (name,value) VALUES('token_expires', 720); --hours until expire for standard logged on token
-INSERT INTO settings (name,value) VALUES('min_pass_len', 6); --minimum password length
-INSERT INTO settings (name,value) VALUES('dwell_time', 2000); --time to elapse before new urls get to be pushed to the history stack (rather than update)
-INSERT INTO settings (name,value) VALUES('webmaster', 'developer@example.com');  --site web master NOTE change once database created to correct person
-INSERT INTO settings (name,value) VALUES('server_port', 2010); --api server port (needs to match what nginx conf says);
-INSERT INTO settings (name,value) VALUES('track_cookie', 'm_user'); --cookie name for tracking cookie
-INSERT INTO settings (name,value) VALUES('auth_cookie', 'm_auth'); --authcookie name
-INSERT INTO settings (name,value) VALUES('null_account', '-- Select (Optional) Other Account --'); --NUll account text (dst or src)
-INSERT INTO settings (name,value) VALUES('null_code', '-- Select (Optional) Account Code --'); --NULL code text
-INSERT INTO settings (name,value) VALUES('debug',''); --this should be a comma separated list of client debug topics to actually log
-
+INSERT INTO settings (name,value) VALUES('version',2), --version of this configuration
+('creation_date', strftime('%s','now')),  -- record the date the database is first installed,
+('token_key', 'newTokenKey'), --key used to encrypt/decrypt cookie token (new value set during db create)
+('repeat_days', 90), -- number of days ahead that the repeated transactions are replicated (with the lower date transactions set to no repeat)
+('year_end', 1231), -- Month and Date (100* MM + DD) as a numeric of financial year end.
+('client_log',':error:'), --if none empty string should specify colon separated function areas client should log or 'all' for every thing 
+('client_uid', 0), --if non zero this uid logs everything
+('token_expires', 720), --hours until expire for standard logged on token
+('min_pass_len', 6), --minimum password length
+('dwell_time', 2000), --time to elapse before new urls get to be pushed to the history stack (rather than update)
+('webmaster', 'developer@example.com'),  --site web master NOTE change once database created to correct person
+('server_port', 2010), --api server port (needs to match what nginx conf says),
+('track_cookie', 'm_user'), --cookie name for tracking cookie
+('auth_cookie', 'm_auth'), --authcookie name
+('null_account', '-- Select (Optional) Other Account --'), --NUll account text (dst or src)
+('null_code', '-- Select (Optional) Account Code --'), --NULL code text
+('debug',''), --this should be a colon separated list of client debug topics to actually log
+('server_debug',''), -- this should be a colon separated list of server debug topics to actually log
+('debug_cache',50); --size of server side debug cache
 
 
 
