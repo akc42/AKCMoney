@@ -17,11 +17,11 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import Debug from 'debug';
+import {Debug} from '@akc42/server-utils';
 import { insertRepeats } from '../utils.js';
 import DB from '@akc42/sqlite-db';
 const db = DB();
-const debug = Debug('money:account');
+const debug = Debug('account');
 
 export default async function (user, params, responder) {
   debug('new request from', user.name, 'account ',params.account,'tid', params.tid);

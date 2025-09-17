@@ -18,7 +18,7 @@
     You should have received a copy of the GNU General Public License
     along with money.  If not, see <http://www.gnu.org/licenses/>.
 */
-import Debug from 'debug';
+import {Debug} from '@akc42/server-utils';
 
 const months = [
   'Jan',
@@ -35,7 +35,7 @@ const months = [
   'Dec'
 ];
 
-const debug = Debug('money:repeats');
+const debug = Debug('repeats');
 
 
 export function  nullIfZeroLength (str) {
