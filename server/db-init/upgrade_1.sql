@@ -14,8 +14,6 @@
 --    You should have received a copy of the GNU General Public License
 --    along with AKCMoney (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
-BEGIN;
-
 INSERT INTO settings (name,value) VALUES 
 ('server_debug',''), -- this should be a colon separated list of server debug topics to actually log
 ('debug_cache',50); --size of server side debug cache
@@ -30,4 +28,3 @@ UPDATE code SET depreciateyear = 3 WHERE description = 'Computer Equipment';
 
 UPDATE Settings SET value = 2 WHERE name = 'version';
 
-COMMIT;

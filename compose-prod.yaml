@@ -37,10 +37,10 @@ services:
       - moneynet
     restart: unless-stopped
     environment:
-      - DEBUG_COLORS=true
+      - DEBUG_CACHE_SIZE=50
       - DATABASE_DB=/db/money.db
-      - DATABASE_DB_VERSION=1
-      - DATABASE_INIT_FILE=db-init/database.sql
+      - DATABASE_DB_VERSION=2
+      - DATABASE_INIT_DIR=db-init
       - MONEY_TRACKING=no
       - MONEY_VERSION_FILE=../appinfo/version
     volumes:

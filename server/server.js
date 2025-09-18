@@ -19,6 +19,7 @@
 */
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { existsSync,readFileSync } from 'node:fs';
 import {fileURLToPath } from 'node:url';
 import {logger,Debug, setDebugConfig, dumpDebugCache, Responder} from '@akc42/server-utils';
 import dbStartup from '@akc42/sqlite-db';
@@ -99,46 +100,10 @@ try {
   const year = new Date(mtime).getUTCFullYear();
   debug('starting server with verion', version)
     
-  db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_FILE, import.meta.url)));
- 
+  db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_DIR, import.meta.url)));
   
   const serverConfig = {};
-  /*
-    start off a process to ensure the database is in the latest format
-  */
-
-  //read version to see if it is up to date
-  const dversion = db.prepare(`SELECT value FROM settings WHERE name = 'version'`).pluck();
-  const dbVersion = dversion.get();
-
-  const moneyVersion = parseInt(process.env.DATABASE_DB_VERSION,10);
-  debug('database is at version ', dbVersion, ' we require ', moneyVersion);
-  if (dbVersion !== moneyVersion) {
-    if (dbVersion > moneyVersion) throw new Error('Setting Version in Database too high');
-    db.pragma('foreign_keys = OFF');
-    const upgradeVersions = db.transaction(() => {
-      
-      for (let version = dbVersion; version < moneyVersion; version++) {
-        if (fs.existsSync(path.resolve(new URL('db-init', import.meta.url).pathname, `pre-upgrade_${version}.sql`))) {
-          //if there is a site specific update we need to do before running upgrade do it
-          const update = fs.readFileSync(path.resolve(new URL('db-init',import.meta.url).pathname, `pre-upgrade_${version}.sql`), { encoding: 'utf8' });
-          db.exec(update);
-        }
-        const update = fs.readFileSync(path.resolve(new URL('db-init',import.meta.url).pathname, `upgrade_${version}.sql`),{ encoding: 'utf8' });
-        db.exec(update);
-        if (fs.existsSync(path.resolve(new URL('db-init',import.meta.url).pathname,`post-upgrade_${version}.sql`))) {
-          //if there is a site specific update we need to do after running upgrade do it
-          const update = fs.readFileSync(path.resolve(new URL('db-init',import.meta.url).pathname, `post-upgrade_${version}.sql`), { encoding: 'utf8' });
-          db.exec(update);
-        }
-      }
-    });
-    upgradeVersions.exclusive();
-    db.exec('VACUUM');
-    db.pragma('foreign_keys = ON');
-    debug('Committed Updates, ready to go')
-  }
-  let amnestyDate;
+   let amnestyDate;
   if (process.env.MONEY_TRACKING !== 'no' ) {
     const logcount = db.prepare('SELECT COUNT(*) FROM Login_Log').pluck().get();
     if (logcount === 0) {
@@ -225,7 +190,7 @@ try {
       clientConfig.yearEnd = s.get('year_end');
       clientConfig.nullAccount = s.get('null_account');
       clientConfig.nullCode = s.get('null_code');
-      clientConfig.debug = s.get('debug') ?? '';
+      clientConfig.debug = s.get('debug');
     })();
 //        const payload = { uid: 1, name: 'alan', password: false, isAdmin: 1, account: 'Bank - Current', domain: 'Personal' }; //TEMP
 //        res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //TEMP
