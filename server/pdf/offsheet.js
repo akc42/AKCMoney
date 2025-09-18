@@ -17,11 +17,11 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import Debug from 'debug';
+import {Debug} from '@akc42/server-utils';
 import { dbDateToString,blankIfNull } from '../utils.js';
 import DB from '@akc42/sqlite-db';
 const db = DB();
-const debug = Debug('money:pdfoffsheet');
+const debug = Debug('pdfoffsheet');
 
 const LEFT_EDGE = 72;
 const RIGHT_EDGE = 523;

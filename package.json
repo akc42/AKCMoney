@@ -29,12 +29,11 @@
   "dependencies": {
     "@akc42/app-utils": "^4.2.1",
     "@akc42/server-utils": "^3.3.0",
-    "@akc42/sqlite-db": "2.0.2",
+    "@akc42/sqlite-db": "2.1.1",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "content-disposition": "^0.5.4",
-    "debug": "^4.3.4",
     "finalhandler": "^2.1.0",
     "jwt-simple": "^0.5.6",
     "lit": "^3.3.0",

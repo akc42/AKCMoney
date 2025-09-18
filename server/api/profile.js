@@ -17,11 +17,11 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import Debug from 'debug';
+import {Debug} from '@akc42/server-utils';
 import bcrypt from 'bcrypt';
 import DB from '@akc42/sqlite-db';
 const db = DB();
-const debug = Debug('money:profile');
+const debug = Debug('profile');
 
 export default async function(user, params, responder, genCook) {
   debug('new request from', user.name );

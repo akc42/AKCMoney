@@ -22,11 +22,11 @@
 import { html,css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 import {connectUrl, disconnectUrl} from '../libs/location.js';
-
+import Debug from '../libs/debug.js'
 import RouteManager from '../elements/route-manager.js';
 import '../elements/delete-dialog.js';
 import '../elements/zero-dialog.js';
-
+const debug = Debug('page');
 
 export class PageManager extends RouteManager {
   static get styles() {
@@ -97,6 +97,7 @@ export class PageManager extends RouteManager {
     `;
   }
   loadPage(page) {
+    debug('switching to page', page)
     switch (page) {  
       case 'admin':
         const user = JSON.parse(sessionStorage.getItem('user'))
@@ -112,11 +113,7 @@ export class PageManager extends RouteManager {
         return false;
     }
     this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
-    import(`./${page}-page.js`).then(() => this.dispatchEvent(new CustomEvent('wait-request',{
-      bubbles: true, 
-      composed: true, 
-      detail:false
-    })));
+    import(`./${page}-page.js`).catch(e => console.error(e))
     
     return true;
   }

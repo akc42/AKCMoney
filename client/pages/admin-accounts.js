@@ -27,7 +27,9 @@ import '../elements/list-selector.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import input from '../styles/error.js';
+import {Debug} from '../libs/debug.js';
 
+const debug = Debug('admin-accounts');
 
 /*
      <admin-accounts>: Edit the list of accounts and assign them to correct domain and currency
@@ -244,10 +246,13 @@ class AdminAccounts extends LitElement {
     if (this.name.length === 0) {
       nameInput.classList.add('error');
     } else if (this.domain.length > 0 && !nameInput.classList.contains('error')) {
+      debug('adding account name', this.name, 'domain', this.domain, 'currency', this.currency);
       api('account_add', {name: this.name, domain: this.domain, currency: this.currency}).then(response => {
         if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+        debug('success adding account name', this.name);
         this.name = ''; //Only reset name as that has to be unique - assume we are keeping exisiting settings
         this.accounts = response.accounts;  
+      
       });
     } else {
       const domainselect = this.shadowRoot.querySelector('#domainselector');

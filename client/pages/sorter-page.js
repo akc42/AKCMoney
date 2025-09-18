@@ -169,10 +169,12 @@ class SorterPage extends LitElement {
     this.selected = newSelection;
   }
   async _fetchAccountData() {
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
     const response = await api('sorter_data', {domain: this.domain});
     this.accounts = response.accounts;
     this.priorities = response.accounts.filter(a => a.sort !== null).map(a => Object.create({name:a.name,sort: a.sort}));
     this.sorted = this.selected = this.priorities.length;
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
   }
   _moveAccount(e) {
     e.stopPropagation();

@@ -18,10 +18,10 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import Debug from 'debug';
+import {Debug} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
-const debug = Debug('money:accountbalance');
+const debug = Debug('accountbalance');
 
 
 
