@@ -18,7 +18,7 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
@@ -39,6 +39,7 @@ export default async function(user, params, responder) {
 
     } else {
       responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
+      logger('error', `AccountArchive Version Error Disk:${v}, Param:${params.dversion}`)
     }
     
   })();
