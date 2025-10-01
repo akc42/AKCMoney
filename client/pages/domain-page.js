@@ -126,8 +126,7 @@ class DomainPage extends LitElement {
     super();
     this.route = {active: false};
     this.domain = '';
-    const d = new Date();
-    this.year = d.getFullYear();
+    this.year = 0;
     this.years = [];
     this.codes = [];
     this.balances = [];
@@ -140,12 +139,15 @@ class DomainPage extends LitElement {
   }
   connectedCallback() {
     super.connectedCallback();
+    const d = new Date();
+    this.year = d.getFullYear();
   }
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.year = 0;
   }
   update(changed) {
-    if((changed.has('domain') || changed.has('year')) && this.domain.length > 0){
+    if((changed.has('domain') || changed.has('year')) && this.domain.length > 0 && this.year > 0){
       api('domain_codes', {domain: this.domain, year: this.year}).then(response => {
         this.start = response.start;
         this.end = response.end;
@@ -153,7 +155,7 @@ class DomainPage extends LitElement {
         this._rebalance();
       });
     }
-    if (changed.has('year')) {
+    if (changed.has('year') && this.year > 0) {
       this.dispatchEvent(new CustomEvent('domain-year-changed', { bubbles: true, composed: true, detail: this.year }));
     }
     super.update(changed);
@@ -187,6 +189,12 @@ class DomainPage extends LitElement {
           this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
           throw new Error(err);
         });
+      }
+    }
+    if (changed.has('year') && this.year > 0) {
+      const codes = this.shadowRoot.querySelectorAll('domain-code');
+      for (const code of codes) {
+        code.expanded = false;
       }
     }
     super.updated(changed);

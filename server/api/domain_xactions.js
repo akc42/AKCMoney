@@ -28,15 +28,21 @@ export default async function(user, params, responder) {
   const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
     repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
   const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
-  const getXactions = db.prepare(`SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
+  const getXactions = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Endate)
+SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
     t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, 
-    0 as srcclear, 0 AS dstclear, 0 AS reconciled, 1 as trate, cu.name AS currency, 0 AS Version
-    FROM dfxaction t,
-    currency cu, 
-    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) 
-    OR (a.name = t.dst AND t.dstcode = c.id)
-    WHERE cu.priority = 0 AND t.date BETWEEN ?- CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND ? 
-    AND a.domain = ? AND c.id = ? ORDER BY t.date`);
+    0 as srcclear, 0 AS dstclear, 0 AS reconciled, 1 as trate, cu.name AS currency, 0 AS version,
+    CASE WHEN c.type = 'A' THEN CAST((CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+     AS INTEGER) ELSE 0 END As depreciation
+    FROM dfxaction t, currency cu, p, 
+    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) OR (a.name = t.dst AND t.dstcode = c.id)
+    WHERE cu.priority = 0 AND t.date BETWEEN p.startdate - CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END AND p.enddate
+    AND a.domain = ? AND c.id =  ? ORDER BY t.date`);
   const repeatCount = db.prepare(`SELECT COUNT(*) FROM xaction t, account a, code c   
   WHERE
       t.repeat <> 0 AND

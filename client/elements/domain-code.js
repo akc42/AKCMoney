@@ -98,7 +98,6 @@ class DomainCode extends LitElement {
       description: {type: String}, //Description of code
       transactions: {type: Array},
       balance: {type: Number},
-      cumulative: {type: Number},
       expanded: {type: Boolean}, //Display expanded to show transactions
       start: {type: Number}, //Start Date for transactions
       end: {type: Number}, //End Date for transactions
@@ -114,7 +113,6 @@ class DomainCode extends LitElement {
     this.description = '';
     this.transactions = [];
     this.balance = 0;
-    this.cumulative = 0;
     this.expanded = false;
     this.start = 0;
     this.end = 0;
@@ -146,7 +144,7 @@ class DomainCode extends LitElement {
       //63072000 = 2 more years back for assets
       api('domain_xactions', { 
         domain: this.domain, 
-        start: this.type === 'A' ? this.start - 63072000:this.start, 
+        start: this.start, 
         end: this.end, 
         code: this.id
       }).then(response => {
@@ -184,10 +182,10 @@ class DomainCode extends LitElement {
               .acurrency=${transaction.currency}
               .account=${this.type === 'B' ? (transaction.amount < 0 ? transaction.src: transaction.dst) :
                  (transaction.dstcode === this.id ? transaction.dst : transaction.src)}
-              ?accounting=${this.type !== 'B'}
+              accounting
               .repeats=${this.repeats}
               .codes=${this.codes}
-              @zero-reply=${this._zeroAdjust}></account-transaction>
+              .code=${this.type}></account-transaction>
           `)}
         `:'')}
       </section>
@@ -210,51 +208,18 @@ class DomainCode extends LitElement {
   _rebalance() {
     this.balances = [];
     let i = 0;
-    this.cumulative = 0;
+    let cumulative = 0;
     for (const transaction of this.transactions) {
-      this.balances[i] = this.cumulative;
-      this.cumulative += Math.round(transaction.amount / (this.type === 'A' ? 3 : 1));
+      this.balances[i] = cumulative;
+      cumulative +=  this.type === 'A' ? transaction.depreciation : transaction.amount ;
       i += 1;
     }
-    if (this.cumulative !== this.tamount) {
-      this.tamount = this.cumulative;
+    if (cumulative !== this.tamount) {
+      this.tamount = cumulative;
       this.dispatchEvent(new CustomEvent('tamount-changed',{bubble: true, composed: true, detail: this.tamount}))
     } 
   }
-  _zeroAdjust(e) {
-    e.stopPropagation();
-    const currentEndBalance = e.currentTarget.cumulative;
-    if (currentEndBalance !== 0) {
-      const index = e.currentTarget.index;
-      let originalAmount;
-      let newAmount;
-      
-      let swap = false;
-      if (this.id === e.currentTarget.srccode) {
-        originalAmount = e.currentTarget.amount * (this.type === 'B' ? 1 : -1);
-        if (originalAmount > currentEndBalance) swap = true;
-        newAmount = currentEndBalance - originalAmount;
-      } else {
-        originalAmount = e.currentTarget.amount;
-        if (originalAmount < currentEndBalance) swap = true;
-        newAmount = originalAmount - currentEndBalance
-      }
-      newAmount *= swap ? -1 : 1;
-      api(`${swap ? 'xaction_swap_zero' : 'xaction_amount'}`, {
-        id: e.currentTarget.tid,
-        version: e.currentTarget.version,
-        amount: newAmount,
-        account: e.currentTarget.account
-      }).then(response => {
-        if (response.status === 'OK') {
-          this.transactions[index] = response.transaction;
-          this._rebalance();
-        } else {
-          this.dialog.show();
-        }
-      });
-    }
-  }
+  
   _zoom(e) {
     e.stopPropagation();
     this.expanded = !this.expanded;
