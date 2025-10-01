@@ -53,6 +53,12 @@ class AccountTransaction extends LitElement {
           "description description description description description description";
 
       }
+      .wrapper.depreciate {
+        grid-template-columns: 94px 70px 1fr repeat(3, var(--amount-width));
+        grid-template-areas:
+          "date ref . amount depreciate balance"
+          "description description description description description description";       
+      }
       .container {
         padding: 2px;
         cursor: normal;
@@ -120,7 +126,9 @@ class AccountTransaction extends LitElement {
       .amount.currency {
         background-color: var(--currency-difference-color);
       }
-
+      .amount.asset {
+        color: var(--asset-value-color);
+      }
       .setrate {
         grid-area: setrate;
       }
@@ -196,10 +204,18 @@ class AccountTransaction extends LitElement {
       .delete {
         grid-area: delete
       }
+      .depreciation {
+        grid-area: depreciate;
+        text-align: right;
+      }
       @media (min-width: 500px) {
         .wrapper {
           grid-template-areas:
             "date ref description amount balance code";
+        }
+        .wrapper.depreciate {
+          grid-template-areas:
+            "date ref description amount depreciate balance";
         }
         .container {
           grid-template-areas:
@@ -252,8 +268,9 @@ class AccountTransaction extends LitElement {
       accountAmountError: {type: Boolean},
       readonly: {type: Boolean}, //set if context (domain/offsheet) doesn't allow editing (also cleared/reconcilled ignored)
       accounting: {type: Boolean}, //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
-      selected: {type: Boolean} //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
-
+      selected: {type: Boolean}, //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
+      code: {type: String},
+      depreciation: {type: Number} //If accounting and code = 'A' This is the amount of depreciation associated with the year being accounted.
     };
   }
   constructor() {
@@ -295,6 +312,8 @@ class AccountTransaction extends LitElement {
     this.readonly = false;
     this.accounting = false;
     this.selected = false;
+    this.code = '';
+    this.depreciation = 0;
   }
   connectedCallback() {
     super.connectedCallback();
@@ -320,31 +339,30 @@ class AccountTransaction extends LitElement {
   updated(changed) {
     if (changed.has('amount') || changed.has('balance') || changed.has('src') || changed.has('currency') || changed.has('acurrency') ||
      changed.has('trate') || changed.has('arate') || changed.has('srcclear') || changed.has('dstclear')) {
-      this.cumulative = this.balance; 
-      let amount;
-      if (this.currency === this.acurrency) {
-        amount = this.amount;
-      } else {
-          amount = this.account === this.src ? this.srcamount : this.dstamount 
-      }
-
-      let factor = 1; 
+      this.cumulative = this.balance;    
       if (this.accounting) {
-        let codeKey;
-        if (this.src === this.account) {
-          codeKey = this.srccode;
+        if (this.code === 'A') {
+          this.cumulative += this.depreciation;
         } else {
-          codeKey = this.dstcode
+          this.cumulative += this.amount;
         }
-        const code = this.codes.find(c => c.id === codeKey);
-        if (code.type === 'A') factor = 3;
+      } else {
+        let amount;
+        if (this.currency === this.acurrency) {
+          amount = this.amount;
+        } else {
+          amount = this.account === this.src ? this.srcamount : this.dstamount 
+        }
+        if (this.src === this.account && !this.srcclear ) {
+          this.cumulative -= amount;
+        } else if (this.dst === this.account && !this.dstclear) {
+          this.cumulative += amount ; 
+        } else {
+          this.cumulative = 0;
+        }
+
       }
-      if (this.src === this.account && (!this.srcclear || this.readonly)) {
-        this.cumulative -= Math.round(amount/factor);
-      } else if (this.dst === this.account && (!this.dstclear || this.readonly)) {
-        this.cumulative += Math.round(amount / factor);
-      }
-    }
+    } 
     if (this.amountEdit) {
       if (changed.has('amount') && changed.get('amount') !== undefined && !changed.has('tid')) {
         this.amountEdit = false;
@@ -413,7 +431,7 @@ class AccountTransaction extends LitElement {
     super.updated(changed);
   }
   render() {
-    const cleared = (this.reconcilled || (this.srcclear && this.src === this.account) ||
+    const cleared = (this.reconciled || (this.srcclear && this.src === this.account) ||
       (this.dstclear && this.dst === this.account)) && !this.readonly;
     let visual;
     let codeVisual;
@@ -550,7 +568,7 @@ class AccountTransaction extends LitElement {
           </div>
         </form>
       `:html`
-        <div id="wrapper" class="wrapper" @dblclick=${this._startEdit} @click=${this._startTouch}>
+        <div id="wrapper" class="wrapper ${classMap({depreciate: this.accounting && this.code === 'A'})}" @dblclick=${this._startEdit} @click=${this._startTouch}>
           <date-format class="date ${classMap({
             reconciled: this.reconciled,
             passed: Date.now()/1000 > this.date,
@@ -590,17 +608,25 @@ class AccountTransaction extends LitElement {
               @dragstart=${this._noDrag} 
               draggable="true" />          
           `):html`
-            <div class="amount ${classMap({ currency: this.currency !== this.acurrency, dual: this.src !== null && this.dst !== null})}" 
+            <div class="amount ${classMap({
+                currency: this.currency !== this.acurrency, 
+                dual: this.src !== null && this.dst !== null, 
+                asset: this.accounting && this.code === 'A'
+              })}" 
               @dblclick=${this._startAmountEdit} 
               @click=${this._touchAmountEdit}
               @contextmenu=${this._zeroRequest}>${
-                ((this.src === this.account && !this.accounting) ? '-':'') + ((
+                ((this.src === this.account && (!this.accounting || this.code === 'B')) ? '-':'') + ((
                   this.currency === this.acurrency ? this.amount : (this.account === this.src ? this.srcamount: this.dstamount)
                 ) / 100).toFixed(2)}</div>
           `)}
           <div class="balance ${classMap({ dual: this.src !== null && this.dst !== null })}">${cleared ? '0.00' : 
             (this.cumulative/100).toFixed(2)}</div>
-          <div class="code ${this.readonly ? '':codeType}"></div>
+          ${cache(this.accounting? (this.code === 'A' ? html`
+            <div class="depreciation">${(this.depreciation/100).toFixed(2)}</div>
+          `:''): html`
+            <div class="code ${this.readonly ? '':codeType}"></div>
+          `)}
         </div>
       `)}
       
@@ -627,12 +653,12 @@ class AccountTransaction extends LitElement {
       srccode: this.srccode,
       trate: this.trate,
       version: this.version,
-      samedomain: this.sameDomain? 1:0
+      samedomain: this.sameDomain? 1:0,
+      depreciation: this.depreciation
     };
   }
   set transaction(value) {
-    //only set values if we are not editing.
-    if (!this.edit) {
+
       this.amount = Math.abs(value.amount); //should never be negative
       this.currency = value.currency;
       this.date = value.date;
@@ -653,9 +679,8 @@ class AccountTransaction extends LitElement {
       this.version = value.version;
       this.sameDomain = value.samedomain !==0;
       if (this.tid === 0) this.edit = true;
-    } else {
-      debug('transaction', value.id, 'not updated');
-    }
+      this.depreciation = value?.depreciation??'';
+
     
   }
   _accountAmountChanged(e) {
@@ -806,8 +831,9 @@ class AccountTransaction extends LitElement {
     this.description = e.currentTarget.value;
   }
   _move(e) {
-      const saver = this.shadowRoot.querySelector('#saver');
-      saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    const saver = this.shadowRoot.querySelector('#saver');
+    saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
   }
   _noDrag(e) {
     e.stopPropagation();
@@ -847,6 +873,7 @@ class AccountTransaction extends LitElement {
     }
   }
   _save(e) {
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
   }
@@ -931,6 +958,7 @@ class AccountTransaction extends LitElement {
     if (!!('ontouchstart' in window || navigator.maxTouchPoints)) this._startAmountEdit(e);
   }
   _update(e) {
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
     //we have got a response from our form save
     const response = e.detail;
     if (response.status !== 'OK') throw new Error(response.status);
@@ -948,9 +976,9 @@ class AccountTransaction extends LitElement {
   }
   _zeroRequest(e) {
     e.stopPropagation();
-    //can't do if transaction is cleared or is a repeated one.
-    if (this.repeat !== this.repeats[0].rkey || this.reconcilled || (this.srcclear && this.src === this.account) ||
-      (this.dstclear && this.dst === this.account)) return;
+    //can't do if transaction is cleared or is a repeated one or we are accounting or we are readonly.
+    if (this.repeat !== this.repeats[0].rkey || this.reconciled || (this.srcclear && this.src === this.account) ||
+      (this.dstclear && this.dst === this.account) || this.readonly || this.accounting) return;
 
     e.preventDefault();
     e.currentTarget.dispatchEvent(new CustomEvent('zero-request', {bubbles: true, composed: true}));

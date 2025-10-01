@@ -29,21 +29,28 @@ export default async function(user, params, responder) {
   const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
     repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
   const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
-  const getCodes = db.prepare(`SELECT
+  const getCodes = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Enddate)
+SELECT
       c.id AS id, 
       c.type AS type, 
       c.description AS description,
-      sum(t.dfamount/CASE WHEN c.type='A' THEN 3 WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END) AS tamount           
+      CAST(sum(CASE WHEN c.type='A' THEN (CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+        WHEN c.type = 'B' AND c.id = t.srccode THEN -t.dfamount ELSE t.dfamount END) AS INTEGER) AS tamount           
   FROM 
-      dfxaction AS t, account AS a, code AS c
+      dfxaction AS t, account AS a, code AS c, p
   WHERE
-      t.date >= ? - CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND t.date <= ? AND
+      t.date + (CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END) >= p.startdate AND t.date <= p.enddate AND
       c.type <> 'O' AND
       a.domain = ? AND (
       (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
       (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
   GROUP BY
-      c.id, c.type, c.description
+      c.id, c.type, c.description,c.depreciateyear, p.startdate, p.enddate
   ORDER BY 
     CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END,
     description COLLATE NOCASE ASC`);
@@ -64,8 +71,8 @@ export default async function(user, params, responder) {
     const startDate = new Date(endDate);
     startDate.setFullYear(startDate.getFullYear() - 1);
     debug('startdate, setting startDate', startDate);
-    const start = Math.floor(startDate.getTime()/1000) + 1;
-    const end = Math.ceil(endDate.getTime()/1000);
+    const start = Math.floor(startDate.getTime()/1000) + 1; //This gets the very beginning of the financial year
+    const end = Math.floor(endDate.getTime()/1000); //This gets the very last second of the financial year
     debug('start and end are:',start, end);
   const repeatCount = db.prepare(`SELECT COUNT(*) FROM xaction t, account a, code c   
   WHERE

@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 const debug = Debug('accountdelete');
@@ -34,7 +34,8 @@ export default async function(user, params, responder) {
       responder.addSection('status', 'OK');
       responder.addSection('accounts', getAccounts.all());
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`);
+      logger('error', `Account delete Version Error Disk:${v}, Param:${params.dversion}`)
     }
     
   })();

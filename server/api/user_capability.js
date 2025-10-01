@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
@@ -47,6 +47,7 @@ export default async function(user, params, responder) {
 
     } else {
       responder.addSection('status', `User Capability version Error Disk:${v}, Param:${params.version}`);
+      logger('error',`User Capability Version Error Disk:${v}, Param:${params.version}`);
     }
     
   })();

@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
@@ -28,14 +28,15 @@ export default async function(user, params, responder) {
   const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
   const deleteXaction = db.prepare('DELETE FROM xaction WHERE id = ?');
   db.transaction(() => {
-    const version = getXactionVersion.get(params.tid);
-    debug('db version', version, 'params version', params.version, 'xaction', params.tid);
-    if (version === params.version) {
+    const v = getXactionVersion.get(params.tid);
+    debug('db version', v, 'params version', params.version, 'xaction', params.tid);
+    if (v === params.version) {
       const {changes} = deleteXaction.run(params.tid);
       debug('delete count', changes);
       if (changes === 1) responder.addSection('status', 'OK'); else responder.addSection('status', 'Wrong Count');
     } else {
-      responder.addSection('status', 'Fail');
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
+      logger('error', `Xaction Delete Version Error Disk:${v}, Param:${params.version}`)
     }
   })();
   debug('request complete');

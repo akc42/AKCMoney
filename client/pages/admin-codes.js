@@ -53,16 +53,19 @@ class AdminCodes extends LitElement {
           display: grid;
           grid-gap: 1px;
           color: var(--table-text-color);
-          grid-template-columns: 1fr var(--codetype-selector-width) 80px;
+          grid-template-columns: 1fr var(--codetype-selector-width) 40px 80px;
           grid-template-areas:
             "description description description" 
-            ". type action";
+            ". type dep action";
         }
         .description {
           grid-area: description;
         }
         .type {
           grid-area: type;
+        }
+        .dep {
+          grid-area: dep;
         }
         .action {
           grid-area: action;
@@ -92,7 +95,7 @@ class AdminCodes extends LitElement {
         @media (min-width: 500px) {
           .code, .header {
             grid-template-areas:
-              "description type action";
+              "description type dep action";
 
           }
         }    
@@ -115,9 +118,16 @@ class AdminCodes extends LitElement {
     this.description = '';
     this.type = '';
     this.typeDescription = '';
-
+    this.depyear = 1;
     this.route = {active: false};
     this.router = new Route('/','page:codes');
+  }
+  connectedCallback() {
+    super.connectedCallback();
+    this.type = '';
+    this.description = ''
+    this.typeDescription = ''
+    this.depyear = 1;
   }
   update(changed) {
     if (changed.has('type') && this.type.length > 0) {
@@ -150,6 +160,7 @@ class AdminCodes extends LitElement {
         <div class="header">
           <div class="description">Description</div>
           <div class="type">Type</div>
+          <div class="dep">Depreciation</div>
           <div class="action"></div>          
         </div>
         <div id="newcode" class="code">
@@ -163,6 +174,17 @@ class AdminCodes extends LitElement {
             .key=${this.type} 
             .visual=${this.typeDescription} 
             @item-selected=${this._typeChanged}></list-selector>
+          ${this.type === 'A' ? html`
+            <input
+              class="dep" 
+              id ="newdep" 
+              .value=${this.depyear} 
+              @input=${this._depreciationChanged} 
+              type="number" 
+              min="1" 
+              max="9"
+              data-index="-1"/>
+          `:''}
           <button id="newc" class="action" @click=${this._addCode}><material-icon>post_add</material-icon><span>Add</span></button>
         </div>
         <section class="scrollable">
@@ -178,7 +200,17 @@ class AdminCodes extends LitElement {
                 .visual=${this.types.find(t => t.type ===code.type).description} 
                 data-index="${i}"
                 @item-selected=${this._codeTypeChanged}></list-selector>
- 
+              ${code.type === 'A' ? html`
+                <input
+                  class="dep" 
+                  .value=${code.depreciateyear} 
+                  @input=${this._codeDepreciationChanged} 
+                  @blur=${this._codeDepreciationUpdate}
+                  type="number" 
+                  min="1" 
+                  max="9"
+                  data-index="${i}"/>
+                `:''}
               <button 
                 class="delc action"
                 data-index="${i}" 
@@ -200,14 +232,42 @@ class AdminCodes extends LitElement {
       const typeSelector = this.shadowRoot.querySelector('#typeselector');
       typeSelector.classList.add('error');
     } else {
-      api('code_add', {description: this.description, type: this.type}).then(response => {
+      api('code_add', {description: this.description, type: this.type, depreciateyear: this.depyear}).then(response => {
         if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
-        this.description = ''; //Only reset description
+        this.description = ''; //Only reset description and any depreciation
+        this.depyear = 1;
         this.codes = response.codes;  
       });
     }
   }
+  _codeDepreciationChanged(e) {
+    e.stopPropagation();
+    const depyear = Number(e.currentTarget.value);
+    if (depyear < 1 || depyear > 9) {
+      e.currentTarget.classList.add('error')
+    } else {
+      e.currentTarget.classList.remove('error')
+    }
+  }
+  _codeDepreciationUpdate(e) {
+    e.stopPropagation();
+    if (!e.currentTarget.classList.contains('error')) {
+      const index = Number(e.currentTarget.dataset.index);
+      const depyear = Number(e.currentTarget.value);
+      if (this.codes[index].type === 'A' && this.codes[index].depreciateyear !== depyear ) {
+        api('code_depyear', {
+          id: this.codes[index].id,
+          depreciateyear: depyear,
+          version: this.codes[index].version
+        }).then(response => {
+          if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+          this.codes = response.codes;
+        })
+      }
+    }
+  }
   _codeDescriptionChanged(e) {
+    e.stopPropagation();
     const description = e.currentTarget.value;
     if (description.length > 0) {
       e.currentTarget.classList.remove('error');
@@ -261,6 +321,19 @@ class AdminCodes extends LitElement {
       if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
       this.codes = response.codes;
     });
+  }
+  _depreciationChanged(e) {
+    e.stopPropagation();
+    if (this.type === 'A') {
+      this.depyear = Number(e.currentTarget.value);
+      if (this.depyear < 1 || this.depyear > 9) {
+        e.currentTarget.classList.add('error');
+      } else {
+        e.currentTarget.classList.remove('error');
+      }
+    } else {
+      e.currentTarget.classList.remove('error');
+    }
   }
   _descriptionChanged(e) {
     e.stopPropagation();

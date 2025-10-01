@@ -27,7 +27,7 @@ const debug = Debug('pdfdomain');
 const LEFT_EDGE = 72;
 const RIGHT_EDGE = 523;
 const DATE_WIDTH = 63;
-const REF_WIDTH = 39;
+const REF_WIDTH = 25;
 const AMOUNT_WIDTH = 45;
 const CODE_SIZE = 12;
 const LEFT_LINE = LEFT_EDGE - 1;
@@ -47,8 +47,10 @@ const DESC_WIDTH = DESC_AMOUNT_LINE - TEXT_MARGIN - DESC_POSITION;
 const PAGE_BOTTOM = 748;
 const PAGE_POSITION = 793;
 const DATE_AREA_WIDTH = DATE_REF_LINE - 1 - LEFT_EDGE;
+const DEPRECIATION_POSITION = AMOUNT_POSITION - AMOUNT_WIDTH - TEXT_MARGIN;
 
-debug('DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
+debug('DATE_POSITION, REF_POSITION, DESC_POSITION, DEPRECIATION_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', 
+  DATE_POSITION, REF_POSITION, DESC_POSITION, DEPRECIATION_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
 
 
 const codeHeader = (code, doc, profit) => {
@@ -103,32 +105,46 @@ export default async function(user, params, doc) {
   debug('prepared repeat insert');
   const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
   debug('prepared repeat update');
-  const getCodes = db.prepare(`SELECT
+  const getCodes = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Enddate)
+SELECT
       c.id AS id, 
       c.type AS type, 
       c.description AS description,
-      sum(t.dfamount/CASE WHEN c.type='A' THEN 3 WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END) AS tamount           
+      CAST(sum(CASE WHEN c.type='A' THEN (CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+        WHEN c.type = 'B' AND c.id = t.srccode THEN -t.dfamount ELSE t.dfamount END) AS INTEGER) AS tamount           
   FROM 
-      dfxaction AS t, account AS a, code AS c
+      dfxaction AS t, account AS a, code AS c, p
   WHERE
-      t.date >= ? - CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND t.date <= ? AND
+      t.date + (CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END) >= p.startdate AND t.date <= p.enddate AND
       c.type <> 'O' AND
       a.domain = ? AND (
       (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
       (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
   GROUP BY
-      c.id, c.type, c.description
+      c.id, c.type, c.description,c.depreciateyear, p.startdate, p.enddate
   ORDER BY 
     CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END,
     description COLLATE NOCASE ASC`);
-  const getXactions = db.prepare(`SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
-    t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, a.name AS account
-    FROM dfxaction t,
-    currency cu, 
-    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) 
-    OR (a.name = t.dst AND t.dstcode = c.id)
-    WHERE cu.priority = 0 AND t.date BETWEEN ?- CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND ? 
-    AND a.domain = ? AND c.id = ? ORDER BY t.date`);
+  const getXactions = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Endate)
+SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
+    t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, 
+    0 as srcclear, 0 AS dstclear, 0 AS reconciled, 1 as trate, cu.name AS currency, 0 AS version,
+    CASE WHEN c.type = 'A' THEN CAST((CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+     AS INTEGER) ELSE 0 END As depreciation
+    FROM dfxaction t, currency cu, p, 
+    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) OR (a.name = t.dst AND t.dstcode = c.id)
+    WHERE cu.priority = 0 AND t.date BETWEEN p.startdate - CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END AND p.enddate
+    AND a.domain = ? AND c.id =  ? ORDER BY t.date`);
   debug('prepared sql')
   const yearEnd = s.get('year_end');
   const monthEnd = Math.floor(yearEnd / 100) - 1 //Range 0 to 11 for Dates 
@@ -248,10 +264,15 @@ export default async function(user, params, doc) {
           doc.text(dbDateToString(transaction.date), DATE_POSITION, y, { width: DATE_WIDTH, align: 'right' });
           doc.text(blankIfNull(transaction.ref), REF_POSITION, y, { width: REF_WIDTH, height: h - 4 });
           doc.text(transaction.description, DESC_POSITION, y, { width: DESC_WIDTH, height: h -4 });
-
-          doc.text((transaction.amount / 100).toFixed(2), AMOUNT_POSITION, y, { width: AMOUNT_WIDTH, align: 'right' });
-          cumulative += Math.round(transaction.amount / (code.type === 'A' ? 3 : 1));  
-
+          if (code.type === 'A') {
+            doc.fillColor('red').strokeColor('red');
+            doc.text((transaction.amount/100).toFixed(2), DEPRECIATION_POSITION, y, {width: AMOUNT_WIDTH, align: 'right'});
+            doc.fillColor('black').strokeColor('black');          
+            doc.text((transaction.depreciation / 100).toFixed(2), AMOUNT_POSITION, y, { width: AMOUNT_WIDTH, align: 'right' });
+          } else {
+            doc.text((transaction.amount / 100).toFixed(2), AMOUNT_POSITION, y, { width: AMOUNT_WIDTH, align: 'right' });
+          }
+          cumulative += code.type === 'A' ? transaction.depreciation: transaction.amount;  
           doc.text((cumulative/100).toFixed(2), TOTAL_POSITION,y,{width: AMOUNT_WIDTH, align: 'right'});
           y += (h - dy);
           doc.x = LEFT_EDGE;

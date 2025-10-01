@@ -41,8 +41,8 @@ export class PageManager extends RouteManager {
       codes: {type: Array}, //list of codes
       repeats: {type: Array}, //list of repeats
       accounts: {type: Array}, //list of accounts
-      domains: {type: Array} //list of domains
-
+      domains: {type: Array}, //list of domains
+      domain: {type: String} //current domain
     };
   }
   constructor() {
@@ -50,6 +50,7 @@ export class PageManager extends RouteManager {
     this.codes = [];
     this.repeats = [];
     this.accounts = [];
+    this.domain = '';
   }
 
   connectedCallback() {
@@ -81,6 +82,7 @@ export class PageManager extends RouteManager {
         domain: html`<domain-page 
                         managed-page 
                         .route=${this.subRoute} 
+                        .domain=${this.domain}
                         .repeats=${this.repeats}></domain-page>`,
         offsheet: html`<offsheet-page 
                         managed-page 

@@ -18,7 +18,7 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 const debug = Debug('accountbalance');
@@ -44,7 +44,7 @@ export default async function(user, params, responder) {
       responder.addSection('status', 'OK');
       responder.addSection('bversion', bversion + 1);
     } else {
-      debug('versions do not match, param bversion:',params.bversion, 'database dversion', bversion);
+      logger('error','Account Balance versions do not match, param bversion:',params.bversion, 'database dversion', bversion);
       responder.addSection('status', 'Fail');
     }
   })();

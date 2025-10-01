@@ -21,22 +21,26 @@ import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
-const debug = Debug('currencydisplay');
+const debug = Debug('codedepyear');
 
 export default async function(user, params, responder) {
   debug('new request from', user.name, 'with params', params );
-  const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-  const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, display = ?, priority = ? WHERE name = ?');
+  const getVersion = db.prepare('SELECT version FROM code WHERE id = ?').pluck();
+  const updateType = db.prepare('UPDATE code SET version = version + 1, depreciateyear = ? WHERE id = ?');
+  const getCodes = db.prepare(`SELECT * FROM code 
+    ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+    description COLLATE NOCASE ASC`);
   db.transaction(() => {
-    const v = getVersion.get(params.name);
+    const v = getVersion.get(params.id);
     if (v === params.version) {
+      updateType.run(params.depreciateyear, params.id);
       responder.addSection('status', 'OK');
-      updateCurrency.run(params.display, params.priority, params.name);
+      responder.addSection('codes', getCodes.all());
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      logger('error', `Currency Display Version Error Disk:${v}, Param:${params.version}`)
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`)
+      logger('error', `codedepyear Version Error Disk:${v}, Param:${params.version}`)
     }
-    
+
   })();
   debug('request complete')
 };

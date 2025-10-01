@@ -25,38 +25,53 @@ const debug = Debug('csvdomain');
 
 export default async function(user, params, responder) {
 
-  debug('new request from', user.name, 'with params', params);
+  debug('new request from', user.name, 'with params', JSON.stringify(params));
 
   const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
   const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
     repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
   const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
-  const getCodes = db.prepare(`SELECT
+  const getCodes = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Enddate)
+SELECT
       c.id AS id, 
       c.type AS type, 
       c.description AS description,
-      sum(t.dfamount/CASE WHEN c.type='A' THEN 3 WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END) AS tamount           
+      CAST(sum(CASE WHEN c.type='A' THEN (CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+        WHEN c.type = 'B' AND c.id = t.srccode THEN -t.dfamount ELSE t.dfamount END) AS INTEGER) AS tamount           
   FROM 
-      dfxaction AS t, account AS a, code AS c
+      dfxaction AS t, account AS a, code AS c, p
   WHERE
-      t.date >= ? - CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND t.date <= ? AND
+      t.date + (CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END) >= p.startdate AND t.date <= p.enddate AND
       c.type <> 'O' AND
       a.domain = ? AND (
       (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
       (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
   GROUP BY
-      c.id, c.type, c.description
+      c.id, c.type, c.description,c.depreciateyear, p.startdate, p.enddate
   ORDER BY 
     CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END,
     description COLLATE NOCASE ASC`);
-  const getXactions = db.prepare(`SELECT t.id,t.date,t.description, t.rno, 
-    t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, a.name AS account
-    FROM dfxaction t,
-    currency cu, 
-    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) 
-    OR (a.name = t.dst AND t.dstcode = c.id)
-    WHERE cu.priority = 0 AND t.date BETWEEN ?- CASE WHEN c.type = 'A' THEN 63072000 ELSE 0 END AND ? 
-    AND a.domain = ? AND c.id = ? ORDER BY t.date`);
+  const getXactions = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Endate)
+SELECT t.id,t.date,t.rno,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
+    t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, 
+    0 as srcclear, 0 AS dstclear, 0 AS reconciled, 1 as trate, cu.name AS currency, 0 AS version,
+    CASE WHEN c.type = 'A' THEN CAST((CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+     AS INTEGER) ELSE 0 END As depreciation,
+     a.name AS account
+    FROM dfxaction t, currency cu, p, 
+    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) OR (a.name = t.dst AND t.dstcode = c.id)
+    WHERE cu.priority = 0 AND t.date BETWEEN p.startdate - CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END AND p.enddate
+    AND a.domain = ? AND c.id =  ? ORDER BY t.date`);
 
   const yearEnd = s.get('year_end');
   const monthEnd = Math.floor(yearEnd / 100) - 1 //Range 0 to 11 for Dates 
@@ -121,11 +136,14 @@ export default async function(user, params, responder) {
         code.transactions = getXactions.all(start, end, params.domain, code.id);   
         debug('read', code.transactions.length, 'transactions for code', code.id); 
         let cumulative = 0;
-        responder.defineFields('id,date,rno,description,amount,cumulative,x,x,x')   
+        responder.defineFields('id,date,rno,description,amount,cumulative,x,x,x');   
         for(const transaction of code.transactions) {
-          cumulative += Math.round(transaction.amount / (code.type === 'A' ? 3 : 1));  
+          cumulative += code.type === 'A'? transaction.depreciation: transaction.amount;  
           transaction.cumulative = (cumulative/100).toFixed(2); 
           transaction.amount = (transaction.amount/100).toFixed(2);
+          if (code.type === 'A') {
+            transaction.depreciation = (transaction.depreciation/100).toFixed(2);
+          }
           transaction.date = dbDateToString(transaction.date);
         }
       }
@@ -140,18 +158,23 @@ export default async function(user, params, responder) {
     }
   }
   responder.setName(`Domain-${params.domain}_${params.year}`);
-  responder.makeHeader('TID:Date:Ref:Description:Amount:Cumulative:Account:Contribution:Profit:Code');
+  responder.makeHeader('TID:Date:Ref:Description:Amount:Depreciation:Cumulative:Contribution:Profit:Code:Account');
   for (const code of codes) {
-    responder.defineFields('x:x:x:description:x:x:x:tamount:profit:type');
-    await responder.write(code);
-    responder.defineFields('id:date:rno:description:amount:cumulative:account:x:x:x');
+
+    if (code.type === 'A') {
+      responder.defineFields('id:date:rno:description:amount:depreciation:cumulative:x:x:x:account');
+    } else {
+      responder.defineFields('id:date:rno:description:amount:x:cumulative:x:x:x:account');
+    }
     for(const transaction of code.transactions) {
       await responder.write(transaction);
     }
+    responder.defineFields('x:x:x:description:x:x:x:tamount:profit:type:x');
+    await responder.write(code);
   }
   responder.defineFields('x:x:x:description:x:x:x:x:profit:x');
   responder.write({});
   responder.write({ description: 'Overall Profit', profit: (profit/100).toFixed(2) });
   debug('request complete')
 
-};
+}

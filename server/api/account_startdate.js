@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
@@ -34,7 +34,7 @@ export default async function(user, params, responder) {
       updateSD.run(params.startdate, params.account);
       responder.addSection('status', 'OK');
     } else {
-      debug('versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
+      logger('error','Account Start Date; versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
       responder.addSection('status', 'Fail');
     }
   })();

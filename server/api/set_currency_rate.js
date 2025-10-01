@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
+import {Debug, logger} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
@@ -28,16 +28,16 @@ export default async function(user, params, responder) {
   const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
   const updateRate = db.prepare('UPDATE currency SET version = version + 1, rate = ? WHERE name = ?');
   db.transaction(() => {
-    const version = getVersion.get(params.name);
-    if (version === params.version) {
+    const v = getVersion.get(params.name);
+    if (v === params.version) {
       updateRate.run(params.rate, params.name);
       responder.addSection('status', 'OK');
       responder.addSection('name', params.name)
       responder.addSection('rate', params.rate);
       responder.addSection('versions', version + 1 );
     } else {
-      debug('db version', version, 'api version', params.version);
-      responder.addSection('status', 'fail');
+      logger('error', `Set Currency Version Error Disk:${v}, Param:${params.version}`);
+      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
     }
   })()
   

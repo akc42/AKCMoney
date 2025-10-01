@@ -1,4 +1,4 @@
--- 	Copyright (c) 2025 - 2025 Alan Chandler
+ia-- 	Copyright (c) 2025 - 2025 Alan Chandler
 --  This file is part of AKCMoney.
 
 --    AKCMoney is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@ ALTER TABLE Code ADD depreciateyear Integer;
 
 INSERT INTO Code(type, description, depreciateyear) VALUES('A', 'Motor Vehicles', 5);
 
-UPDATE code SET depreciateyear = 3 WHERE description = 'Computer Equipment';
+UPDATE code SET depreciateyear = 3 WHERE id = 12;
 
 UPDATE Settings SET value = 2 WHERE name = 'version';
 
