@@ -30,7 +30,7 @@ export default async function(user, params, responder) {
   db.transaction(() => {
     const v = getXactionVersion.get(params.tid);
     debug('db version', v, 'params version', params.version, 'xaction', params.tid);
-    if (version === params.version) {
+    if (v === params.version) {
       const {changes} = deleteXaction.run(params.tid);
       debug('delete count', changes);
       if (changes === 1) responder.addSection('status', 'OK'); else responder.addSection('status', 'Wrong Count');

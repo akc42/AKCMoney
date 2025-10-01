@@ -831,8 +831,9 @@ class AccountTransaction extends LitElement {
     this.description = e.currentTarget.value;
   }
   _move(e) {
-      const saver = this.shadowRoot.querySelector('#saver');
-      saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    const saver = this.shadowRoot.querySelector('#saver');
+    saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
   }
   _noDrag(e) {
     e.stopPropagation();
@@ -872,6 +873,7 @@ class AccountTransaction extends LitElement {
     }
   }
   _save(e) {
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
   }
@@ -956,6 +958,7 @@ class AccountTransaction extends LitElement {
     if (!!('ontouchstart' in window || navigator.maxTouchPoints)) this._startAmountEdit(e);
   }
   _update(e) {
+    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
     //we have got a response from our form save
     const response = e.detail;
     if (response.status !== 'OK') throw new Error(response.status);
