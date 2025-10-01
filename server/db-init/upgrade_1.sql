@@ -1,4 +1,4 @@
-ia-- 	Copyright (c) 2025 - 2025 Alan Chandler
+-- 	Copyright (c) 2025 - 2025 Alan Chandler
 --  This file is part of AKCMoney.
 
 --    AKCMoney is free software: you can redistribute it and/or modify
