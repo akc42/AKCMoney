@@ -39,7 +39,7 @@ services:
       - moneynet
     restart: unless-stopped
     environment:
-      - DEBUG=server:api:user:auth
+      - DEBUG=server:api
       - DEBUG_CACHE_SIZE=50
       - DATABASE_DB=/db/money.db
       - DATABASE_DB_VERSION=2
