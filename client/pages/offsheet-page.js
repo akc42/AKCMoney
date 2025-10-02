@@ -164,7 +164,6 @@ class OffsheetPage extends LitElement {
               readonly 
               .acurrency=${transaction.currency}
               .account=${transaction.dstcode === this.code ? transaction.dst : transaction.src}
-              accounting
               .code=${this.code}
               .repeats=${this.repeats}
               .codes=${this.codes}
@@ -186,7 +185,11 @@ class OffsheetPage extends LitElement {
     this.cumulative = 0;
     for (const transaction of this.transactions) {
       this.balances[i] = this.cumulative;
-      this.cumulative += Math.round(transaction.amount / (this.type === 'A' ? 3 : 1));
+      if (transaction.dstcode === this.code) {
+        this.cumulative += transaction.amount;
+      } else {
+        this.cumulative -= transaction.amount;
+      }
       i += 1;
     }
     this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
