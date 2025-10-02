@@ -25,7 +25,7 @@ const debug = Debug('offsheet');
 
 export default async function(user, params, responder) {
   debug('new request from', user.name, 'with codeid', params.code );
-
+  const getCode = db.prepare('SELECT description FROM code WHERE id = ?').pluck();
   const getXactions = db.prepare(`SELECT
           t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
           CASE 
@@ -50,6 +50,7 @@ export default async function(user, params, responder) {
           t.Date
   `);
   db.transaction(() => {
+    responder.addSection('description', getCode.get(params.code));
     responder.addSection('transactions', getXactions.all(user.uid, params.code));
   })();  
 

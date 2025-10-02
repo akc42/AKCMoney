@@ -26,5 +26,30 @@ INSERT INTO Code(type, description, depreciateyear) VALUES('A', 'Motor Vehicles'
 
 UPDATE code SET depreciateyear = 3 WHERE id = 12;
 
+
+DROP VIEW dfxaction;
+
+CREATE VIEW dfxaction AS
+    WITH df(name) AS (SELECT name FROM currency WHERE priority = 0 )
+    SELECT t.id,t.date,t.version, src, srccode, dst, dstcode,t.description, rno, repeat,
+        CASE 
+            WHEN t.currency = df.name THEN t.amount
+            WHEN t.srcamount IS NOT NULL AND sa.currency = df.name THEN t.srcamount
+            WHEN t.dstamount IS NOT NULL AND da.currency = df.name THEN t.dstamount
+            ELSE CAST ((CAST (t.amount AS REAL) / currency.rate) AS INTEGER)
+        END AS dfamount
+    FROM
+        df,
+        xaction AS t
+        LEFT JOIN account AS sa ON t.src = sa.name
+        LEFT JOIN account AS da ON t.dst = da.name
+        LEFT JOIN currency ON 
+            t.currency != df.name AND
+            (t.srcamount IS NULL OR sa.currency != df.name) AND
+            (t.dstamount IS NULL OR da.currency != df.name) AND 
+            t.currency = currency.name;
+
+
+
 UPDATE Settings SET value = 2 WHERE name = 'version';
 
