@@ -134,7 +134,7 @@ class DomainPage extends LitElement {
     this.start = 0;
     this.end = 0;
     this.repeats = [];
-    this.router = new Route('/','page:domain');
+    this.router = new Route('/:domain','page:domain');
     this.eventLocked = true;
   }
   connectedCallback() {
@@ -168,7 +168,7 @@ class DomainPage extends LitElement {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        this.domain = route.query.domain
+        this.domain = route.params.domain
         this.dispatchEvent(new CustomEvent('domain-changed',{bubbles:true,composed:true,detail:this.domain}));
         this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
         api('domain_range', {domain: this.domain}).then(response => {

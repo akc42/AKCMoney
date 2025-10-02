@@ -111,8 +111,9 @@ class OffsheetPage extends LitElement {
     super();
     this.route = {active: false};
     this.code = 0;
+    this.title = ''
     this.transactions = [];
-    this.router = new Route('/','page:offsheet');
+    this.router = new Route('/:code','page:offsheet');
   }
 
   update(changed) {
@@ -124,10 +125,13 @@ class OffsheetPage extends LitElement {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        this.code = route.query.id;
-        this.dispatchEvent(new CustomEvent('code-changed',{bubbles: true, composed: true, detail: this.code}));
-        this.title = route.query.description;
-        this.fetchData()
+        if (Number.isInteger(route.params.code)) {
+          this.code = route.params.code;
+          this.dispatchEvent(new CustomEvent('code-changed',{bubbles: true, composed: true, detail: this.code}));
+          this.fetchData()
+        } else {
+
+        }
       }
     }
     super.updated(changed);
@@ -161,6 +165,7 @@ class OffsheetPage extends LitElement {
               .acurrency=${transaction.currency}
               .account=${transaction.dstcode === this.code ? transaction.dst : transaction.src}
               accounting
+              .code=${this.code}
               .repeats=${this.repeats}
               .codes=${this.codes}
               ></account-transaction>
@@ -173,6 +178,7 @@ class OffsheetPage extends LitElement {
   async fetchData() {
     this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
     const response = await api('offsheet',{code: this.code})
+    this.title = response.description;
     this.transactions = response.transactions;
     this.fetchedTransactions = true;
     this.balances = [];

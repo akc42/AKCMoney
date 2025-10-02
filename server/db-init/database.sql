@@ -32,7 +32,7 @@ CREATE TABLE codeType (
 
 INSERT INTO codeType VALUES ('C','Direct Costs') -- Direct Costs incurred by the business
 , ('R','Revenue') -- Revenues Due
-, ('A','Capital Asset') --Capital purchase of Computer Asset
+, ('A','Capital Asset') --Capital purchase of Asset
 , ('B','Balancing Account')  --Holds personal costs that are to be re-embersed by the business
 , ('O','Off Balance Sheet');  --Items that should not appear in domain accounting
 

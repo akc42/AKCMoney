@@ -547,7 +547,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.account = e.detail;
     this.accountsMenu.mainMenu = false;
     this.mainMenu.close();
-    switchPath('/account', {account: this.account});
+    switchPath(`/account/${this.account}`);
   }
   _accountsMenu(e) {
     e.stopPropagation();
@@ -586,7 +586,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.domain = this.domains[index];
     this.domainsMenu.close();
     this.mainMenu.close();
-    switchPath('/domain', { domain: this.domain });
+    switchPath(`/domain/${this.domain}`);
   }
   _domainsMenu(e) {
     e.stopPropagation();
@@ -609,7 +609,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     e.stopPropagation();
     this.extrasMenu.close();
     this.mainMenu.close();
-    switchPath('/sorter', {domain: this.domain});
+    switchPath(`/sorter/${this.domain}`);
   }
   _errorChanged(e) {
     e.stopPropagation();
@@ -647,7 +647,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     if ((this.user.account ?? '').length > 0) this.account = this.user.account;
     if (this.domain.length === 0 && (this.user.domain ?? '' ).length > 0) this.domain = this.user.domain;
     this.mainMenu.close();
-    switchPath('/account', {account: this.account});
+    switchPath(`/account/${this.account}`);
   }
   _keyPressed(e) {
     e.stopPropagation();
@@ -722,7 +722,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     const index = parseInt(e.currentTarget.dataset.index, 10);
     this.domainsMenu.close();
     this.mainMenu.close();
-    switchPath('/offsheet', this.offsheet[index]);
+    switchPath(`/offsheet/${this.offsheet[index].id}`);
   }
   _pageChanged(e) {
     e.stopPropagation();

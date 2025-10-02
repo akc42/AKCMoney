@@ -48,14 +48,14 @@ class SorterPage extends LitElement {
     this.selected = 0;
     this.sorted = 0;
     this.route = {active: false};
-    this.router = new Route('/', 'page:sorter');
+    this.router = new Route('/:domain', 'page:sorter');
     this.priorities = [];
   }
   updated(changed) {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        this.domain = route.query.domain;
+        this.domain = route.params.domain;
         this._fetchAccountData();
       }
     }

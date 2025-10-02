@@ -244,7 +244,8 @@ class AccountPage extends LitElement {
     this.startDate = nowNo;
     this.startType = 'U';
     this.balanceError = false;
-    this.router = new Route('/','page:account');
+    this.router = new Route('/:name','page:account');
+    this.trouter = new Route('/:tid/:open')
     this.zeroLocked = true;
     this.selectedIndex = null;
     this.selectedClear = false;
@@ -252,24 +253,33 @@ class AccountPage extends LitElement {
 
   }
 
-
   firstUpdated() {
     this.dragImage = this.shadowRoot.querySelector('#dragim');
     this.dialog = this.shadowRoot.querySelector('#parallel');
     this.zeroMenu = this.shadowRoot.querySelector('#zero');
     this.zeroLocked = false;
   }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.route = {active: false, params:{}, query: {}};
+  }
   updated(changed) {
     if (changed.has('route') && this.route.active) {
       const route = this.router.routeChange(this.route);
       if (route.active) {
-        let account = route.query.account;
-        if ((account ?? '').length === 0) {
-          //no query parameter - so try to get an alternative.
+        if (route.params.name.length === 0) {          
           const user = JSON.parse(sessionStorage.getItem('user'));
-          account = user.account ?? 'Cash';
+          this.router.params = {name: user.account ?? 'Cash'}
+        } else {
+          let tid = 0, edit = false;
+          const troute = this.trouter.routeChange(route);
+          if (troute.active) {
+            tid = troute.params.tid;
+            edit = troute.params.open === 'yes'
+          }
+          this._fetchAccountData(route.params.name, tid, edit);       
         }
-        this._fetchAccountData(account, route.query.tid, route.query.open === 'yes');
+
       }
     }
     if (changed.has('account') && this.account.name.length > 0) {
@@ -521,11 +531,12 @@ class AccountPage extends LitElement {
     e.dataTransfer.setData('text/plain', e.currentTarget.dataset.index);
     e.dataTransfer.setDragImage(this.dragImage,0,0);
   }
-  async _fetchAccountData(name, tid, edit) {
-    let openid = tid ?? 0;
+  async _fetchAccountData(name, t = 0, e = false) {
+    let tid = t;
+    const edit = e;
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     this.transactions = [];
-    const response = await api('account', { account: name , tid: openid})
+    const response = await api('account', { account: name , tid: tid})
     this.account = response.account;
     if (this.account.name.length > 0) {
       this.startDate = response.startdate;
@@ -540,7 +551,7 @@ class AccountPage extends LitElement {
         for (let i=1; i < response.transactions.length; i++) {
           let previousTime = previousTransaction.date;
           let transaction = response.transactions[i];
-          if (openid === 0 && transaction.date > todayStart) openid = transaction.id;
+          if (tid === 0 && transaction.date > todayStart) tid = transaction.id;
           if (transaction.date - previousTime < 60) {  
             transactionDate.setTime(transaction.date * 1000);
             const TZOffset = transactionDate.getTimezoneOffset() * 60; //get offset in seconds
@@ -585,13 +596,13 @@ class AccountPage extends LitElement {
       this.transactions = response.transactions;
       this._rebalance();
       await this.updateComplete;
-      if (openid > 0) {
-        const wrap = this.shadowRoot.querySelector(`#w${openid}`);
-        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (tid > 0) {
+        const wrap = this.shadowRoot.querySelector(`#w${tid}`);
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });    
         if (edit) {
-          const xaction = this.shadowRoot.querySelector(`#t${openid}`);
+          const xaction = this.shadowRoot.querySelector(`#t${tid}`);
           xaction.edit = true;
-        }        
+        }   
       }
     }
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
@@ -824,7 +835,7 @@ class AccountPage extends LitElement {
         this.selectedIndex = null;
         return;
       } else {
-        //we've moved the selection rather than just started a new on
+        //we've moved the selection rather than just started a new one
         const tid = this.transactions[this.selectedIndex].id
         const transaction = this.shadowRoot.querySelector(`#t${tid}`);
         transaction.selected = false;
