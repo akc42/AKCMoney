@@ -27,7 +27,7 @@ import '../elements/list-selector.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import input from '../styles/error.js';
-import {Debug} from '../libs/debug.js';
+import Debug from '../libs/debug.js';
 
 const debug = Debug('admin-accounts');
 
