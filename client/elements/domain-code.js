@@ -211,7 +211,7 @@ class DomainCode extends LitElement {
     let cumulative = 0;
     for (const transaction of this.transactions) {
       this.balances[i] = cumulative;
-      cumulative +=  this.type === 'A' ? transaction.depreciation : transaction.amount ;
+      cumulative +=  this.type === 'A' ? transaction.depreciation : this.type === 'B'? -transaction.amount:transaction.amount ;
       i += 1;
     }
     if (cumulative !== this.tamount) {

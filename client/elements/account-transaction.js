@@ -343,6 +343,8 @@ class AccountTransaction extends LitElement {
       if (this.accounting) {
         if (this.code === 'A') {
           this.cumulative += this.depreciation;
+        } else if (this.code === 'B' && this.dstcode === 13) {
+          this.cumulative -= this.amount;
         } else {
           this.cumulative += this.amount;
         }
