@@ -28,10 +28,10 @@ export default async function(user, params, responder) {
   const getList = db.prepare(`SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
           SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
           OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid 
-          AND p.domain = a.domain WHERE u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1)
+          AND p.domain = a.domain WHERE a.domain = ? AND u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1)
       WHERE c.type = 'O';`)
   db.transaction(() => {
-    responder.addSection('offsheet', getList.all(user.uid))
+    responder.addSection('offsheet', getList.all(params.domain, user.uid))
   })();
   debug('request complete')
 };
