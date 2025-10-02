@@ -29,7 +29,7 @@ import button from '../styles/button.js';
 import input from '../styles/error.js';
 import Debug from '../libs/debug.js';
 
-const debug = Debug('admin-accounts');
+const debug = Debug('adminaccounts');
 
 /*
      <admin-accounts>: Edit the list of accounts and assign them to correct domain and currency
