@@ -27,11 +27,7 @@ export default async function(user, params, responder) {
   debug('new request from', user.name, 'with codeid', params.code );
   const getCode = db.prepare('SELECT description FROM code WHERE id = ?').pluck();
   const getXactions = db.prepare(`SELECT
-          t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
-          CASE 
-              WHEN t.src = a.name THEN -dfamount
-              ELSE dfamount 
-          END AS amount,
+          t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, dfamount AS amount, 
           t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
       FROM  
           user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
