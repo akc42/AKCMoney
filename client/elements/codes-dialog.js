@@ -101,12 +101,12 @@ class CodesDialog extends LitElement {
             <span>${config.nullCode}</span>
           </button>
           ${cache(this.codes.filter(c => 
-              this.request.key.filter === 'N' || (this.request.key.filter === 'S' && c.type !== 'R') || 
-              (this.request.key.filter === 'D' && c.type !== 'C' && c.type !== 'A') 
-          ).map((code, i) => html`
+              this.request.key.filter === 'N' || (this.request.key.filter === 'S' && c.type !== 'R' && c.type !== 'A') || 
+              (this.request.key.filter === 'D' && c.type !== 'C' ) 
+          ).map((code,i) => html`
             ${i !== 0 ? html`<hr class="sep"/>` : ''}
             <button type="button" role="menuitem" 
-              data-index="${i}" @click=${this._codeSelected}>
+              data-id="${code.id}" @click=${this._codeSelected}>
               <div class="code ${code.type}"></div>
               <span>${code.description}</span>
             </button>
@@ -118,8 +118,8 @@ class CodesDialog extends LitElement {
   }
   _codeSelected(e) {
     e.stopPropagation();
-    const index =  parseInt(e.currentTarget.dataset.index,10);
-    this.code = this.codes[index];
+    const id =  Number(e.currentTarget.dataset.id);
+    this.code = this.codes.find(c => c.id === id);
     this.dialog.positionTarget.dispatchEvent(new CustomEvent('codes-reply', { 
       detail: { key: {key: this.code.id, filter: this.request.filter}, visual: this.code.description }
     }));
