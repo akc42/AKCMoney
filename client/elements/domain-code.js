@@ -214,10 +214,7 @@ class DomainCode extends LitElement {
       cumulative +=  this.type === 'A' ? transaction.depreciation : this.type === 'B'? -transaction.amount:transaction.amount ;
       i += 1;
     }
-    if (cumulative !== this.tamount) {
-      this.tamount = cumulative;
-      this.dispatchEvent(new CustomEvent('tamount-changed',{bubble: true, composed: true, detail: this.tamount}))
-    } 
+
   }
   
   _zoom(e) {

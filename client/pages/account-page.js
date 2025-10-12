@@ -224,7 +224,8 @@ class AccountPage extends LitElement {
       minimumBalance: {type: Number},
       startDate: {type: Number}, //same values as account.startDate.
       startType: {type: String}, //values U (unreconciled), F (financial year end), D (explicit date)
-      balanceError: {type: Boolean}
+      balanceError: {type: Boolean},
+      register: {type: Boolean}
     };
   }
   constructor() {
@@ -244,6 +245,7 @@ class AccountPage extends LitElement {
     this.startDate = nowNo;
     this.startType = 'U';
     this.balanceError = false;
+    this.register = false;
     this.router = new Route('/:name','page:account');
     this.trouter = new Route('/:tid/:open')
     this.zeroLocked = true;
@@ -300,7 +302,7 @@ class AccountPage extends LitElement {
 
       <calendar-dialog noUnset></calendar-dialog>
       <section class="page">
-          <h1>${this.account.name}</h1>
+          <h1>${this.account.name}${this.register ? ' (Asset Register)':''}</h1>
           <div class="info">
             <div class="domain"><strong>Domain:</strong> ${this.account.domain}</div>
             <div class="currency">
@@ -372,6 +374,7 @@ class AccountPage extends LitElement {
                   .codes=${this.codes}
                   .repeats=${this.repeats}
                   .accounts=${this.accounts}
+                  ?register=${this.register}
                   @amount-edit=${this._amountEdit}
                   @clear-changed=${this._clearChanged} 
                   @delete-transaction=${this._deleteTransaction}
@@ -536,11 +539,12 @@ class AccountPage extends LitElement {
     const edit = e;
     this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
     this.transactions = [];
-    const response = await api('account', { account: name , tid: tid})
+    const response = await api('account', { account: name , tid: tid});
     this.account = response.account;
     if (this.account.name.length > 0) {
       this.startDate = response.startdate;
       this.startType = response.starttype;
+      this.register = (response.assets > 0);
       this.reconciledBalance = this.clearedBalance = this.account.balance;
       
       if (response.transactions.length > 1) {

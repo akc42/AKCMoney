@@ -270,7 +270,8 @@ class AccountTransaction extends LitElement {
       accounting: {type: Boolean}, //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
       selected: {type: Boolean}, //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
       code: {type: String},
-      depreciation: {type: Number} //If accounting and code = 'A' This is the amount of depreciation associated with the year being accounted.
+      depreciation: {type: Number}, //If accounting and code = 'A' This is the amount of depreciation associated with the year being accounted.
+      register: {type: Boolean}
     };
   }
   constructor() {
@@ -314,6 +315,7 @@ class AccountTransaction extends LitElement {
     this.selected = false;
     this.code = '';
     this.depreciation = 0;
+    this.register = false;
   }
   connectedCallback() {
     super.connectedCallback();
@@ -474,7 +476,10 @@ class AccountTransaction extends LitElement {
         codeType = code.type;
       }
     }
-  
+    let year;
+    if (this.register && this.account === this.src) {
+      year = new Date(this.date * 1000).getFullYear();
+    }
     return html`
       ${cache(this.edit && !this.readonly ? html`
         <form id="login" action="xaction_update" @submit=${submit} @form-response=${this._update}>
@@ -490,7 +495,14 @@ class AccountTransaction extends LitElement {
           <input type="hidden" name="reconciled" .value=${this.reconciled ? '1' : '0'} />
           <input id="saver" type="hidden" name="type" value="save" />
           <div class="container" @dragstart=${this._noDrag} draggable="true">
-            <calendar-input .value=${this.date} @value-changed=${this._dateChange}></calendar-input>
+            ${cache(this.register && this.account === this.src ?html`
+              <list-selector id="ysel" class="years" .list=${'years'}
+                .key=${year.toString()}
+                .visual=${year.toString()}
+                @years-reply=${this._yearSelected}></list-selector>
+            `:html`
+              <calendar-input .value=${this.date} @value-changed=${this._dateChange}></calendar-input>
+            `)}
             <label class="lref" fore="ref">Ref:</label>
             <input id="ref" type="text" name="rno" .value=${this.rno} />
             <label class="dstsrc" for="description">${this.account === this.src ? 'Src' : 'Dst'}:</label>
@@ -975,6 +987,21 @@ class AccountTransaction extends LitElement {
       switchPath(`/account/${response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src}/${response.transaction.id}/yes`);
     }
 
+  }
+  _yearSelected(e) {
+    e.stopPropagation();
+    const monthEnd = Math.floor(config.yearEnd / 100) - 1 //Range 0 to 11 for Dates 
+    const dayEnd = config.yearEnd % 100;
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59); //last possible time
+    debug('enddate setting time', endDate);
+    endDate.setMonth(monthEnd);
+    debug('enddate, setting month', endDate)
+    endDate.setDate(dayEnd);
+    debug('enddate, setting endDate', endDate)
+    endDate.setFullYear(Number(e.detail));
+    debug('enddate, setting endDate', endDate);
+    this.date = Math.floor(endDate.getTime()/1000)
   }
   _zeroRequest(e) {
     e.stopPropagation();

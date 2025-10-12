@@ -30,6 +30,7 @@ export default async function (user, params, responder) {
     FROM account AS a JOIN currency AS c ON a.currency = c.name,
     user AS u LEFT JOIN capability AS c ON c.uid = u.uid 
     WHERE a.name = ? AND u.uid = ? AND (u.isAdmin = 1 OR c.domain = a.domain)`);
+  const checkRegister = db.prepare(`SELECT COUNT(*) as assets FROM xaction t JOIN Code c ON t.dstcode = c.id AND t.dst = ? WHERE c.type = 'A'`)
   const getXaction = db.prepare(`SELECT t.date, 
     CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled
     FROM xaction t JOIN account a ON (t.src = a.name OR t.dst = a.name) WHERE id = ? AND a.name = ?`);
@@ -62,6 +63,9 @@ export default async function (user, params, responder) {
     debug('done all repeats');
     let account = getAccount.get(params.account, user.uid);
     if (account !== null && account.name.length > 0) {
+      const assetCount = checkRegister.get(account.name);
+      debug('assetCount', assetCount);
+      responder.addSection('assets', assetCount.assets);
       let xaction;
       if (params.tid !== 0) xaction = getXaction.get(params.tid, params.account);
       if (account.startdate === null && params.tid !== 0 && xaction.reconciled === 1) {
