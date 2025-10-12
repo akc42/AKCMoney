@@ -26,6 +26,8 @@ import Debug from '../libs/debug.js'
 import RouteManager from '../elements/route-manager.js';
 import '../elements/delete-dialog.js';
 import '../elements/zero-dialog.js';
+import '../elements/years-dialog.js';
+
 const debug = Debug('page');
 
 export class PageManager extends RouteManager {
@@ -70,6 +72,7 @@ export class PageManager extends RouteManager {
   render() {
     return html`
       <delete-dialog></delete-dialog>
+      <years-dialog .domain=${this.domain}></years-dialog>
       <zero-dialog></zero-dialog>
       ${cache({
         home: html`<home-page managed-page></home-page>`,

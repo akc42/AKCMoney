@@ -36,13 +36,11 @@ Multiple currencies are supported, and can use exchange rates which are
 initially estimated, but are then corrected when the actual value used 
 in a transaction is known.  
 
-Each side of the transaction can optionally be assigned an "Accounting Code"
-which belongs to one of "Costs","Revenue","Assets" (Depreciated over 3 years),
-"Balance" (items such as expenses and their re-embersment, which are therefore
-expected to round out to zero) and "Offsheet" (Off balance sheet amounts, such
-as profits declared and dividents paid which are separately accounted for
-cumulatively over time to ensure that only the profits actually achieved are
-paid out in dividends) 
+Each side of the transaction can optionally be assigned an "Accounting Code" which belongs to one of
+"Costs","Revenue","Asset Depreciation" (Depreciated over a number of years - defined by a value in the accounting code
+field ), "Balance" (items such as expenses and their re-embersment, which are therefore expected to round out to zero)
+and "Offsheet" (Off balance sheet amounts, such as profits declared and dividents paid which are separately accounted
+for cumulatively over time to ensure that only the profits actually achieved are paid out in dividends) 
 
 I have been using versions of this application for the past 16 years to manage my own money and that of my business (in
 separate Domains). I've been able to slowly add features I've needed
@@ -51,13 +49,24 @@ The transistion to javascript (v4) and custom elements has been completed somewh
 through a couple of iterations using docker containers for the client and server parts of the application.  Release
 4.3.0 saw the restructuring of that approach so that the containers only had the frameworks for the application built
 into them and the rest (client and server code) was mapped to using the docker volume facilities to code directories on
-the appropriate server. For development that is my local development machine, for production it is a synology NAS.  
+the appropriate server. For development that is my local development machine, for production it is a synology NAS. 
 
+4.4.0 is a subtle change to the way depreciation works.
+Instead of depreciation being calculated in the domain accounts from the date and initial value of the asset, a separate
+account is used as an asset register and a new transaction is added for each years depreciation. When the initial
+transaction is given an Asset Depreciation code and the account is a destination account (i.e the purchase is going to
+be a positive value to the balance of the account) the application understands that the account is a register. When a
+new transaction is requested and the transaction is opened, the date is assumed to be a financial year and a year
+selector rather than a data picker is offered for the date. Once the year is selected, the value is estimated (but may
+be subsequently edited) using calculations based on the number of years the asset is to be depreciated and the date
+(first and last years of depreciation are proportion to the time in the year, intermediate years are a full years
+depreciation).  When the domain account, pdf or csv is made if the transactions exist the value in them is used.  If the
+transaction does not exist, the algorithmn calculates the appropriate depreciation accordingly.
 
+The other element in 4.4.0 is the ability to handle losses and carry them forward to subsequent years. 
 
-
-One final point to make - I want to explore using jest and playwright for both server and client testing.  It may not
-work out, but I need to find out if I can make it work for another of my projects. Any code in the test directory is (at
-the moment) unlikely to work.
+One final point to make - I want to explore using playwright for client testing and the built in test suite in nodejs
+for testing the server. It may not work out, but I need to find out if I can make it work for another of my projects.
+Any code in the test directory is (at the moment) unlikely to work.
 
 

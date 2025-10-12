@@ -21,7 +21,7 @@ import {Debug} from '@akc42/server-utils';
 import DB from '@akc42/sqlite-db';
 const db = DB();
 
- const debug = Debug('domain_range');
+ const debug = Debug('domainrange');
 
 export default async function(user, params, responder) {
   debug('new request from', user.name, 'with params', params );

@@ -148,11 +148,16 @@ class DomainPage extends LitElement {
   }
   update(changed) {
     if((changed.has('domain') || changed.has('year')) && this.domain.length > 0 && this.year > 0){
+      this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
       api('domain_codes', {domain: this.domain, year: this.year}).then(response => {
         this.start = response.start;
         this.end = response.end;
         this.codes = response.codes;
         this._rebalance();
+        this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+      }).catch((err) => {
+        this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+        throw new Error(err);  
       });
     }
     if (changed.has('year') && this.year > 0) {
@@ -170,25 +175,7 @@ class DomainPage extends LitElement {
       if (route.active) {
         this.domain = route.params.domain
         this.dispatchEvent(new CustomEvent('domain-changed',{bubbles:true,composed:true,detail:this.domain}));
-        this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
-        api('domain_range', {domain: this.domain}).then(response => {
-          if (response.min !== null && response.min > 0) {
-            this.years = [];
-            const firstDate = new Date();
-            firstDate.setTime(response.min * 1000);
-            const earliest = Math.min(this.year, firstDate.getFullYear());
-            const lastDate = new Date();
-            lastDate.setTime(response.max * 1000);
-            const latest = Math.max(this.year, lastDate.getFullYear());
-            for(let i = earliest; i <= latest; i++ ) {
-              this.years.push(i);
-            }
-          }
-          this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
-        }).catch((err) => {
-          this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
-          throw new Error(err);
-        });
+
       }
     }
     if (changed.has('year') && this.year > 0) {
@@ -201,13 +188,6 @@ class DomainPage extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="years" closeOnClick @overlay-closed=${this._closing}>
-        ${cache(this.years.map(year => html`
-          <button role="menuitem" @click=${this._selectYear} data-year="${year}">
-            <span>${year}</span>
-          </button>
-        `))}
-      </dialog-box>
       <section class="page">
         <h1>Accounting Reports</h1>
         <h2>Domain: ${this.domain}</h2>
@@ -217,7 +197,7 @@ class DomainPage extends LitElement {
           .list=${'years'}
           .key=${this.year.toString()}
           .visual=${this.year.toString()}
-          @years-request=${this._yearRequest}></list-selector>
+          @years-reply=${this._yearSelected}></list-selector>
         <div class="header">
             <div class="type">Type</div>
             <div class="code">Account Code</div>
@@ -235,8 +215,7 @@ class DomainPage extends LitElement {
               .balance=${this.balances[i]}
               .repeats=${this.repeats}
               .codes=${this.codes}
-              data-index=${i}
-              @tamount-changed=${this._tamountChanged}></domain-code>
+              data-index=${i}></domain-code>
           `)}
         </section>
         <div class="footer">
@@ -294,13 +273,9 @@ class DomainPage extends LitElement {
     this.codes[index].tamount = e.detail;
     this._rebalance();
   }
-  _yearRequest(e) {
+  _yearSelected(e) {
     e.stopPropagation();
-    if (this.eventLocked) return;
-    this.eventLocked = true;
-    this.dialog.positionTarget = e.composedPath()[0];
-    this.dialog.show();
-
+    this.year = e.detail;
   }
 
 }

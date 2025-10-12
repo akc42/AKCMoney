@@ -288,7 +288,8 @@ class AdminAccounts extends LitElement {
   }
   _accountNameChanged(e) {
     e.stopPropagation();
-    if (!e.currentTarget.classList.has('error')) {
+    if (!e.currentTarget.classList.contains('error')) {
+      const index = Number(e.currentTarget.dataset.index);
       if (this.accounts[index].name !== e.currentTarget.value) {
         api('account_name', { old: this.accounts[index].name, new: e.currentTarget.value, dversion: this.accounts[index].dversion }).then(response => {
           if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);

@@ -34,26 +34,22 @@ SELECT
       c.id AS id, 
       c.type AS type, 
       c.description AS description,
-      CAST(sum(CASE WHEN c.type='A' THEN (CAST(t.dfamount AS REAL) / c.depreciateyear) *
-        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
-            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
-        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
-            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
-        ELSE 1 END 
-        WHEN c.type = 'B' AND c.id = t.srccode THEN -t.dfamount ELSE t.dfamount END) AS INTEGER) AS tamount           
+      CAST(sum(CASE WHEN a.register = 1 AND t.src <> a.name THEN 0 ELSE t.dfamount END) AS INTEGER) AS tamount
   FROM 
-      dfxaction AS t, account AS a, code AS c, p
+      dfxaction AS t, (SELECT account.*, CASE WHEN ta.id IS NOT NULL THEN 1 ELSE 0 END as Register, ta.dstcode AS code FROM account LEFT JOIN xaction ta ON ta.id = (
+    SELECT x.id FROM xaction x JOIN code c ON x.dstcode = c.id WHERE x.dst = account.name AND c.type = 'A' LIMIT 1)) AS a, code AS c, p
   WHERE
-      t.date + (CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END) >= p.startdate AND t.date <= p.enddate AND
+      t.date   >= p.startdate AND t.date <= p.enddate AND
       c.type <> 'O' AND
-      a.domain = ? AND (
-      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
-      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
+      a.domain = ? AND  (
+      (t.src IS NOT NULL AND t.src = a.name AND t.srccode IS NOT NULL AND t.srccode = c.id) OR
+      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id AND a.register = 0) OR
+      (t.src IS NOT NULL AND t.src = a.name AND a.register = 1 and a.code = c.id))
   GROUP BY
-      c.id, c.type, c.description,c.depreciateyear, p.startdate, p.enddate
+      c.id, c.type, c.description, p.startdate, p.enddate
   ORDER BY 
     CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END,
-    description COLLATE NOCASE ASC`);
+    description COLLATE NOCASE ASC `);
 
     const yearEnd = s.get('year_end');
     const monthEnd = Math.floor(yearEnd / 100) - 1 //Range 0 to 11 for Dates 
