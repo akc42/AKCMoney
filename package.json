@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/akc42/AKCMoney#readme",
   "dependencies": {
-    "@akc42/app-utils": "^4.2.1",
+    "@akc42/app-utils": "^4.2.2",
     "@akc42/server-utils": "^3.4.0",
     "@akc42/sqlite-db": "2.1.1",
     "@rollup/plugin-node-resolve": "^16.0.1",
