@@ -379,6 +379,7 @@ class AccountPage extends LitElement {
                   @clear-changed=${this._clearChanged} 
                   @delete-transaction=${this._deleteTransaction}
                   @selected-changed=${this._selectedChanged}
+                  @balance-changed=${this._balanceChangedInTransaction}
                   @transaction-changed=${this._transactionChanged}
                   @version-error=${this._versionError};
                   @zero-reply=${this._zeroAdjust}
@@ -401,6 +402,15 @@ class AccountPage extends LitElement {
       this.balanceError = true;
     }
 
+  }
+  _balanceChangedInTransaction(e) {
+    e.stopPropagation();
+    this.account.bversion = e.detail.version;
+    const change = e.detail.balance - this.reconciledBalance;
+    this.reconciledBalance += change;
+    this.account.balance = this.reconciledBalance;
+    this.clearedBalance += change;
+    this._rebalance();
   }
   async _balanceUpdated(e) {
     e.stopPropagation();
