@@ -505,7 +505,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       </header>
       <section>
         <error-manager
-          ?hidden=${!this.serverError}
+
           @error-status=${this._errorChanged};
           @auth-changed=${this._authChanged}></error-manager>
         <session-manager

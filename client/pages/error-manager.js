@@ -107,6 +107,7 @@ has occured`;
     const possibleError = e.reason;
 
     if (possibleError.type === 'api-error') {
+      document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false }));
       this._serverError(possibleError);
     } else {
       this._clientError(possibleError);
@@ -124,13 +125,13 @@ has occured`;
     //put us back to home
     window.history.pushState({}, null, '/');
     window.dispatchEvent(new CustomEvent('location-altered',{bubbles: true, composed: true}));
-    if (e.detail === 403) {
+    if (e.detail.status === 403) {
       //unauthorised so log off
       window.dispatchEvent(new CustomEvent('auth-changed', {bubbles: true, composed: true, detail:false}));
       this.forbidden=true;
 
     }
-    if (e.detail === 502) this.serverDown = true;
+    if (e.detail.status === 502 || e.detail.status === 504) this.serverDown = true;
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }
