@@ -979,7 +979,7 @@ class AccountTransaction extends LitElement {
     if (this.readonly) {
       e.stopPropagation();
       e.preventDefault();
-      switchPath(`/account/${this.src !== null ? this.src: this.dst}/${this.tid}/no`);
+      switchPath(`/account/${encodeURIComponent(this.src !== null ? this.src: this.dst)}/${this.tid}/no`);
     } else {
       //only respond to a click if its a touch device
       if (!!('ontouchstart' in window || navigator.maxTouchPoints) && !this.amountEdit) this._startEdit(e);
@@ -1038,7 +1038,7 @@ class AccountTransaction extends LitElement {
         this.dispatchEvent(new CustomEvent('balance-changed', {bubbles: true, composed: true, details: {version: response.bversion, balance: response.balance}}));
       }
     } else {
-      switchPath(`/account/${response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src}/${response.transaction.id}/yes`);
+      switchPath(`/account/${encodeURIComponent(response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src)}/${response.transaction.id}/yes`);
     }
 
   }
