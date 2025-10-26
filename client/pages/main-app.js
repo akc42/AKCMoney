@@ -32,6 +32,7 @@ import '../elements/domains-dialog.js';
 import '../elements/currencies-dialog.js';
 import '../elements/codes-dialog.js';
 import '../elements/repeats-dialog.js';
+import '../elements/waiting-indicator.js';
 import './error-manager.js';
 
 import csv from '../modules/csv.js';
@@ -505,7 +506,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       </header>
       <section>
         <error-manager
-          ?hidden=${!this.serverError}
+
           @error-status=${this._errorChanged};
           @auth-changed=${this._authChanged}></error-manager>
         <session-manager
@@ -547,7 +548,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.account = e.detail;
     this.accountsMenu.mainMenu = false;
     this.mainMenu.close();
-    switchPath(`/account/${this.account}`);
+    switchPath(`/account/${encodeURIComponent(this.account)}`);
   }
   _accountsMenu(e) {
     e.stopPropagation();
@@ -586,7 +587,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     this.domain = this.domains[index];
     this.domainsMenu.close();
     this.mainMenu.close();
-    switchPath(`/domain/${this.domain}`);
+    switchPath(`/domain/${encodeURIComponent(this.domain)}`);
   }
   _domainsMenu(e) {
     e.stopPropagation();
@@ -609,7 +610,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     e.stopPropagation();
     this.extrasMenu.close();
     this.mainMenu.close();
-    switchPath(`/sorter/${this.domain}`);
+    switchPath(`/sorter/${encodeURIComponent(this.domain)}`);
   }
   _errorChanged(e) {
     e.stopPropagation();
@@ -647,7 +648,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     if ((this.user.account ?? '').length > 0) this.account = this.user.account;
     if (this.domain.length === 0 && (this.user.domain ?? '' ).length > 0) this.domain = this.user.domain;
     this.mainMenu.close();
-    switchPath(`/account/${this.account}`);
+    switchPath(`/account/${encodeURIComponent(this.account)}`);
   }
   _keyPressed(e) {
     e.stopPropagation();
@@ -722,7 +723,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     const index = parseInt(e.currentTarget.dataset.index, 10);
     this.domainsMenu.close();
     this.mainMenu.close();
-    switchPath(`/offsheet/${this.offsheet[index].id}`);
+    switchPath(`/offsheet/${encodeURIComponent(this.offsheet[index].id)}`);
   }
   _pageChanged(e) {
     e.stopPropagation();
@@ -734,7 +735,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
     const target = e.currentTarget.id;
     this.adminMenu.close();
     this.mainMenu.close();
-    switchPath(`/admin/${target}`);
+    switchPath(`/admin/${encodeURIComponent(target)}`);
   }
   _standingReread(e) {
     e.stopPropagation();

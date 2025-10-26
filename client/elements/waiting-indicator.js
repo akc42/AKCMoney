@@ -21,7 +21,6 @@
 
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import domHost from '../libs/dom-host.js';
 
 class WaitingIndicator extends LitElement {
   static get styles () {
@@ -131,13 +130,12 @@ class WaitingIndicator extends LitElement {
   }
   connectedCallback() {
     super.connectedCallback();
-    this.domHost = domHost(this);
-    this.domHost.addEventListener('wait-request', this._gotRequest);
+    document.body.addEventListener('wait-request', this._gotRequest);
 
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.domHost.removeEventListener('wait-request', this._gotRequest);
+    document.body.removeEventListener('wait-request', this._gotRequest);
   }
   render() {
     return html`

@@ -129,6 +129,9 @@ class AccountTransaction extends LitElement {
       .amount.asset {
         color: var(--asset-value-color);
       }
+      .amount.error {
+        background-color: var(--input-error-color)
+      }
       .setrate {
         grid-area: setrate;
       }
@@ -515,8 +518,8 @@ class AccountTransaction extends LitElement {
               pattern="^(0|[1-9][0-9]{0,2}(,?[0-9]{3})*)(\.[0-9]{1,2})?$"
               class="amount ${classMap({ error: this.inputError, currency: this.acurrency !== this.currency })}" 
               .value=${(this.amount / 100).toFixed(2)} 
-              @input="${this._amountChanged}"
-              @blur=${this._amountUpdate}
+              @input=${this._amountChanged}
+              @blur=${this._transactionAmountUpdate}
               /> 
             <list-selector 
               class="currency"
@@ -525,7 +528,7 @@ class AccountTransaction extends LitElement {
               .visual=${this.currency} 
               @item-selected=${this._currencyChanged}></list-selector>
             <label for="cleared">
-              <input type="checkbox" name="cleared" ?checked=${cleared} @input=${this._clearedChanged}/>Cleared</label>
+              <input type="checkbox" name="cleared" ?checked=${cleared} @input=${this._clearedUpdated}/>Cleared</label>
             <list-selector
               class="repeat"
               .list=${'repeats'}
@@ -602,7 +605,7 @@ class AccountTransaction extends LitElement {
               class="amount ${classMap({error: this.inputError, currency: this.acurrency !== this.currency})}" 
               .value=${
             (-(this.currency === this.acurrency ? this.amount : this.srcamount) / 100).toFixed(2)}
-              @input="${this._amountChanged}"
+              @input=${this._amountChanged}
               @blur=${this._amountUpdate}
               @contextmenu=${this._zeroRequest} 
                @dragstart=${this._noDrag} 
@@ -616,7 +619,7 @@ class AccountTransaction extends LitElement {
               class="amount ${classMap({ error: this.inputError, currency: this.acurrency !== this.currency })}" 
               .value=${((this.currency === this.acurrency ? this.amount : this.dstamount) / 100).toFixed(2)}
               @click=${this._amountClick}
-              @input="${this._amountChanged}"
+              @input=${this._amountChanged}
               @blur=${this._amountUpdate}
               @contextmenu=${this._zeroRequest}  
               @dragstart=${this._noDrag} 
@@ -720,7 +723,8 @@ class AccountTransaction extends LitElement {
         } else {
           this.dstamount = newAmount;
         }
-      };       
+        this.trate = this.arate * this.amount/newAmount;
+      };     
     }
   }
   _altAccountChanged(e) {
@@ -755,12 +759,35 @@ class AccountTransaction extends LitElement {
     if (this.amountInput.reportValidity()) {
       this.inputError = false;
       const newAmount = Math.round(Math.abs(parseFloat(this.amountInput.value) * 100));
-      if (this.currency === this.acurrency) {
-        if (newAmount === this.amount) this.amountEdit = false; else this.amount = newAmount;
-      } else if (this.account === this.src) {
-        if (newAmount === this.srcamount) this.amountEdit = false; else this.srcamount = newAmount;
-      } else {
-        if (newAmount === this.dstamount) this.amountEdit = false; else this.dstamount = newAmount;
+      if (this.account === this.src) {
+
+        if (this.currency === this.acurrency) {
+          if (newAmount === this.amount) {
+            this.accountEdit = false;
+          } else {
+            this.srcamount = newAmount;
+            this.amount = newAmount
+          }
+        } else if (newAmount === this.srcamount) {
+          this.accountEdit = false;
+        } else {
+          this.srcamount = newAmount;
+          this.amount = Math.floor(newAmount * this.trate/this.arate)
+        }
+      } else if (this.account === this.dst) {
+        if (this.currency === this.acurrency) {
+          if (newAmount === this.amount) {
+            this.accountEdit = false;
+          } else {
+            this.dstamount = newAmount;
+            this.amount = newAmount
+          }
+        } else if (newAmount === this.dstamount) {
+          this.accountEdit = false;
+        } else {
+          this.dstamount = newAmount;
+          this.amount = Math.floor(newAmount * this.trate/this.arate)
+        }
       }
     } else {
       this.inputError = true;
@@ -806,6 +833,14 @@ class AccountTransaction extends LitElement {
       }));
     }
   }
+  _clearedUpdated(e) {
+    e.stopPropagation();
+    if (this.src === this.account) {
+      this.srcclear = !this.srcclear;
+    } else if (this.dst === this.account) {
+      this.dstclear = !this.dstclear;
+    }
+  }
   _codeChanged(e) {
     e.stopPropagation();
     if (this.account === this.src) {
@@ -845,7 +880,7 @@ class AccountTransaction extends LitElement {
     this.description = e.currentTarget.value;
   }
   _move(e) {
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
   }
@@ -887,7 +922,7 @@ class AccountTransaction extends LitElement {
     }
   }
   _save(e) {
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
   }
@@ -944,7 +979,7 @@ class AccountTransaction extends LitElement {
     if (this.readonly) {
       e.stopPropagation();
       e.preventDefault();
-      switchPath(`/account/${this.src !== null ? this.src: this.dst}/${this.tid}/no`);
+      switchPath(`/account/${encodeURIComponent(this.src !== null ? this.src: this.dst)}/${this.tid}/no`);
     } else {
       //only respond to a click if its a touch device
       if (!!('ontouchstart' in window || navigator.maxTouchPoints) && !this.amountEdit) this._startEdit(e);
@@ -971,11 +1006,27 @@ class AccountTransaction extends LitElement {
     //only respond to a click if its a touch device
     if (!!('ontouchstart' in window || navigator.maxTouchPoints)) this._startAmountEdit(e);
   }
+  _transactionAmountUpdate(e) {
+    e.stopPropagation();
+    const errorStat = this.amountInput.validity
+    debug('transaction amount update error state', errorStat)
+    if (this.amountInput.reportValidity()) {
+      this.inputError = false;
+      this.amount = Math.round(parseFloat(this.amountInput.value) * 100);
+      if (this.account === this.src) {
+        this.srcamount = this.currency === this.acurrency ? this.amount : Math.round(this.amount * this.arate/this.trate)
+      } else {
+        this.dstamount = this.currency === this.acurrency ? this.amount : Math.round(this.amount * this.arate/this.trate)
+      }
+    } else {
+      this.inputError = true;
+    }
+  }
   _update(e) {
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
-    //we have got a response from our form save
+        //we have got a response from our form save
     const response = e.detail;
     if (response.status !== 'OK') throw new Error(response.status);
+
     const saver = this.shadowRoot.querySelector('#saver');
     const mover = saver.getAttribute('value');
     if (mover === 'save') {
@@ -983,8 +1034,11 @@ class AccountTransaction extends LitElement {
       this.edit = false;
       this.transaction = response.transaction;
       this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: response.transaction}));
+      if (response.balance !== undefined) {
+        this.dispatchEvent(new CustomEvent('balance-changed', {bubbles: true, composed: true, details: {version: response.bversion, balance: response.balance}}));
+      }
     } else {
-      switchPath(`/account/${response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src}/${response.transaction.id}/yes`);
+      switchPath(`/account/${encodeURIComponent(response.transaction.src === this.account || response.transaction.src === null ? response.transaction.dst : response.transaction.src)}/${response.transaction.id}/yes`);
     }
 
   }

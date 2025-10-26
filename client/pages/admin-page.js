@@ -64,8 +64,8 @@ class AdminPage extends RouteManager {
       default:
         return false;
     }
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
-    import(`./admin-${page}.js`).then(() => this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false})));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{ detail:true}));
+    import(`./admin-${page}.js`).then(() => document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false})));
     return true;
   }
 }

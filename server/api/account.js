@@ -62,7 +62,7 @@ export default async function (user, params, responder) {
     insertRepeats(repeatCount,repeats,insertRepeat,updateRepeat);
     debug('done all repeats');
     let account = getAccount.get(params.account, user.uid);
-    if (account !== null && account.name.length > 0) {
+    if (account !== undefined && account.name.length > 0) {
       const assetCount = checkRegister.get(account.name);
       debug('assetCount', assetCount);
       responder.addSection('assets', assetCount.assets);
