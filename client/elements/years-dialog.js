@@ -69,7 +69,7 @@ class YearsDialog extends LitElement {
   }
   update(changed) {
     if(changed.has('domain') && this.domain.length > 0) {
-        this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
+        document.body.dispatchEvent(new CustomEvent('wait-request', {detail: true}));
         api('domain_range', {domain: this.domain}).then(response => {
           if (response.min !== null && response.min > 0) {
             this.years = [];
@@ -83,9 +83,9 @@ class YearsDialog extends LitElement {
               this.years.push(i);
             }
           }
-          this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+          document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
         }).catch((err) => {
-          this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+          document.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
           throw new Error(err);
         });
     } 

@@ -880,7 +880,7 @@ class AccountTransaction extends LitElement {
     this.description = e.currentTarget.value;
   }
   _move(e) {
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'move'); //tells xaction_update that this is a save   
   }
@@ -922,7 +922,7 @@ class AccountTransaction extends LitElement {
     }
   }
   _save(e) {
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
   }

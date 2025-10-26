@@ -547,7 +547,7 @@ class AccountPage extends LitElement {
   async _fetchAccountData(name, t = 0, e = false) {
     let tid = t;
     const edit = e;
-    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request', {detail: true}));
     this.transactions = [];
     const response = await api('account', { account: name , tid: tid});
     this.account = response.account;
@@ -619,7 +619,7 @@ class AccountPage extends LitElement {
         }   
       }
     }
-    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+    document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
   }
   async _insertTransaction(dst,transaction, up) {
     const transactionDate = new Date()
@@ -781,7 +781,7 @@ class AccountPage extends LitElement {
     e.stopPropagation();
     if (this.reconcileInProgress) return;
     this.reconcileInProgress = true;
-    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request', {detail: true}));
     let sdate = 0;
     let updateNeeded = false;
     for (let i = 0; i < this.transactions.length; i++) {
@@ -832,7 +832,7 @@ class AccountPage extends LitElement {
       }
     }
     this.reconcileInProgress = false;
-    this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+    document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
   }
   _reload(e) {
     e.stopPropagation();

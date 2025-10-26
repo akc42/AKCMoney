@@ -29,9 +29,6 @@ import page from '../styles/page.js';
 
 import Debug from '../libs/debug.js';
 
-
-import  '../elements/waiting-indicator.js';
-
 import '/api/user.js';  //create user cookie
 
 const debug = Debug('session');
@@ -83,21 +80,21 @@ class SessionManager extends LitElement {
   updated(changed) {
     if (changed.has('state')) {
       debug(`state-changed to ${this.state}`);
-      this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+      document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
       switch(this.state) {
         case 'authorised':
-          this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
+          document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false}));
           this.authorised = true;     
           break;
         case 'error': 
           //just suspend if error
-          this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
+          document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false}));
           break;
         case 'login':
-          import('./login-page.js').then(() => this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false})));
+          import('./login-page.js').then(() => document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false})));
           break;
         case 'logoff':
-          this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
+          document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false}));
           //remove the cookie
           document.cookie = `${config.authCookie}=;expires=Thu, 01 Jan 1970 00:00:01 GMT; Path=/`;
           switchPath('/');
@@ -110,7 +107,7 @@ class SessionManager extends LitElement {
           if (matches) {
             performance.mark('start_user_validate');
             api('validate_user',{}).then(response => {
-              this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
+              document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false}));
               performance.mark('end_user_validate');
               performance.measure('user_validate', 'start_user_validate', 'end_user_validate');
               if (response.user !== undefined) {

@@ -148,15 +148,15 @@ class DomainPage extends LitElement {
   }
   update(changed) {
     if((changed.has('domain') || changed.has('year')) && this.domain.length > 0 && this.year > 0){
-      this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: true}));
+      document.body.dispatchEvent(new CustomEvent('wait-request', {detail: true}));
       api('domain_codes', {domain: this.domain, year: this.year}).then(response => {
         this.start = response.start;
         this.end = response.end;
         this.codes = response.codes;
         this._rebalance();
-        this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+        document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
       }).catch((err) => {
-        this.dispatchEvent(new CustomEvent('wait-request', {bubbles: true, composed: true, detail: false}));
+        document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
         throw new Error(err);  
       });
     }

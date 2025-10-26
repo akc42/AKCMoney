@@ -117,8 +117,12 @@ export class PageManager extends RouteManager {
       default:
         return false;
     }
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
-    import(`./${page}-page.js`).catch(e => console.error(e))
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
+    import(`./${page}-page.js`).then(()=> document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false})))
+      .catch(e => {
+        console.error(e);
+        document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false}));
+      });
     
     return true;
   }

@@ -175,7 +175,7 @@ class OffsheetPage extends LitElement {
     `;
   }
   async fetchData() {
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:true}));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:true}));
     const response = await api('offsheet',{code: this.code})
     this.title = response.description;
     this.transactions = response.transactions;
@@ -192,7 +192,7 @@ class OffsheetPage extends LitElement {
       }
       i += 1;
     }
-    this.dispatchEvent(new CustomEvent('wait-request',{bubbles: true, composed: true, detail:false}));
+    document.body.dispatchEvent(new CustomEvent('wait-request',{detail:false}));
   }
 }
 customElements.define('offsheet-page', OffsheetPage);

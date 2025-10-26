@@ -32,6 +32,7 @@ import '../elements/domains-dialog.js';
 import '../elements/currencies-dialog.js';
 import '../elements/codes-dialog.js';
 import '../elements/repeats-dialog.js';
+import '../elements/waiting-indicator.js';
 import './error-manager.js';
 
 import csv from '../modules/csv.js';
