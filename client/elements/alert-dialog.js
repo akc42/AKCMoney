@@ -1,6 +1,6 @@
 /**
 @licence
-    Copyright (c) 2021 Alan Chandler, all rights reserved
+    Copyright (c) 2025 Alan Chandler, all rights reserved
 
     This file is part of AKCMoney.
 
@@ -18,57 +18,63 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
+import {unsafeHTML} from '../libs/unsafe-html.js';
+
 import domHost from '../libs/dom-host.js';
 import './dialog-box.js';
 import './material-icon.js';
 
-import button from '../styles/button.js';
 
 /*
-     <zero-dialog>
+     <alert-dialog>
 */
-class ZeroDialog extends LitElement {
-  static get styles() {
-    return [button,css`
-      :host {
-        margin: 5px;
+class AlertDialog extends LitElement {
+  static styles = [css`
+    :host {
+      margin: 0px;
+    }
+    dialog-box {
+      background-color: transparent!important;
+    }
+    .container {
+      background-color: white;
+      color: var(--color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: none;
+      padding: 5px;
+      border-radius:5px;
+      box-shadow: 2px 2px 5px 4px var(--shadow-color);
       }
-      dialog-box {
-        background-color: transparent!important;
+      h1 {
+        color: red;
       }
-      .container {
-        background-color: transparent;
-        color: var(--color);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        border: none;
-        padding: 5px;
-        border-radius:5px;
-        box-shadow: 2px 2px 5px 4px var(--shadow-color);
+      p {
+        color: black;
       }
-     `];
-  }
-  static get properties() {
-    return {
-      
-    };
-  }
+  `];
+  
+  static properties = {
+    message: {type: String}    
+  };
+  
   constructor() {
     super();
     this._gotRequest = this._gotRequest.bind(this);
     this.eventLocked = true;
+    this.message = ''
 
   }
   connectedCallback() {
     super.connectedCallback();
     this.domHost = domHost(this);
-    this.domHost.addEventListener('zero-request', this._gotRequest);
+    this.domHost.addEventListener('alert-request', this._gotRequest);
 
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.domHost.removeEventListener('zero-request', this._gotRequest);
+    this.domHost.removeEventListener('alert-request', this._gotRequest);
   }
   firstUpdated() {
     this.dialog = this.shadowRoot.querySelector('#diag');
@@ -76,9 +82,10 @@ class ZeroDialog extends LitElement {
   }
   render() {
     return html`
-      <dialog-box id="diag" @overlay-closed=${this._dialogClosed} closeOnClick>
+      <dialog-box id="diag" @overlay-closed=${this._dialogClosed} closeOnClick position="centre">
         <div class="container">
-          <button id="zselect" role="menuitem" @click=${this._replyToCaller}><material-icon>exposure_zero</material-icon> Balance</button>
+          <h1>Alert</h1>
+          <p>${unsafeHTML(this.message)}</p>
         </div>
       </dialog-box>
     `;
@@ -91,15 +98,8 @@ class ZeroDialog extends LitElement {
     e.stopPropagation();
     if (this.eventLocked) return;
     this.eventLocked = true;
-    this.dialog.positionTarget = e.composedPath()[0];
+    this.message = e.detail;
     this.dialog.show();
   }
-  _replyToCaller(e) {
-    e.stopPropagation();
-    this.dialog.positionTarget.dispatchEvent(new CustomEvent('zero-reply', { bubbles: true, composed: true }));
-    this.dialog.close();
-
-  }
-
 }
-customElements.define('zero-dialog', ZeroDialog);
+customElements.define('alert-dialog', AlertDialog);

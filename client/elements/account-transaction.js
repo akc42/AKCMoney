@@ -485,7 +485,9 @@ class AccountTransaction extends LitElement {
     }
     return html`
       ${cache(this.edit && !this.readonly ? html`
-        <form id="login" action="xaction_update" @submit=${submit} @form-response=${this._update}>
+        <form id="login" action="xaction_update" @submit=${submit} 
+          @form-submitting=${this._checkFormValidity}
+          @form-response=${this._update}>
           <input type="hidden" name="account" .value=${this.account} />
           <input type="hidden" name="tid" .value=${this.tid.toString()} />
           <input type="hidden" name="version" .value=${this.version.toString()} />
@@ -799,6 +801,13 @@ class AccountTransaction extends LitElement {
     this.edit = false;
     this.dispatchEvent(new CustomEvent('transaction-changed',{bubbles: true, composed: true, detail: null}));
     
+  }
+  _checkFormValidity(e) {
+    if ((e.detail.account !== e.detail.src && e.detail.account !== e.detail.dst) || e.detail.src === e.detail.dst) {
+      e.preventDefault();
+      document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
+      this.dispatchEvent(new CustomEvent('alert-request',{bubbles: true, composed: true, detail: 'Source and Destination Accounts cannot be the same'}))
+    }
   }
   _clearedChanged(e) {
     e.stopPropagation();
