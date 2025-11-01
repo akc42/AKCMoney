@@ -43,15 +43,15 @@ export default async function(user, params, responder) {
   WHERE t.id = ? AND a.name = ?`)
   const updateXaction = db.prepare(`WITH items (rate, name,altname, acurrency, tcurrency, amount, aamount, clear, code ) AS (
     SELECT CASE
-        WHEN a.name = NULL THEN 0 
+        WHEN a.name IS NULL OR c.name IS NULL THEN 0 
         WHEN d.name = c.name AND d.name <> a.currency THEN ac.rate
         WHEN d.name <> c.name AND d.name <> a.currency THEN  ac.rate/c.rate
         WHEN d.name <> c.name AND d.name = a.currency THEN 1/c.rate
         ELSE 1
     END As Rate, ? AS name, a.name AS altname, a.currency AS acurrency, c.name AS tcurrency, 
     ? AS amount, ? AS aamount, ? AS clear, ? AS code
-    FROM Currency c, Account a, Currency d, Currency ac 
-    WHERE a.name = ? AND c.name = ? AND d.priority = 0 AND ac.name = a.currency
+    FROM Currency d LEFT JOIN Account a ON a.name = ? LEFT JOIN Currency c ON c.name = ? LEFT JOIN Currency ac ON ac.name = a.currency 
+    WHERE d.priority = 0 
 )
 UPDATE xaction AS t  SET
     date = ?, version = t.version + 1, amount = items.amount, currency = items.tcurrency,
@@ -71,8 +71,7 @@ UPDATE xaction AS t  SET
     dstcode = CASE WHEN t.dst = items.name THEN items.code ELSE t.dstcode END,
     repeat = ?,
     rno = ?
-FROM items, currency c 
-WHERE t.id = ? AND t.currency = c.name`);
+FROM items WHERE t.id = ?`);
   const updateAccountBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
     date = (strftime('%s','now')) WHERE name = ?`);
   const getDefaultCurrency = db.prepare(`SELECT name FROM currency WHERE priority = 0`).pluck();
@@ -137,10 +136,10 @@ WHERE t.id = ? AND t.currency = c.name`);
       responder.addSection('transaction', getUpdatedXaction.get(lastInsertRowid, params.account));
     } else {
       const { version, amount, currency, src, srcclear, srcamount, dst, dstclear, dstamount} = getXaction.get(tid);
-      let accCurrency = null;
+
       if (version === Number(params.version)) {
         const { currency:acurrency, balance, bversion } = getAccount.get(params.account);
-        accCurrency = acurrency;
+
         // This is a valid update to the transaction, so lets see if we have to worry about adjustments to any account balance 
         if ((params.cleared === undefined && (srcclear === 1 || dstclear === 1)) || 
           (params.cleared !== undefined && (srcclear === 0 || dstclear === 0 || amount !== nullOrAmount(params.amount))) || currency !== params.currency){
@@ -266,7 +265,7 @@ WHERE t.id = ? AND t.currency = c.name`);
           nullIfZeroLength(params.code),
           params.src === params.account ? nullIfZeroLength(params.dst): nullIfZeroLength(params.src),
           params.currency,
-          params.date,
+          Number(params.date),
           Number(params.repeat),
           nullIfZeroLength(params.rno),
           tid
