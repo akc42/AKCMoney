@@ -25,6 +25,7 @@ import AppKeys from '../libs/app-keys.js';
 import config from '../libs/config.js';
 import {switchPath} from '../libs/switch-path.js';
 
+import '../elements/alert-dialog.js';
 import '../elements/material-icon.js';
 import '../elements/dialog-box.js';
 import '../elements/accounts-dialog.js';
@@ -381,6 +382,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
   render() {
     return html`
       <waiting-indicator></waiting-indicator>
+      <alert-dialog></alert-dialog>
       ${cache(this.authorised?html`
         <currencies-dialog .currencies=${this.currencies}></currencies-dialog>
         <repeats-dialog .repeats=${this.repeats}></repeats-dialog>
