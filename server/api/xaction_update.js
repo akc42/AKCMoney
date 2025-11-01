@@ -32,8 +32,8 @@ export default async function(user, params, responder) {
     FROM xaction  WHERE id = ?`);
   const swapSrcDst = db.prepare(`UPDATE xaction SET src = dst, dst = src, srcclear = dstclear, dstclear = srcclear,
       srccode = dstcode, dstcode = srccode, srcamount = dstamount, dstamount = srcamount   WHERE id = ?`);
-  const changeXactionSrc = db.prepare('UPDATE xaction SET src = ? WHERE id = ?');
-  const changeXactionDst = db.prepare('UPDATE xaction SET dst = ? WHERE id = ?');
+  const moveXactionToDst = db.prepare('UPDATE xaction SET src = ?, dst = NULL, dstamount = NULL, dstclear = 0  WHERE id = ?'); //updateXaction will handle other src values
+  const moveXactionToSrc = db.prepare('UPDATE xaction SET dst = ? , src = NULL, srcamount = NULL, srcclear = 0 WHERE id = ?'); //updateXaction will handly other dst values
   const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, 
   CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
   CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
@@ -56,7 +56,7 @@ export default async function(user, params, responder) {
 UPDATE xaction AS t  SET
     date = ?, version = t.version + 1, amount = items.amount, currency = items.tcurrency,
     src = CASE WHEN items.name = t.src THEN t.src ELSE items.altname END,
-    dst = CASE WHEN items.name = t.dst THEN t.dst ELSE items.altname END,
+    dst = CASE WHEN items.name = t.dst AND items.name <> t.src THEN t.dst ELSE items.altname END,
     srcamount = CAST(CASE WHEN t.src = items.altname OR t.src IS NULL THEN 
         CASE WHEN items.tcurrency = items.acurrency OR items.altname IS NULL THEN NULL
         ELSE t.amount * items.rate END
@@ -65,10 +65,10 @@ UPDATE xaction AS t  SET
         CASE WHEN items.tcurrency = items.acurrency OR items.altname IS NULL THEN NULL
         ELSE t.amount * items.rate END
     ELSE items.aamount END AS INTEGER),
-    srcclear = CASE WHEN t.src = items.name THEN items.clear ELSE t.srcclear END,
-    dstclear = CASE WHEN t.dst = items.name THEN items.clear ELSE t.dstclear END,
-    srccode = CASE WHEN t.src = items.name THEN items.code ELSE t.srccode END,
-    dstcode = CASE WHEN t.dst = items.name THEN items.code ELSE t.dstcode END,
+    srcclear = CASE WHEN t.src = items.name THEN items.clear ELSE CASE WHEN items.altname IS NULL THEN 0 ELSE t.srcclear END END,
+    dstclear = CASE WHEN t.dst = items.name AND items.name <> t.src THEN items.clear ELSE CASE WHEN items.altname IS NULL THEN 0 ELSE t.dstclear END END,
+    srccode = CASE WHEN t.src = items.name THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.srccode END END,
+    dstcode = CASE WHEN t.dst = items.name AND items.name <> t.src THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.dstcode END END,
     repeat = ?,
     rno = ?
 FROM items WHERE t.id = ?`);
@@ -239,17 +239,19 @@ FROM items WHERE t.id = ?`);
           if (params.account !== src) swapSrcDst.run(tid); //we have to swap first
           if (params.type === 'move' && dst === null && params.dst.length > 0) {
             debug('Previous dst was null, but we moved to it, so make src', params.dst,'and make dst null (later update)');
-            changeXactionSrc.run(params.dst, tid);
-            params.account = params.dst
+            moveXactionToDst.run(params.dst, tid);
+            params.account = params.dst;
+            params.src = params.dst;
             params.dst = '';
           }
         } else if (params.account === params.dst){
           debug('type dst - dst account', dst, 'account', params.account);
           if (params.account !== dst) swapSrcDst.run(tid); //we have to swap first
-          if (params.saver === 'move' && src === null && params.src.length > 0) {
+          if (params.type === 'move' && src === null && params.src.length > 0) {
             debug('Previous src was null, but we moved to it, so make dst', params.src, 'and make src null (later update)');
-            changeXactionDst.run(params.src, tid);
+            moveXactionToSrc.run(params.src, tid);
             params.account = params.src;
+            params.dst = params.src;
             params.src = '';
           }
         } else {
