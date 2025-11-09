@@ -70,7 +70,8 @@ UPDATE xaction AS t  SET
     srccode = CASE WHEN t.src = items.name THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.srccode END END,
     dstcode = CASE WHEN t.dst = items.name AND items.name <> t.src THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.dstcode END END,
     repeat = ?,
-    rno = ?
+    rno = ?,
+    desciption = ?
 FROM items WHERE t.id = ?`);
   const updateAccountBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
     date = (strftime('%s','now')) WHERE name = ?`);
@@ -270,6 +271,7 @@ FROM items WHERE t.id = ?`);
           Number(params.date),
           Number(params.repeat),
           nullIfZeroLength(params.rno),
+          nullIfZeroLength(params.description),
           tid
         );
         debug('tid', tid, 'params.account', params.account);
