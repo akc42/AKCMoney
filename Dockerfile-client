@@ -20,4 +20,6 @@
 
 FROM nginx:mainline-alpine-slim 
 LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
+RUN --mount=type=cache,target=/var/cache/apk apk add tzdata
+ENV TZ=Europe/London
 COPY nginx/default.conf /etc/nginx/conf.d/
