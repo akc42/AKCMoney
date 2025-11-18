@@ -782,55 +782,40 @@ class AccountPage extends LitElement {
     if (this.reconcileInProgress) return;
     this.reconcileInProgress = true;
     document.body.dispatchEvent(new CustomEvent('wait-request', {detail: true}));
+    const xactionsToClear = []
     let sdate = 0;
     let updateNeeded = false;
-    for (let i = 0; i < this.transactions.length; i++) {
-      const xactionElement = this.shadowRoot.querySelector(`#t${this.transactions[i].id}`);
-      if ((this.transactions[i].reconciled === 1 && 
-        ((xactionElement.src === this.account.name && !xactionElement.srcclear) ||
-        (xactionElement.dst === this.account.name && !xactionElement.dstclear))) ||
-        (this.transactions[i].reconciled === 0 && 
-        ((xactionElement.src === this.account.name && xactionElement.srcclear) ||
-        (xactionElement.dst === this.account.name && xactionElement.dstclear)))){
-        //if we are actually de-reconciling this transaction it can be considered for the first unreconciled transaction
-        if (sdate === 0 && this.transactions[i].reconciled === 1) sdate = this.transactions[i].date - 1;
-        const response = await api('xaction_clear', {
-          clear: this.transactions[i].reconciled === 0, //we are not clearing this if we already have it reconciled 
-          id: this.transactions[i].id, 
-          version: this.transactions[i].version,
-          account: this.account.name
-        });
-        if (response.status === 'OK') {
-          this.transactions[i] = response.transaction;
-          updateNeeded = true;
-          await new Promise(accept => setTimeout(accept,100)); //wait 10th sec to allow some breathing;
-        } else {
-          this.dialog.show();
-          break;
-        }
-      } else if (sdate === 0 && this.transactions[i].reconciled === 0) sdate = this.transactions[i].date -1;
-    }
-    if (updateNeeded) {
-      this.reconciledBalance = this.clearedBalance;
-      const response = await api('account_balance', {
-        balance: this.clearedBalance,
-        bversion: this.account.bversion,
-        account: this.account.name,
-        date: sdate
-      });
-      if (response.status === 'OK') {
-        if (sdate !== 0) {
-          this.startDate = sdate;
-        } else {
-          this.startDate = Math.round(new Date().getTime()/1000);
-        }
-        this.account.bversion = response.bversion;
-        this.account.balance = this.clearedBalance;
-        this.requestUpdate();
-      } else {
-        this.dialog.show();
+    for (const t of this.transactions) {
+      if (t.reconciled === 0 && ((t.src === this.account.name &&  t.srcclear === 1) || (t.dst === this.account.name && t.dstclear === 1))) {
+        xactionsToClear.push([t.id,t.version]);
       }
     }
+    const response = await api('account_reconcile',{
+      account: this.account.name, 
+      bversion: this.account.bversion,
+      balance: this.clearedBalance,
+      transactions: xactionsToClear
+    });
+    if (response.status === 'OK') {
+      for(const t of this.transactions) if(xactionsToClear.map(x => x[0]).includes(t.id)) {
+        t.version++;
+        t.reconciled = 1
+      }
+      
+      this.reconciledBalance = this.clearedBalance;
+      if (sdate !== 0) {
+        this.startDate = sdate;
+      } else {
+        this.startDate = Math.round(new Date().getTime()/1000);
+      }
+      this.account.bversion = response.bversion;
+      this.account.balance = this.clearedBalance;
+      this.reconciledBalance = this.clearedBalance;
+      this.requestUpdate();
+    } else {
+      this.dialog.show();
+    }
+  
     this.reconcileInProgress = false;
     document.body.dispatchEvent(new CustomEvent('wait-request', {detail: false}));
   }
