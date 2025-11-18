@@ -396,6 +396,11 @@ class AccountTransaction extends LitElement {
         this.accountAmountError = !this.accountAmountInput.reportValidity();
       }
       if (changed.has('edit') && this.edit) {
+        this.updateComplete.then(() => {
+          const formelement = this.shadowRoot.querySelector('#editform')
+          formelement.scrollIntoView({behavior: 'smooth', block:'center',inline:'center'})
+        });
+
         this.amountInput = this.shadowRoot.querySelector('#amount');
         this.inputError = !this.amountInput.reportValidity()
         this.descriptionInput = this.shadowRoot.querySelector('#description');
@@ -485,7 +490,7 @@ class AccountTransaction extends LitElement {
     }
     return html`
       ${cache(this.edit && !this.readonly ? html`
-        <form id="login" action="xaction_update" @submit=${submit} 
+        <form id="editform" action="xaction_update" @submit=${submit} 
           @form-submitting=${this._checkFormValidity}
           @form-response=${this._update}>
           <input type="hidden" name="account" .value=${this.account} />
@@ -607,6 +612,7 @@ class AccountTransaction extends LitElement {
               class="amount ${classMap({error: this.inputError, currency: this.acurrency !== this.currency})}" 
               .value=${
             (-(this.currency === this.acurrency ? this.amount : this.srcamount) / 100).toFixed(2)}
+              @click=${this._amountClick}
               @input=${this._amountChanged}
               @blur=${this._amountUpdate}
               @contextmenu=${this._zeroRequest} 
@@ -756,6 +762,7 @@ class AccountTransaction extends LitElement {
   }
   _amountUpdate(e) {
     e.stopPropagation();
+    if ((e.currentTarget.selectionEnd - e.currentTarget.selectionStart) !== 0) return;
     const errorStat = this.amountInput.validity
     debug('amount-update-stat', errorStat)
     if (this.amountInput.reportValidity()) {
@@ -765,13 +772,13 @@ class AccountTransaction extends LitElement {
 
         if (this.currency === this.acurrency) {
           if (newAmount === this.amount) {
-            this.accountEdit = false;
+            this.amountEdit = false;
           } else {
             this.srcamount = newAmount;
             this.amount = newAmount
           }
         } else if (newAmount === this.srcamount) {
-          this.accountEdit = false;
+          this.amountEdit = false;
         } else {
           this.srcamount = newAmount;
           this.amount = Math.floor(newAmount * this.trate/this.arate)
@@ -779,13 +786,13 @@ class AccountTransaction extends LitElement {
       } else if (this.account === this.dst) {
         if (this.currency === this.acurrency) {
           if (newAmount === this.amount) {
-            this.accountEdit = false;
+            this.amountEdit = false;
           } else {
             this.dstamount = newAmount;
             this.amount = newAmount
           }
         } else if (newAmount === this.dstamount) {
-          this.accountEdit = false;
+          this.amountEdit = false;
         } else {
           this.dstamount = newAmount;
           this.amount = Math.floor(newAmount * this.trate/this.arate)
@@ -935,6 +942,7 @@ class AccountTransaction extends LitElement {
     const saver = this.shadowRoot.querySelector('#saver');
     saver.setAttribute('value', 'save'); //tells xaction_update that this is a save
   }
+
   setClear() {
     this.selected = false;
     if (this.reconciled) return; //must not change previously reconcilled
