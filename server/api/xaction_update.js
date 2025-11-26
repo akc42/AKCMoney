@@ -55,20 +55,20 @@ export default async function(user, params, responder) {
 )
 UPDATE xaction AS t  SET
     date = ?, version = t.version + 1, amount = items.amount, currency = items.tcurrency,
-    src = CASE WHEN items.name = t.src THEN t.src ELSE items.altname END,
-    dst = CASE WHEN items.name = t.dst AND items.name <> t.src THEN t.dst ELSE items.altname END,
-    srcamount = CAST(CASE WHEN t.src = items.altname OR t.src IS NULL THEN 
+    src = CASE WHEN COALESCE(items.name,'') = COALESCE(t.src,'') THEN t.src ELSE items.altname END,
+    dst = CASE WHEN COALESCE(items.name,'') = COALESCE(t.dst,'') AND COALESCE(items.name,'') <> COALESCE(t.src,'') THEN t.dst ELSE items.altname END,
+    srcamount = CAST(CASE WHEN COALESCE(t.src,'') = COALESCE(items.altname,'') OR t.src IS NULL THEN 
         CASE WHEN items.tcurrency = items.acurrency OR items.altname IS NULL THEN NULL
         ELSE t.amount * items.rate END
         ELSE items.aamount END AS INTEGER) ,
-    dstamount = CAST(CASE WHEN t.dst = items.altname OR t.dst IS NULL THEN
+    dstamount = CAST(CASE WHEN COALESCE(t.dst,'') = COALESCE(items.altname,'') OR t.dst IS NULL THEN
         CASE WHEN items.tcurrency = items.acurrency OR items.altname IS NULL THEN NULL
         ELSE t.amount * items.rate END
     ELSE items.aamount END AS INTEGER),
-    srcclear = CASE WHEN t.src = items.name THEN items.clear ELSE CASE WHEN items.altname IS NULL THEN 0 ELSE t.srcclear END END,
-    dstclear = CASE WHEN t.dst = items.name AND items.name <> t.src THEN items.clear ELSE CASE WHEN items.altname IS NULL THEN 0 ELSE t.dstclear END END,
-    srccode = CASE WHEN t.src = items.name THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.srccode END END,
-    dstcode = CASE WHEN t.dst = items.name AND items.name <> t.src THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.dstcode END END,
+    srcclear = CASE WHEN COALESCE(t.src,'') = COALESCE(items.name,'') THEN items.clear ELSE CASE WHEN items.altname IS NULL THEN 0 ELSE t.srcclear END END,
+    dstclear = CASE WHEN COALESCE(t.dst,'') = COALESCE(items.name,'') AND COALESCE(items.name,'') <> COALESCE(t.src,'') THEN items.clear ELSE CASE WHEN items.altname IS NULL THEN 0 ELSE t.dstclear END END,
+    srccode = CASE WHEN COALESCE(t.src,'') = COALESCE(items.name,'') THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.srccode END END,
+    dstcode = CASE WHEN COALESCE(t.dst,'') = COALESCE(items.name,'') AND COALESCE(items.name,'') <> COALESCE(t.src,'') THEN items.code ELSE CASE WHEN items.altname IS NULL THEN NULL ELSE t.dstcode END END,
     repeat = ?,
     rno = ?,
     description = ?
