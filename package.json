@@ -32,7 +32,7 @@
     "@akc42/sqlite-db": "2.1.2",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "bcrypt": "^6.0.0",
-    "body-parser": "^2.2.0",
+    "body-parser": "^2.2.1",
     "content-disposition": "^0.5.4",
     "finalhandler": "^2.1.0",
     "jwt-simple": "^0.5.6",
