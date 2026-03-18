@@ -1,5 +1,6 @@
 #!/bin/bash
 node scripts/buildlibs.js
 
-docker buildx build --push -f Dockerfile-client -t docker.chandlerfamily.org.uk/moneyclient .
-docker buildx build --push -f Dockerfile-server -t docker.chandlerfamily.org.uk/moneyserver .
+docker build --push --target Client -t docker.chandlerfamily.org.uk/moneyclient .
+docker build --push --target Server -t docker.chandlerfamily.org.uk/moneyserver .
+docker build --push --target Timer -t docker.chandlerfamily.org.uk/moneytimer .

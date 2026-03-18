@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.0-experimental
 #
-#   Copyright (c) 2023 Alan Chandler, all rights reserved
+#   Copyright (c) 2025 Alan Chandler, all rights reserved
 #
 #   This file is part of AKCMoney.
 #
@@ -18,13 +18,19 @@
 #   along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+FROM nginx:mainline-alpine-slim AS Client
+LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
+RUN --mount=type=cache,target=/var/cache/apk apk add tzdata
+ENV TZ=Europe/London
+COPY nginx/default.conf /etc/nginx/conf.d/
+
 FROM node:lts-alpine AS build
 WORKDIR /build
 COPY package.json ./
-RUN --mount=type=cache,target=/var/cache/apk apk add python3 make g++
+RUN --mount=type=cache,target=/var/cache/apk apk add tzdata vim
 RUN --mount=type=cache,target=~.npm npm install --omit=dev
 
-FROM node:lts-alpine 
+FROM node:lts-alpine AS ServerBase
 LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
 RUN --mount=type=cache,target=/var/cache/apk apk add tzdata
 ENV TZ Europe/London
@@ -32,9 +38,23 @@ RUN mkdir /db
 WORKDIR /app
 COPY --from=build /build/node_modules ./node_modules
 COPY --from=build /build/package.json .
-RUN mkdir -p server
 RUN mkdir -p appinfo
 ## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
 ENV TERM xterm-256color
+
+FROM ServerBase AS Server
+WORKDIR /app
+RUN mkdir -p server
 EXPOSE 2010
 CMD ["node", "server/server.js"]
+
+FROM ServerBase AS Timer
+RUN mkdir -p /db-backup
+WORKDIR /etc/crontabs
+COPY crontab-root ./root
+WORKDIR /app
+RUN mkdir -p timer
+
+USER 0:0
+CMD ["/usr/sbin/crond", "-f"]
+
