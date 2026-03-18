@@ -17,18 +17,14 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('domains');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user,p ,responder) {
-  debug('new request from', user.name);
   
-  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-  db.transaction(() => {
-    responder.addSection('domains', getDomains.all());
-  })();
-  debug('request complete')
+  await mdb.transactionAsync(async db => {
+    responder.addSection('domains');
+    for (const domain of db.iterate`SELECT * FROM domain ORDER BY name`) {
+      await responder.write(domain);
+    }
+  });
 };

@@ -18,35 +18,26 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-const debug = Debug('accountbalance');
+import { Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-
+const logger = Logger('accountbalance','rrror');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'account', params.account, 'balance', params.balance);
-  const getVersion = db.prepare('SELECT bversion FROM account WHERE name = ?').pluck();
-  const updateBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
-    date = (strftime('%s','now')) WHERE name = ?`);
-  const updateBalanceDate = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
-    date = ? WHERE name = ?`);
-  db.transaction(() => {
-    const bversion = getVersion.get(params.account);
+
+  mdb.transaction(db => {
+    const {bversion} = db.get`SELECT bversion FROM account WHERE name = ${params.account}`??{bversion:0};
     if (bversion === params.bversion) {
-      debug('correct version, do update');
       if (params.date === 0) {
-        updateBalance.run(params.balance, params.account);
+        db.run`UPDATE account SET bversion = bversion + 1, balance = ${params.balance}, date = (strftime('%s','now')) WHERE name = ${params.account}`;
       } else {
-        updateBalanceDate.run(params.balance, params.date, params.account);
+        db.run`UPDATE account SET bversion = bversion + 1, balance = ${params.balance}}, date = ${params.date} WHERE name = ${params.account}`;
       }
       responder.addSection('status', 'OK');
       responder.addSection('bversion', bversion + 1);
     } else {
-      logger('error','Account Balance versions do not match, param bversion:',params.bversion, 'database dversion', bversion);
+      logger('Versions do not match, param bversion:',params.bversion, 'database bversion', bversion);
       responder.addSection('status', 'Fail');
     }
-  })();
-  debug('Request Complete');
+  });
 };

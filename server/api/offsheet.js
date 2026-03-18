@@ -17,38 +17,24 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('offsheet');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with codeid', params.code );
-  const getCode = db.prepare('SELECT description FROM code WHERE id = ?').pluck();
-  const getXactions = db.prepare(`SELECT
-          t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, dfamount AS amount, 
-          t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
-      FROM  
-          user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
-          INNER JOIN account a ON 
-              (t.src = a.name AND t.srccode = c.id) 
-              OR (t.dst = a.name AND t.dstcode = c.id) 
-          LEFT JOIN capability p ON 
-              p.uid = u.uid 
-              AND p.domain = a.domain 
-      WHERE 
-          u.uid = ? 
-          AND (u.isAdmin = 1 OR p.uid IS NOT NULL) 
-          AND c.id = ?
-          AND cur.priority = 0
-      ORDER BY 
-          t.Date
-  `);
-  db.transaction(() => {
-    responder.addSection('description', getCode.get(params.code));
-    responder.addSection('transactions', getXactions.all(user.uid, params.code));
-  })();  
+  
+  await mdb.transactionAsync(async db => {
+    responder.addSection('description');
+    for(const code of db.iterate`SELECT description FROM code WHERE id = ${params.code}`) {
+      await responder.write(code);
+    }
+    responder.addSection('transactions');
+    for (const xaction of db.iterate`SELECT t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, dfamount AS amount, 
+          t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate FROM  
+          user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c INNER JOIN account a ON 
+          (t.src = a.name AND t.srccode = c.id) OR (t.dst = a.name AND t.dstcode = c.id) LEFT JOIN capability p ON 
+          p.uid = u.uid AND p.domain = a.domain WHERE u.uid = ${user.uid} AND (u.isAdmin = 1 OR p.uid IS NOT NULL) AND c.id = ${params.code}
+          AND cur.priority = 0 ORDER BY t.Date`) {
+      await responder.write(xaction);
+    }
+  });  
 
-  debug('request complete');
 };

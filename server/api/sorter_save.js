@@ -17,23 +17,15 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('sortersave');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with domain', params.domain );
-  const deletePriorities = db.prepare('DELETE FROM priority WHERE uid = ? AND domain = ?');
-  const insertPriority = db.prepare('INSERT INTO priority(uid,domain,account,sort) VALUES (?,?,?,?)')
-  db.transaction(() => {
-    deletePriorities.run(user.uid, params.domain);
+  
+  mdb.transaction(db => {
+    db.run`DELETE FROM priority WHERE uid = ${user.uid} AND domain = ${params.domain}`;
     for(const account of params.accounts) {
-      debug('insert new priority', account.name, account.sort);
-      insertPriority.run(user.uid,params.domain,account.name,account.sort);
+      db.run`INSERT INTO priority(uid,domain,account,sort) VALUES (${user.uid},${params.domain},${account.name},${account.sort})`;
     }
     
-  })();
-  debug('request complete')
+  });
 };

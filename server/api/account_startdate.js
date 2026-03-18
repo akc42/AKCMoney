@@ -17,26 +17,20 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('accountstartdate');
+const logger = Logger('accountstartdate','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'account', params.account, 'startdate', params.startdate);
-  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-  const updateSD = db.prepare('UPDATE account SET dversion = dversion + 1, startdate = ? WHERE name = ?');
-  db.transaction(() => {
-    const dversion = getVersion.get(params.account);
+  mdb.transaction(db => {
+    const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.account}`??{dversion:0}
     if (dversion === params.dversion) {
-      debug('correct version, do update');
-      updateSD.run(params.startdate, params.account);
+      db.run`UPDATE account SET dversion = dversion + 1, startdate = ${params.startdate}} WHERE name = ${params.account}`;
       responder.addSection('status', 'OK');
     } else {
-      logger('error','Account Start Date; versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
-      responder.addSection('status', 'Fail');
+      logger('Versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
+      responder.addSection('status', 'Versions not matching');
     }
-  })();
-  debug('Request Complete');
+  });
 };

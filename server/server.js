@@ -17,12 +17,13 @@
     You should have received a copy of the GNU General Public License
     along with money.  If not, see <http://www.gnu.org/licenses/>.
 */
+import mdb, {manager} from '@akc42/sqlite-db';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { setTimeout} from 'node:timers/promises';
 import { existsSync,readFileSync } from 'node:fs';
 import {fileURLToPath } from 'node:url';
-import {logger,Debug, setDebugConfig, dumpDebugCache, Responder} from '@akc42/server-utils';
-import dbStartup from '@akc42/sqlite-db';
+import {Logger,Debug, Responder, logWriter, close as debugClose, getDebugLog} from '@akc42/server-utils';
 import chalk from 'chalk';
 import bodyParser  from 'body-parser';
 import  Router from 'router';
@@ -37,10 +38,19 @@ import url from 'node:url';
 import CSVResponder from './csvresponder.js';
 
 
+
+
+
 const debug = Debug('server');
 const debugapi = Debug('api');
 const debuguser = Debug('user');
 const debugauth = Debug('auth');
+
+const logdb = Logger('server', 'db');
+const logauth = Logger('Server', 'auth')
+const logerr = Logger('Server', 'error');
+const logger = Logger('server', 'app');
+
 
 async function loadServers(relPath) {
   const dir = fileURLToPath(new URL (relPath, import.meta.url));
@@ -62,89 +72,106 @@ async function loadServers(relPath) {
 };
 
 async function forbidden(req,res, message) {
-  debug('In "forbidden"');
-  logger(req.headers['x-forwarded-for'],'auth', message, 'with request url of',req.originalUrl);
+  logauth(req.headers['x-forwarded-for'], message, 'with request url of',req.originalUrl);
   res.statusCode = 403;
   res.end('---403---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail
 
 }
 async function errored(req,res,error) {
-  debug('In "Errored"');
   const message = `Error${error.message ? ': ' + error.message: '' } ${error.stack? ': ' + error.stack: ''}`;
-  logger(req.headers['x-forwarded-for'] ,'error', message,'\nwith request url of ',req.originalUrl);
-  dumpDebugCache();
+  logerr(req.headers['x-forwarded-for'] , message,'\nwith request url of ',req.originalUrl);
   res.statusCode = 500;
   res.end('---500---'); //definitely not json, so should cause api to throw even if attempt to send status code is to no avail.
 
 }
 process.on('unhandledRejection', (err) => {
-  logger('error', `Unhandled Rejection with error ${err.stack || err.toString()}`);
-  dumpDebugCache();
+  logerr('crash', `Unhandled Rejection with error ${err.stack || err.toString()}`);
 }); 
 process.on('uncaughtException', (err) => {
-  logger('error', `Uncaught Exception with error ${err.stack || err.toString()}`);
-  dumpDebugCache();
+  logerr('crash', `Uncaught Exception with error ${err.stack || err.toString()}`);
+
 });
 
+if (!mdb.isOpen) {
+  logdb('crash', 'Database failed to open');
+} else {
+  const {count} = mdb.get`SELECT COUNT(*) AS tables FROM pragma_table_list() WHERE schema = 'main' AND name NOT LIKE 'sqlite_%'`
+  if (count  === 0) {
+    debug('initialise database needed')
+    // We are not yet initialised so time to run the initisation script
+    const initialiseScriptP =  path.resolve(process.env.MONEY_DB_INIT_DIR, `database.sql`);
+    const initialiseScript = readFileSync(initialiseScriptP,{ encoding: 'utf8' });
+    mdb.transaction((db) => {
+      db.exec(initialiseScript);
+    });
+  }
+  const {value: dbVersion} = mdb.get`SELECT value FROM Settings WHERE name = 'version'`;
+  if (dbVersion < Number(process.env.MONEY_DB_VERSION)) {
+    debug('version updrage needed')
+    const upgradeP =  path.resolve(process.env.MONEY_DB_INITDIR, `upgrade.sql`);
+    if (existsSync(upgradeP)) {
+      const upgrade = readFileSync(upgradeP,{ encoding: 'utf8' });
+      mdb.transaction((db) => {
+        db.exec(upgrade);
+      });
+    } else {
+      logdb('crash', 'Database Upgrade Incomplete');
+    }
+  }
+
+}
+
+
+
 async function finalErr (err,req) {
-  logger('error', `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
+  logerr( `Final Error at url ${req.originalUrl} with error ${err.stack || err.toString()}`);
 }
 
 let server;
-let db;
 
 try {
-
   const version = await fs.readFile(fileURLToPath(new URL(process.env.MONEY_VERSION_FILE ,import.meta.url)), 'utf-8')
   const { mtime } = await fs.stat(fileURLToPath(new URL(process.env.MONEY_VERSION_FILE ,import.meta.url))); 
   const year = new Date(mtime).getUTCFullYear();
-  debug('starting server with verion', version)
-    
-  db = dbStartup(fileURLToPath(new URL(process.env.DATABASE_DB ,import.meta.url)),fileURLToPath(new URL(process.env.DATABASE_INIT_DIR, import.meta.url)));
-  
-  const serverConfig = {};
-   let amnestyDate;
+
+
+  let amnestyDate;
   if (process.env.MONEY_TRACKING !== 'no' ) {
-    const logcount = db.prepare('SELECT COUNT(*) FROM Login_Log').pluck().get();
-    if (logcount === 0) {
-      debug('log count was zero')
-      //first run 
-      const setMarker = db.prepare(`INSERT INTO Login_Log (track_uid, isSuccess) VALUES ('New Server',1)`)
-      setMarker.run();
-      //What we have done is give given user.js functions 24 hours to get their house in order before missing tokens from an
-      //ip address we've seen before.  Essentially an amnesty on not having a tracking token on a previously seen ip.
-      amnestyDate = new Date();
-      amnestyDate.setDate(amnestyDate.getDate() + 1);
-    } else {
-      debug('log count was', logcount)
-      const firstTime =db.prepare('SELECT Time FROM Login_log WHERE Lid = 1').pluck().get()
-      amnestyDate = new Date(firstTime * 1000);
-    }
-    amnestyDate.setDate(amnestyDate.getDate() + 1);
-    debug('amnesty date', amnestyDate);
+    mdb.transaction(db => {
+      const {count} = db.get`SELECT COUNT(*) AS count FRON Login_Log`??{count:0};
+      if (count === 0) {
+        db.run`INSERT INTO Login_Log (track_uid, isSuccess) VALUES ('New Server',1)`;
+        amnestyDate = new Date();
+        amnestyDate.setDate(amnestyDate.getDate() + 1);
+      } else {
+        const {time} = db.get`SELECT time FROM Login_Log WHERE lid = ${1}`??{time: 0};
+        if (time > 0) {
+          amnestyDate = new Date(time * 1000);
+        } else {
+          amnestyDate = new Date();
+          amnestyDate.setDate(amnestyDate.getDate() + 1);
+        }
+      }
+    });
   }
   /*
     Get the few important settings that we need in our server, but also take the opportunity to get back what we need for
     our config route
   */
+  const serverConfig = {};
   const clientConfig= {};
-  const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
-  const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
-  db.transaction(() => {
-    const serverdebug = s.get('server_debug')??'';
-    if (serverdebug.length > 0) {
-      setDebugConfig(serverdebug,s.get('debug_cache'));
+  mdb.transaction(db => {
+    const settings = ['auth_cookie', 'token_key', 'server_port', 'token_expires'];
+    if (process.env.MONEY_TRACKING !== 'no') settings.push('track_cookie');
+    for (const name of settings) {
+      const {value} = db.get`SELECT value FROM Settings WHERE name = ${name}`??{value: ''};
+      const confname = name.split('_').map((segment,i) => i === 0? segment: segment[0].toUpperCase() + segment.slice(1)).join('');
+      serverConfig[confname] = value
     }
-    if (process.env.MONEY_TRACKING !== 'no') serverConfig.trackCookie = s.get('track_cookie');
-    serverConfig.authCookie = s.get('auth_cookie');
-    serverConfig.tokenKey = `AKCMoney${s.get('token_key').toString()}`;
-    serverConfig.serverPort = s.get('server_port');
-    serverConfig.tokenExpires = s.get('token_expires');
+    serverConfig.tokenKey = `AKCMoney${serverConfig.tokenKey}`;
     clientConfig.authCookie = serverConfig.authCookie;
-    const {name, description} = dc.get();
-    clientConfig.defaultCurrency = name;
-    clientConfig.defaultCurrencyDescription = description;
-  })();
+    
+  });
 
   function generateCookie(payload, key, expires) {
     const date = new Date();
@@ -176,22 +203,18 @@ try {
   api.get('/config', (req,res) => {
     debugapi('config request');
     //do this every client start up because then we can change them without restarting server
-    db.transaction(() => {
-      const serverdebug = s.get('server_debug')??'';
-      if (serverdebug.length > 0) {
-        setDebugConfig(serverdebug,s.get('debug_cache'));
+    mdb.transaction(db => {
+      const settings = ['client_log', 'client_uid', 'min_pass_len', 'dwell_time','webmaster', 'repeat_days', 'year_end', 'null_account', 'null_code'];
+      for(const name of settings) {
+      const {value} = db.get`SELECT value FROM Settings WHERE name = ${name}`??{value: ''};     
+        const confname = name.split('_').map((segment,i) => i === 0? segment: segment[0].toUpperCase() + segment.slice(1)).join('');
+        clientConfig[confname] = value
       }
-      clientConfig.clientLog = s.get('client_log');
-      clientConfig.clientUid = s.get('client_uid');
-      clientConfig.minPassLength = s.get('min_pass_len');
-      clientConfig.dwellTime = s.get('dwell_time');
-      clientConfig.webmaster = s.get('webmaster');
-      clientConfig.repeatDays = s.get('repeat_days');
-      clientConfig.yearEnd = s.get('year_end');
-      clientConfig.nullAccount = s.get('null_account');
-      clientConfig.nullCode = s.get('null_code');
-      clientConfig.debug = s.get('debug');
-    })();
+      const {name, description} = db.get`SELECT name, description FROM Currency WHERE priority = 0`??{name:'',description:''};
+      clientConfig.defaultCurrency = name;
+      clientConfig.defaultCurrencyDescription = description;
+      
+    });
 //        const payload = { uid: 1, name: 'alan', password: false, isAdmin: 1, account: 'Bank - Current', domain: 'Personal' }; //TEMP
 //        res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, serverConfig.tokenExpires)); //TEMP
 
@@ -253,8 +276,7 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         //user should have had a token if its after the amnesty date and his ip has been used before
         if (new Date() > amnestyDate) {
           debuguser('after amnesty date of', amnestyDate)
-          const checkip = db.prepare('SELECT COUNT(*) FROM Login_log WHERE ipAddress = ? OR track_ip = ?').pluck();
-          const count = checkip.get(ip,ip);
+          const {count} = mdb.get`SELECT COUNT(*) AS count FROM Login_log WHERE upaddress = ${ip} OR track_ip = ${ip}`??{count: 0};
           debuguser('count of', count, 'previous logins from', ip);
           if (count > 0) {
             forbidden(req,res,'Missing token');
@@ -321,21 +343,39 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
     Client Debug Support
   */
   debug('setting up debug api');
-  api.post('/debuglog/:topic', async (req,res) =>{
-    const topic = req.params.topic;
-    debugapi('debug topic', topic);
-    if (typeof topic === 'string' && topic.length > 0 && /^([a-zA-Z]+)/.test(topic) ) { 
-      // no longer limit, because in a dump we want all 
-      const ip = req.headers['x-forwarded-for'];
-      const comment = req.body.message ?? '';
-
+  api.post('/debuglog/:immediate', async (req,res) =>{
+    //all the rest of the parameters apart from ip address will be encoded in the body.  They should be the exact parameters to be passed to
+    //logWriter 
+    let immediate = Number(req.params.immediate);
+    const ip = req.headers['x-forwarded-for'];
+    let output;
+    let crsh;
+    if(Number.isNaN(immediate)) {
+      const topic = req.params.immediate;
+      const message = req.body.message ?? '';
       const gap = req.body.gap ?? null; //seemlessly leave out gap if it isn't provided  
-      const message = `${chalk.greenBright(topic)} ${comment}${gap ? chalk.whiteBright.bgBlack(' +' + gap + 'ms'):''}`;
-      logger(ip, 'log', message);       
-      res.end();
+      immediate = 1;
+      crsh = 0;
+      output = logWriter(0,0,1,ip,topic,message,null,gap);
     } else {
-      forbidden(req,res, 'Invalid Debug Topic');
+      const {logtime, crash, shortdate, topic, message, colourspec,gap} = req.body; 
+      output = logWriter(logtime, crash??0, shortdate??0,ip,topic??'unknown', message??'message not provided', colourspec??null, gap??null);
+      crsh = crash;
     }
+    if (immediate === 1 || crsh === 1) {
+      console.log(output.message);
+      if (crsh === 1) {
+        let lt;
+        getDebugLog((logid,message) => {
+          if (lt === undefined) lt=message.substring(0,24);
+          console.log(chalk.whiteBright(logid), message)
+        },output.logid,Number(process.env.PAS_DEBUG_CACHE_SIZE), output.ip).then(() => {
+          console.log(chalk.whiteBright(lt),chalk.white.bgBlue('Above are all the debug calls (most recent first) which lead up to the error above'));
+        });
+      }
+    }       
+    
+    res.end();
   });
   /*
     A simple log api
@@ -354,22 +394,18 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   debug('Setting up User Login')
   api.post('/login', async (req,res) => {
     debugauth('Trying to Login',req.body.username);
-    const user = db.prepare('SELECT * FROM user WHERE name = ?').get(req.body.username);
+    const user = mdb.get`SELECT * FROM user WHERE name = ${req.body.username}`;
     let success = false;        
     if (user) {
-      debugauth('We found a user');
       success = true;
       if (user.password) {
-        debugauth('Check Password');
         success = await bcrypt.compare(req.body.pwd, user.password);
       }
     }
     if (process.env.MONEY_TRACKING !== 'no') {
-      debugauth('login was ', success, 'Write log entry');
-      const loginEntry = db.prepare(`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES (?,?,?,?,?)`);
-      if (process.env.MONEY_TRACKING !== 'no') {
-        loginEntry.run(req.headers['x-forwarded-for'], req.track.uid, req.track.ip, req.body.name, success ? 1 : 0);
-      }
+      mdb.run`INSERT INTO login_log (ipaddress,track_uid,track_ip,username,isSuccess) VALUES 
+        (${req.headers['x-forwarded-for']},${req.track.uid},${req.track.ip},${req.body.name},${success? 1:0})`;
+      
     }
     if (success) {
       debug('login success so set cookie and return user')
@@ -381,7 +417,6 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
       debugauth('incorrect password')
       res.end(JSON.stringify({}));
     }
-    debugauth('login all done');
   });
   /*
     validate user
@@ -514,20 +549,18 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
         );
 
       } catch (e) {
-        logger('error','error in pdf',e);
         if (doc !== undefined) {
           doc.fillColor('red').fontSize(14).font('Helvetica-Bold');
           doc.text('SERVER ERROR - CANNOT COMPLETE PDF', {width: 172, align: 'center'});
         }
-        logger(req.headers['x-forwarded-for'],'error', 'PDF function ', p , 'failed with error', e.stack);
-        dumpDebugCache();
+        logerr(req.headers['x-forwarded-for'],'PDF function ', p , 'failed with error', e.stack);
       }
       if (doc !== undefined) doc.end();
     });
   }
   const csvs = await loadServers('csv');
   for (const c in csvs) {
-    debugapi(`Setting up /api/csv/${c} route`);s
+    debugapi(`Setting up /api/csv/${c} route`);
     csv.get(`/${c}`, async (req, res) => {
       debugapi(`Received /api/csv/${c}`);
       const urlObj = url.parse(req.url, true);
@@ -561,30 +594,39 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   });
   server.listen(serverConfig.serverPort, '0.0.0.0');
   serverDestroy(server);        
-  logger('app', `Release ${version} of money Server Operational on Port:${serverConfig.serverPort} using node ${process.version}`); 
-  if (process.send) process.send('ready'); //if started by (e.g.) PM2 then tell it you are ready
+  logger(`Release ${version} of money Server Operational on Port:${serverConfig.serverPort} using node ${
+    process.version}, Database Schema Version ${Number(process.env.MONEY_DB_VERSION)}`); 
+  
 } catch(e) {
   logger('error', 'Initialisation Failed with error ' + e.message + '\n' + e.stack);
-  close();
+  await close();
 }
 
-function close() {
+async function close() {
 // My process has received a SIGINT signal
   if (server) {
     logger('app', 'Starting money Server ShutDown Sequence');
+    let badExit = false;
     try {
       const tmp = server;
       server = null;
       //we might have to stop more stuff later, so leave as a possibility
-      tmp.destroy(() => {
-        logger('app', 'Money Server ShutDown Complete');
-        if(db) db.close(); //only of we managed to open it
-        debug('process exit');
-        process.exit(0);  //only exit if we were the starting script. It will close database automatically.
-      });
+      await new Promise((accept) => {
+        tmp.destroy(accept);
+      })
+      if(mdb.isOpen) { 
+        mdb.close(true); //only of we managed to open it
+        await setTimeout(10)       
+      }
+      const {maxConnections, maxTagStoreSize} = manager('stats');
+      logger('Money  API Server ShutDown Complete; Max Database Connections:', maxConnections, 'Max Cached Queries:', maxTagStoreSize);
     } catch (err) {
-      logger('error', `Trying to close caused error:${err}`);
+      logger('crash', 'Trying to close caused error', err);
+      badExit = true;
+    } finally {
+      debugClose();
     }
+    if (badExit) process.exit(1); else process.exit(0);
   }
 }
 process.on('SIGTERM', close)

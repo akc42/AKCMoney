@@ -17,21 +17,17 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('offsheetlist');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getList = db.prepare(`SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
-          SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
-          OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid 
-          AND p.domain = a.domain WHERE a.domain = ? AND u.uid = ? AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1)
-      WHERE c.type = 'O';`)
-  db.transaction(() => {
-    responder.addSection('offsheet', getList.all(params.domain, user.uid))
-  })();
-  debug('request complete')
+  
+  await mdb.transactionAsync(async db => {
+    responder.addSection('offsheet') 
+    for(const code of db.iterate`SELECT c.id,c.description FROM code c INNER JOIN xaction t ON t.id = (
+        SELECT x.id FROM user u,xaction x INNER JOIN account a ON (x.src = a.name AND x.srccode = c.id) 
+        OR (x.dst = a.name AND x.dstcode = c.id) LEFT JOIN capability p ON p.uid = u.uid AND p.domain = a.domain 
+        WHERE a.domain = ${params.domain} AND u.uid = ${user.uid} AND (u.isAdmin = 1 OR p.uid IS NOT NULL) LIMIT 1) WHERE c.type = 'O'`) {
+      await responder.write(code);
+    }
+  });
 };

@@ -17,17 +17,14 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('currenciesrefresh');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user,p , responder) {
-  debug('new request from', user.name);
-  const getCurrencies = db.prepare('SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC');
-  db.transaction(() => {
-    responder.addSection('currencies', getCurrencies.all());
-  })();
-  debug('request complete')
+  await mdb.transactionAsync(async db => {
+
+    responder.addSection('currencies');
+    for(const currency of db.iterate`SELECT * FROM currency WHERE display = 1 ORDER BY priority ASC`) {
+      await responder.write(currency);
+    }
+  });
 };

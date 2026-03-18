@@ -17,40 +17,33 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('useradmin');
+const logger = Logger('useradmin','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'for user uid', params.uid, 'isAdmin', params.isAdmin );
-  const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
-  const updateUser = db.prepare('UPDATE user SET version = version + 1, isAdmin = ? WHERE uid = ?');
-  const insertCapability = db.prepare('REPLACE INTO capability(uid, domain) VALUES(?,?)');
-  const deleteCapability = db.prepare('DELETE FROM capability WHERE uid = ? ');
-  const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
-  ORDER BY u.name, u.uid`);
-  db.transaction(() => {
-    const v = getVersion.get(params.uid);
-    if (v === params.version) {
-      updateUser.run(params.isAdmin, params.uid);
+  await mdb.transactionAsync(async db => {
+    const {version} = db.get`SELECT version FROM user WHERE uid = ${params.uid}`??{version:0}
+    if (version === params.version) {
+      db.run`UPDATE user SET version = version + 1, isAdmin = ${params.isAdmin} WHERE uid = ${params.uid}`;
       if (params.isAdmin === 1) {
-        debug('deleting capabilities');
-        deleteCapability.run(params.uid);
+        db.run`DELETE FROM capability WHERE uid = ${params.uid}`;
       } else {
         for(const domain of params.domains) {
-          debug('insert capability for domain', domain)
-          insertCapability.run(params.uid,domain);
+          db.run`REPLACE INTO capability(uid, domain) VALUES(${params.uid},?)`
         }
       }
+      responder.addSection('users')
+      for(const user of db.iterate`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u 
+        LEFT JOIN capability c ON u.uid = c.uid ORDER BY u.name, u.uid`) {
+        await responder.write(user);
+      }
       responder.addSection('status', 'OK');
-      responder.addSection('users', getUsers.all())
     } else {
-      logger('error', `User Admin Version Error Disk:${v}, Param:${params.version}`)
-      responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
+      logger(`Version Error Disk:${version}, Param:${params.version}`)
+      responder.addSection('status', `User Name version Error Disk:${version}, Param:${params.version}`);
     }
     
-  })();
-  debug('request complete')
+  });
 };
