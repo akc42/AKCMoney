@@ -20,10 +20,10 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 
+import {api} from '../libs/app-utils.js';
 
 import './account-transaction.js';
 import './material-icon.js';
-import api from '../libs/post-api.js';
 
 /*
      <domain-code>

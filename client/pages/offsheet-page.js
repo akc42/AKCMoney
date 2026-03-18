@@ -18,11 +18,10 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
-import Route from '../libs/route.js';
-import config from '../libs/config.js';
+
+import {api, config, Route} from '../libs/app-utils.js';
 
 import '../elements/account-transaction.js';
-import api from '../libs/post-api.js';
 
 import page from '../styles/page.js';
 

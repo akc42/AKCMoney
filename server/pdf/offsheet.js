@@ -17,11 +17,8 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
 import { dbDateToString,blankIfNull } from '../utils.js';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-const debug = Debug('pdfoffsheet');
+import mdb from '@akc42/sqlite-db';
 
 const LEFT_EDGE = 72;
 const RIGHT_EDGE = 523;
@@ -48,7 +45,6 @@ const PAGE_BOTTOM = 769;
 const PAGE_POSITION = 793;
 const DATE_AREA_WIDTH = DATE_REF_LINE - 1 - LEFT_EDGE;
 const AMOUNT_AREA_WIDTH = AMOUNT_WIDTH + 2 * (TEXT_MARGIN-1);
-debug('DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
 const transactionsHeader = doc => {
   let y = doc.y
   doc.font('Helvetica-Bold');
@@ -71,36 +67,10 @@ const transactionsHeader = doc => {
 }
 
 export default async function(user, params, doc) {
-  debug('new request from', user.name, 'with params', params );
-  const dc = db.prepare('SELECT name, description FROM currency WHERE priority = 0');
-  const getCode = db.prepare('SELECT description FROM code WHERE id = ?').pluck();
-  const getXactions = db.prepare(`SELECT
-          t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
-          CASE 
-              WHEN t.src = a.name THEN -dfamount
-              ELSE dfamount 
-          END AS amount,
-          t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
-      FROM  
-          user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
-          INNER JOIN account a ON 
-              (t.src = a.name AND t.srccode = c.id) 
-              OR (t.dst = a.name AND t.dstcode = c.id) 
-          LEFT JOIN capability p ON 
-              p.uid = u.uid 
-              AND p.domain = a.domain 
-      WHERE 
-          u.uid = ? 
-          AND (u.isAdmin = 1 OR p.uid IS NOT NULL) 
-          AND c.id = ?
-          AND cur.priority = 0
-      ORDER BY 
-          t.Date
-  `);
-  db.transaction(() => {
-    const {name:currency, description } = dc.get();
-    const accountName = getCode.get(params.code);
 
+  mdb.transaction(db => {
+    const {name:currency } = db.get`SELECT name FROM currency WHERE priority = 0`??{name:''};
+    const {description: accountName} = db.get`SELECT description FROM code WHERE id = ${params.code}`??{description:''};
     const now = new Date();
     doc.fontSize(14).text(`Account: ${accountName}`, {align: 'center'});
     doc.fontSize(8).text(`Created: ${dbDateToString(Math.floor(now.getTime()/1000))}`, {align: 'center'});
@@ -111,15 +81,18 @@ export default async function(user, params, doc) {
     transactionsHeader(doc)
     
     let pageNo = 1;
-
-    const transactions = getXactions.bind(user.uid, params.code);
-    
-
     let y = doc.y
 
     let even = false;
     let cumulative = 0;
-    for (const transaction of transactions.iterate()) {
+    for (const transaction of db.iterate`SELECT t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, 
+          CASE WHEN t.src = a.name THEN -dfamount ELSE dfamount END AS amount,
+          t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate
+      FROM  user u, currency cur, dfxaction x JOIN xaction t ON x.id = t.id,code c 
+          INNER JOIN account a ON (t.src = a.name AND t.srccode = c.id) OR (t.dst = a.name AND t.dstcode = c.id) 
+          LEFT JOIN capability p ON p.uid = u.uid AND p.domain = a.domain 
+      WHERE u.uid = ${user.uid} AND (u.isAdmin = 1 OR p.uid IS NOT NULL) AND c.id = ${params.code} AND cur.priority = 0
+      ORDER BY t.Date`) {
       doc.x = LEFT_EDGE;
       if (y > PAGE_BOTTOM) {
         doc.y = PAGE_POSITION;
@@ -138,7 +111,6 @@ export default async function(user, params, doc) {
       const ht = doc.heightOfString(transaction.description, { width: DESC_WIDTH })
       const h = Math.max(Math.ceil(ht), 12) + 4;
       const dy = (h - ht)/2;
-      if (h !== 16) debug('height of transaction', ht, 'Desc', transaction.description.substring(0,20));
       if (even) {
         doc.rect(LEFT_EDGE, y, RIGHT_EDGE-LEFT_EDGE, h).fillAndStroke('aliceblue')
         doc.moveTo(DATE_REF_LINE, y).lineTo(DATE_REF_LINE, y + h).stroke('white');
@@ -167,6 +139,5 @@ export default async function(user, params, doc) {
     doc.y = PAGE_POSITION;
     doc.text(`Page: ${pageNo}`, { align: 'center' });
     
-  })();
-  debug('request complete')
+  });
 };

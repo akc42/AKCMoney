@@ -18,7 +18,8 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
-import submit from '../libs/submit-function.js';
+
+import {submit} from '../libs/app-utils.js';
 
 import '../elements/list-selector.js';
 
@@ -26,7 +27,6 @@ import page from '../styles/page.js';
 import error from '../styles/error.js';
 
 import button from '../styles/button.js';
-
 
 /*
      <profile-page>: Page to edit your use account

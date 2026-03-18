@@ -21,16 +21,15 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
 import {classMap} from '../libs/class-map.js';
 import {guard} from '../libs/guard.js';
-import domHost from '../libs/dom-host.js';
 
-import './dialog-box.js';
-
+import {domHost} from '../libs/app-utils.js';
 
 import button from '../styles/button.js';
 
+import './dialog-box.js';
 
 const monthFormatter = Intl.DateTimeFormat('default', {
-  month: 'long'
+  month: 'short'
 });
 const weekdayFormatter = Intl.DateTimeFormat('default', {
   weekday: 'narrow'
@@ -74,27 +73,67 @@ for (let i = 0; i < 12; i++) {
 
 */
 class CalendarDialog extends LitElement {
-  static get styles() {
-    return [button, css`
- 
+  static styles = [button, css`
+    :host {
+      --icon-size:20px;
+    }
+    .container {
+      padding: 5px;
+      box-shadow: 2px 2px 6px 0px var(--shadow-color);
+      border-radius: 4px;
+      width: 160px;
+    }
+    .datepanel {
+      display: grid;
+      grid-gap: 1px;
+      grid-template-columns: repeat(7, 1fr);
+      --icon-size: 16px;
+      text-align: right;
+      margin: 2px 0;
+    }
+    .datepanel>.month {
+      grid-column: 3 / 6;
+      grid-row: 1 / 2;
+      text-align: center;
+      cursor: default !important;
+    }
+    .datepanel>* {
+      background-color: var(--background-color);
+      color: var(--color);
+      box-sizing:border-box;
+      height:20px;
+    }
+    .datepanel>* {
+      cursor: pointer;
+    }
+    .datepanel>.wd {
+      cursor: default !important;
+    }
+    .datepanel>.day {
+      color: grey;
+    }
+    .day.inmonth {
+      color: white;
+    }
+    .month, .prev, .next, .day.today {
+      color: #cf0;
+    }
+    .day.selected, .day.inmonth.selected  {
+      color: red;
+      border:1px solid red;
+    }
 `];
-  }
+  
 
-  static get properties() {
-    return {
-      value: {type: Number}, //seconds since 1970 - provided by the outside
-      name: {type: String, reflect: true},  //can be used in forms.
-      month: {type: Number},
-      year:{type:Number},
-      monthName: {type: String},
-      withTime: {type: Boolean},
-      pm: {type: Boolean},  //set if time triggered to pm
-      minuteGuard: {type: Number},
-      hourGuard: {type: Number}, //something that only changes if the hour changes
-      dayGuard: {type: Number},
-      noUnset: {type: Boolean} //if set there should be no Unset Function
-    };
-  }
+  static properties = {
+    value: {type: Number}, //seconds since 1970 - provided by the outside
+    name: {type: String, reflect: true},  //can be used in forms.
+    month: {type: Number},
+    year:{type:Number},
+    monthName: {type: String},
+    dayGuard: {type: Number},
+  };
+
   constructor() {
     super();
     const d = new Date();
@@ -186,126 +225,15 @@ class CalendarDialog extends LitElement {
   render() {
     return html`
     <style>
-  :host {
-    --icon-size:20px;
-  }
-
-  .container {
-    padding: 5px;
-    box-shadow: 2px 2px 6px 0px var(--shadow-color);
-    border-radius: 4px;
-    width: 160px;
-  }
-  .datepanel {
-    display: grid;
-    grid-gap: 1px;
-    grid-template-columns: repeat(7, 1fr);
-    --icon-size: 16px;
-    text-align: right;
-    margin: 2px 0;
-  }
-  .datepanel>.month {
-    grid-column: 2 / 7;
-    grid-row: 1 / 2;
-    text-align: center;
-    cursor: default !important;
-  }
-  .timepanel {
-    display: grid;
-    grid-gap: 1px;
-    grid-template-areas:
-      ". am am am pm pm pm"
-      "hr hp hp hp hp hp hp"
-      "hr  hp hp hp hp hp hp"
-      "mi mn mn mn mn mn mn"
-      "mi mn mn mn mn mn mn";
-    border-top: 2px solid white;
-    margin: 2px 0;
-
-  }
-  .datepanel>*, .timepanel>* {
-    background-color: var(--background-color);
-    color: var(--color);
-    box-sizing:border-box;
-    height:20px;
-  }
-  .datepanel>* {
-    cursor: pointer;
-  }
-  .datepanel>.wd {
-    cursor: default !important;
-  }
-  .datepanel>.day {
-    color: grey;
-  }
-  .day.inmonth {
-    color: white;
-  }
-  .am, .pm, .hr, .mi , .month, .prev,.next, .day.today {
-    color: #cf0;
-  }
-  .day.selected, .day.inmonth.selected , .am.selected, .pm.selected, .hour.selected, .minute.selected {
-    color: red;
-    border:1px solid red;
-  }
-  .am {
-    grid-area: am;
-    text-align: right;
-    padding-right: 30px;
-    cursor:pointer;
-  }
-  .pm {
-    grid-area: pm;
-    text-align: left;
-    padding-left:30px;
-    cursor: pointer;
-  }
-  .hr {
-    grid-area: hr;
-    height: 41px;
-  }
-  .mi {
-    grid-area: mi;
-    height:41px;
-  } 
-  .hours {
-    grid-area: hp;
-  }
-  .minutes {
-    grid-area: mn;
-  }
-  .hours, .minutes{
-    display: grid;
-    grid-gap: 1px;
-    grid-template-columns: repeat(6, 1fr);
-    text-align: right;
-    background-color: var(--dialog-color);
-
-    height: 41px;
-  }
-  .hours>*, .minutes>* {
-    cursor: pointer;
-    box-sizing:border-box;
-    height: 20px;
-    background-color: var(--background-color);
-  }
-  .unset {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    padding: 4px;
-    border-top: 2px solid white;
-  }
-  .unset button {
-    width: 70px;
-  }     
     </style>
     <dialog-box id="picker" @overlay-closed=${this._closing} closeOnClick>
       <div class="container">
         <div class="datepanel">
-          <material-icon class="prev" @click=${this._previousMonth}>navigate_before</material-icon>
+          <material-icon class="prev" @click=${this._previousMonth}>chevron_left</material-icon>
+          <material-icon class="prev" @click=${this._previousYear}>arrow_left</material-icon>
           <div class="month"><span>${this.monthName}</span>  <span>${this.year}</span></div>
-          <material-icon class="next" @click=${this._nextMonth}>navigate_next</material-icon>
+          <material-icon class="next" @click=${this._nextYear}>arrow_right</material-icon>
+          <material-icon class="next" @click=${this._nextMonth}>chevron_right</material-icon>
             ${guard([weekdays],() => weekdays.map(day => html`<div class="wd">${day}</div>`))}
             ${guard([this.dayGuard, this.month],() => this.weeks.map(week => week.map(day => html`
               <div class="day ${classMap({
@@ -314,31 +242,6 @@ class CalendarDialog extends LitElement {
                   today: day.today
                 })}" data-date="${day.date}" @click=${this._selectDay}>${day.day}</div> 
             `)))}      
-        </div>
-        ${cache(this.withTime? html`
-          <div class="timepanel">
-            <div class="am ${classMap({ selected: this.value !==0 && !this.pm })}" @click=${this._selectAm}>am</div>
-            <div class="pm ${classMap({ selected: this.value !== 0 && this.pm })}" @click=${this._selectPm}>pm</div>
-            <div class="hr">Hr</div><div class="mi">Mi</div>
-            <div class="hours">
-              ${guard([this.hourGuard, hours], () => hours.map(h => html`
-                <div class="hour ${classMap({
-                  selected: this.value !== 0 && (this.pm? h.offset + 12 : h.offset) === this.hourGuard 
-                })}" data-hour=${h.offset} @click=${this._selectHour}>${h.hour}</div>
-              `))}
-            </div>
-            <div class="minutes">
-              ${guard([this.minuteGuard, mins], () => mins.map(m => html`
-                <div class="minute ${classMap({
-                  selected: this.value !== 0 && m.offset === this.minuteGuard
-                })}" data-minute=${m.offset} @click=${this._selectMinute}>${m.min}</div>
-              `))}      
-            </div>
-            <div></div>
-          </div>
-        `:'')}
-        <div class="unset">
-          <button cancel @click=${this._unset}>${this.noUnset? 'Restore':(this.value === 0? (this.setZero? 'Restore' : 'Today') : 'Unset')}</button>
         </div>
       </div>
       
@@ -371,6 +274,10 @@ class CalendarDialog extends LitElement {
       this.month = 0;
     }
   }
+  _nextYear(e) {
+    e.stopPropagation()
+    this.year++;
+  }
   _previousMonth(e) {
     e.stopPropagation();
     this.month--;
@@ -379,14 +286,11 @@ class CalendarDialog extends LitElement {
       this.month = 11;
     }
   }
-  _selectAm(e) {
+  _previousYear(e) {
     e.stopPropagation();
-    if (this.pm) {
-      //only do anything if currently pm is selected
-      this.value = this.value - 43200; //switch to first half of day
-      this.pm = false;
-    }
+    this.year--;
   }
+  
   _selectDay(e) {
     e.stopPropagation();
     const d = new Date();
@@ -399,40 +303,9 @@ class CalendarDialog extends LitElement {
     d.setFullYear(nd);
     this.value = Math.floor(d.getTime() / 1000);
   }
-  _selectHour(e) {
-    e.stopPropagation();
-    const d = new Date();
-    d.setTime(this.value * 1000);
-    const hrs = parseInt(e.currentTarget.dataset.hour,10) + (this.pm? 12 : 0);
-    d.setHours(hrs);
-    this.value = Math.floor(d.getTime() / 1000);
-  }
-  _selectMinute(e) {
-    e.stopPropagation();
-    const d = new Date();
-    d.setTime(this.value * 1000);
-    d.setMinutes(parseInt(e.currentTarget.dataset.minute,10) * 5);
-    this.value = Math.floor(d.getTime()/1000);
-  }
-  _selectPm() {
-    if (!this.pm) {
-      this.value = this.value + 43200; //switch to second half of day
-      this.pm = true;
-    }
-  }
+
   _show() {
     this.overlay.show();
-  }
-  async _unset() {
-    if (this.value  === 0 || this.noUnset) {
-      this.value = 0;
-      await this.requestUpdate();
-      this.value = this.savedValue;
-    } else {
-      this.savedValue = this.value;
-      this.value = 0;
-      this.setZero = true;
-    }
   }
 }
 customElements.define('calendar-dialog', CalendarDialog);

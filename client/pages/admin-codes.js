@@ -19,8 +19,8 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 
-import Route from '../libs/route.js';
-import api from '../libs/post-api.js';
+import {api, Route} from '../libs/app-utils.js';
+
 import '../elements/material-icon.js';
 import '../elements/list-selector.js';
 import '../elements/codetype-dialog.js';
@@ -28,7 +28,6 @@ import '../elements/codetype-dialog.js';
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import input from '../styles/error.js';
-
 
 /*
      <admin-codes>: Edit the list of accounting codes and assign them to correct type

@@ -19,15 +19,11 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import config from '../libs/config.js';
 
-import {default as Debug, initialiseDebug, debugDump, unloadDebug} from '../libs/debug.js'
+import {config} from '../libs/app-utils.js';
 
 import button from '../styles/button.js';
 import page from '../styles/page.js';
-
-
-
 
 /*
      <error-manager>: a page which handles errors.
@@ -59,14 +55,12 @@ class ErrorManager extends LitElement {
   }
   connectedCallback() {
     super.connectedCallback();
-    initialiseDebug();
     window.addEventListener('error', this._clientError);
     window.addEventListener('unhandledrejection', this._promiseRejection);
     this.forbidden = false;
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    unloadDebug()
     window.removeEventListener('error', this._clientError);
     window.removeEventListener('unhandledrejection', this._promiseRejection);
 
@@ -98,7 +92,6 @@ ${e.stack??e.error.stack??e.message}
 has occured`;
     const logpath = `/api/log/${encodeURIComponent('error')}/${encodeURIComponent(message)}`
     navigator.sendBeacon(logpath);
-    debugDump();
     this.dispatchEvent(new CustomEvent('error-status',{bubbles: true, composed: true, detail:'error'}));
     this.anError = true;
   }

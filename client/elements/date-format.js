@@ -20,58 +20,44 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {classMap} from '../libs/class-map.js';
 
-
 const dateFormatter = Intl.DateTimeFormat('default', {
   dateStyle: 'medium'
 });
-const dateTimeFormatter = Intl.DateTimeFormat('default', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  hour12: true,
-});
+
 
 /*
      <date-format>
 */
 class DateFormat extends LitElement {
-  static get styles() {
-    return css`
-      :host {
-        display: inline-block;
-        font-size: 12px;
-      }
-      .date {
-        display: flex;
-        flex-direction: row;
-        width: 94px;
-        justify-content: center;
-        padding: 2px;
-      }
-      .date.time {
-        width: 168px;
-      }
-            
-    `;
-  }
-  static get properties() {
-    return {
-      date:{type: Number}, //this is the date time in seconds since 1970
-      withTime: {type: Boolean},
-      dateString: {type: String},
+  static styles = [css`
+    :host {
+      display: inline-block;
+      font-size: 12px;
+    }
+    .date {
+      display: flex;
+      flex-direction: row;
+      width: 94px;
+      justify-content: center;
+      padding: 2px;
+    }
+          
+  `];
+  static  properties = {
+    date:{type: Number}, //this is the date time in seconds since 1970
+    dateString: {type: String},
+  };
 
-    };
-  }
   constructor() {
     super();
     this.date = 0;
-    this.withTime = false;
     this.dateString = '';
   }
   update(changed) {
-    if(changed.has('date') || changed.has('withTime')) {
+    if(changed.has('date')) {
       if (this.date !== 0) {
         const when = new Date().setTime(this.date * 1000);
-        this.dateString = this.withTime? dateTimeFormatter.format(when) : dateFormatter.format(when);
+        this.dateString = dateFormatter.format(when);
       } else {
         this.dateString = 'No Date Set';
       }
@@ -81,7 +67,7 @@ class DateFormat extends LitElement {
 
   render() {
     return html`
-      <div class="date ${classMap({time: this.withTime})}">
+      <div class="date">
         <span>${this.dateString}</span>
       </div>
     `;

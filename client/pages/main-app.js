@@ -19,11 +19,8 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import Debug from '../libs/debug.js';
-import api from '../libs/post-api.js';
-import AppKeys from '../libs/app-keys.js';
-import config from '../libs/config.js';
-import {switchPath} from '../libs/switch-path.js';
+
+import { Debug, api, AppKeys,switchPath, config } from '../libs/app-utils.js';
 
 import '../elements/alert-dialog.js';
 import '../elements/material-icon.js';
@@ -39,13 +36,11 @@ import './error-manager.js';
 import csv from '../modules/csv.js';
 import pdf from '../modules/pdf.js';
 
-
 import tooltip from '../styles/tooltip.js';
 import menu from '../styles/menu.js';
 import './session-manager.js';
 
-sessionStorage.setItem('debug', config.debug); //set up the debug module to define it config 
-const debug=Debug('mainApp');
+const debug = Debug('mainApp');
 
 /*
      <main-app>: Main Page of the Application
@@ -340,7 +335,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
 
     // Get the scrollbar width
     const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-    this.style.setProperty('--scrollbar-width', `-${scrollbarWidth}px`);
+    this.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
 
     // Delete the DIV
     this.shadowRoot.removeChild(scrollDiv);
@@ -357,7 +352,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
           this.currencies = response.currencies;
         })
       } else {
-        this.user = {uid: 0};
+        this.user = {uid: 0, isAdmin: false, account: '', domain: ''}
       }
     }
     if (changed.has('user')) {

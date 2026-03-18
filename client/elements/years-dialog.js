@@ -20,8 +20,9 @@
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
 import { classMap } from '../libs/class-map.js';
-import domHost from '../libs/dom-host.js';
-import api from '../libs/post-api.js';
+
+import {api,domHost} from '../libs/app-utils.js';
+
 import './material-icon.js';
 import './dialog-box.js';
 

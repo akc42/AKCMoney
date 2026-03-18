@@ -21,13 +21,9 @@
 
 import { LitElement, html } from '../libs/lit-element.js';
 
-import api from '../libs/post-api.js';
-import config from '../libs/config.js';
-import {switchPath} from '../libs/switch-path.js';
+import {api, config, Debug, switchPath} from '../libs/app-utils.js';
 
 import page from '../styles/page.js';
-
-import Debug from '../libs/debug.js';
 
 import '/api/user.js';  //create user cookie
 

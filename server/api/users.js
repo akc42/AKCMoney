@@ -17,19 +17,15 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('users');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name);
-  const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
-  ORDER BY u.name, u.uid`)
   
-  db.transaction(() => {
-    responder.addSection('users', getUsers.all());
-  })();
-  debug('request complete')
+  await mdb.transactionAsync(async db => {
+    responder.addSection('users')
+    for(const user of db.iterate`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u 
+      LEFT JOIN capability c ON u.uid = c.uid ORDER BY u.name, u.uid`) {
+      await responder.write(user);
+    }
+  });
 };

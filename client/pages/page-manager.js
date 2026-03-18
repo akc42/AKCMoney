@@ -21,9 +21,10 @@
 
 import { html,css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import {connectUrl, disconnectUrl} from '../libs/location.js';
-import Debug from '../libs/debug.js'
+import {connectUrl, disconnectUrl, Debug} from '../libs/app-utils.js';
+
 import RouteManager from '../elements/route-manager.js';
+
 import '../elements/delete-dialog.js';
 import '../elements/zero-dialog.js';
 import '../elements/years-dialog.js';
@@ -31,22 +32,19 @@ import '../elements/years-dialog.js';
 const debug = Debug('page');
 
 export class PageManager extends RouteManager {
-  static get styles() {
-    return css`
-      :host {
-        height:100%;
-      }
-    `;
-  }
-  static get properties() {
-    return {
-      codes: {type: Array}, //list of codes
-      repeats: {type: Array}, //list of repeats
-      accounts: {type: Array}, //list of accounts
-      domains: {type: Array}, //list of domains
-      domain: {type: String} //current domain
-    };
-  }
+  static styles= [css`
+    :host {
+      height:100%;
+    }
+  `];
+  static properties = {
+    codes: {type: Array}, //list of codes
+    repeats: {type: Array}, //list of repeats
+    accounts: {type: Array}, //list of accounts
+    domains: {type: Array}, //list of domains
+    domain: {type: String} //current domain
+  };
+
   constructor() {
     super();
     this.codes = [];

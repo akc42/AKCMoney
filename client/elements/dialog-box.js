@@ -88,7 +88,6 @@ class DialogBox extends LitElement  {
   constructor() {
     super();
     this.nativeDialog = !!window.HTMLDialogElement;  //store it so we can change it in testing later
-    if (!this.nativeDialog) import('./dialog-polyfill.js');
     this.sizingTarget = this;
     this.fitInto = window;
     this.position = 'target';
@@ -128,18 +127,11 @@ class DialogBox extends LitElement  {
   }
   render() {
     return html`
-      ${cache(this.nativeDialog ? html`
-        <dialog
-          id="dialog">
-          <slot @slotchange=${this._slotChange}></slot>
-        </dialog>`
-    : html`
-        <dialog-polyfill
-          id="dialog"
-          ?open=${this.opened}>
-          <slot @slotchange=${this._slotChange}></slot>
-        </dialog-polyfill>`)}
-    `;
+      <dialog
+        id="dialog">
+        <slot @slotchange=${this._slotChange}></slot>
+      </dialog>`
+    ;
   }
   get opened() {
     if (this.sizingTarget !== undefined) {

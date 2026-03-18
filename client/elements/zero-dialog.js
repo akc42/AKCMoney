@@ -18,7 +18,9 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
-import domHost from '../libs/dom-host.js';
+
+import {domHost} from '../libs/app-utils.js';
+
 import './dialog-box.js';
 import './material-icon.js';
 

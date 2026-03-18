@@ -20,11 +20,13 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {classMap} from '../libs/class-map.js';
 
+import {api, Route} from '../libs/app-utils.js';
+
 import '../elements/material-icon.js';
+
 import page from '../styles/page.js';
 import button from '../styles/button.js';
-import api from '../libs/post-api.js';
-import Route from '../libs/route.js';
+
 /*
      <sorter-page>: Sorting Accounts
 */

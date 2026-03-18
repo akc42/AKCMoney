@@ -19,15 +19,14 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 
+import {api, Route, Debug} from '../libs/app-utils.js';
 
-import Route from '../libs/route.js';
-import api from '../libs/post-api.js';
 import '../elements/material-icon.js';
 import '../elements/list-selector.js';
+
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import input from '../styles/error.js';
-import Debug from '../libs/debug.js';
 
 const debug = Debug('adminaccounts');
 
