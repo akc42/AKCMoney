@@ -32,30 +32,24 @@ import list from '../styles/list.js';
      <years-dialog>
 */
 class YearsDialog extends LitElement {
-  static get styles() {
-    return [list,css`
-      button[role="menuitem"].selected {
-        background-color: royalblue;
-        color: white;
-      }
-    `];
-  }
-  static get properties() {
-    return {
-      years: {type: Array},
-      domain: {type: String},
-      year: {type: Number}
-    };
-  }
+  static styles = [list,css`
+    button[role="menuitem"].selected {
+      background-color: royalblue;
+      color: white;
+    }
+  `];
+  static properties = {
+    years: {type: Array},
+    domain: {type: String},
+    year: {type: Number}
+  };
   constructor() {
     super();
     this.years = [];
     this.year = new Date().getFullYear();
     this.domain = '';
     this._gotRequest = this._gotRequest.bind(this);
-    this.eventLocked = true;
-    
-
+    this.eventLocked = true;  
   }
   connectedCallback() {
     super.connectedCallback();
@@ -107,8 +101,7 @@ class YearsDialog extends LitElement {
             <span>${year}</span>
           </button>
         `))}
-      </dialog-box>
-    `;
+      </dialog-box>`;
   }
   _closing(e) {
     e.stopPropagation();

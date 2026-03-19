@@ -35,56 +35,48 @@ function activeElement() {
 }
 
 class DialogBox extends LitElement  {
-  static get styles() {
-    return css`   
+  static styles= [css`   
+    #dialog {
+      position: fixed;
+      background-color: var(--dialog-color);
+      color:  black;
+      margin:5px;
+      box-sizing: border-box;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 0 40px var(--shadow-color), 0 0 10px var(--shadow-color);
+      padding: 0;
+      display: none;
+      opacity:0;
+    }
+    #dialog[open] {
+      display:block;
+      opacity: 1;
+    }
+  `];
+static properties = {
+    //close if use clicks in the overlay (unless propagation prevented)
+    closeOnClick: {type: Boolean},
+    /**
+     * position the sizingTarget according to the string.  Possible Values are
+     *
+     *  'target'  look for a "positionTarget" object and fit it near that
+     *  'right'   look for a "positionTarget" onject and try and fit just to the right of it, matching tops if possible.
+     *  'centre'  centre the item in the "fitInto" element
+     *  'bottom'  align to the bottom center of the fitInto element
+     *  'top'     align to the to centre of the fitInto element (but a this.topOffset Down)
+     */
+    position: { type: String },
+    /*
+      * percentage (between 1 and 100) of the maximum size of the sizing element against
+      * ths object it is fitting into.
+      */
+    maxSize: { type: Number },
+    //Offset if position is top
+    topOffset: { type: Number }
 
-      :host {
-        display:block;
-      }
-      #dialog {
-        position: fixed;
-        background-color: var(--dialog-color);
-        color:  black;
-        margin:5px;
-        box-sizing: border-box;
-        border: none;
-        border-radius: 5px;
-        box-shadow: 0 0 40px var(--shadow-color), 0 0 10px var(--shadow-color);
-        padding: 0;
-        display: none;
-        opacity:0;
-      }
-      #dialog[open] {
-        display:block;
-        opacity: 1;
-      }
-    `;
-  }
+  };
 
-  static get properties() {
-    return {
-      //close if use clicks in the overlay (unless propagation prevented)
-      closeOnClick: {type: Boolean},
-      /**
-       * position the sizingTarget according to the string.  Possible Values are
-       *
-       *  'target'  look for a "positionTarget" object and fit it near that
-       *  'right'   look for a "positionTarget" onject and try and fit just to the right of it, matching tops if possible.
-       *  'centre'  centre the item in the "fitInto" element
-       *  'bottom'  align to the bottom center of the fitInto element
-       *  'top'     align to the to centre of the fitInto element (but a this.topOffset Down)
-       */
-      position: { type: String },
-      /*
-       * percentage (between 1 and 100) of the maximum size of the sizing element against
-       * ths object it is fitting into.
-       */
-      maxSize: { type: Number },
-      //Offset if position is top
-      topOffset: { type: Number }
-
-    };
-  }
   constructor() {
     super();
     this.nativeDialog = !!window.HTMLDialogElement;  //store it so we can change it in testing later
@@ -127,8 +119,7 @@ class DialogBox extends LitElement  {
   }
   render() {
     return html`
-      <dialog
-        id="dialog">
+      <dialog id="dialog">
         <slot @slotchange=${this._slotChange}></slot>
       </dialog>`
     ;

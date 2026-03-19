@@ -36,14 +36,15 @@ class DomainCode extends LitElement {
           display: grid;
           grid-gap: 1px;
           color: var(--table-text-color);
-          grid-template-columns: 40px 1fr repeat(2, var(--amount-width)) 70px;
+          grid-template-columns: 32px 1fr repeat(2, var(--amount-width)) 20px;
           grid-template-areas:
             "type . amount balance show"
             "code code code code code";
-          margin: 2px 5px;
+          
+        }
+        .type, .code, .amount, .balance, .show {
           background-color: var(--table-panel-background);
         }
-
 
         .type {
           grid-area: type;
@@ -69,16 +70,16 @@ class DomainCode extends LitElement {
         }
 
         div.type.C {
-            background:transparent url(/images/codes.png) no-repeat 0 -20px;
+            background:var(--table-panel-background) url(/images/codes.png) no-repeat 0 -20px;
         }
         div.type.R {
-            background:transparent url(/images/codes.png) no-repeat 0 -40px;
+            background:var(--table-panel-background) url(/images/codes.png) no-repeat 0 -40px;
         }
         div.type.A {
-            background:transparent url(/images/codes.png) no-repeat 0 -60px;
+            background:var(--table-panel-background) url(/images/codes.png) no-repeat 0 -60px;
         }
         div.type.B {
-            background:transparent url(/images/codes.png) no-repeat 0 -80px;
+            background:var(--table-panel-background) url(/images/codes.png) no-repeat 0 -80px;
         }
 
         @media (min-width: 500px) {
@@ -168,8 +169,8 @@ class DomainCode extends LitElement {
         <div class="amount">${(this.tamount/100).toFixed(2)}</div>
         <div class="balance">${(this.balance/100).toFixed(2)}</div>
         <div class="show" @click=${this._zoom}>${this.expanded? 
-          html`<material-icon>zoom_out</material-icon>`:
-          html`<material-icon>zoom_in</material-icon>`}</div>
+          html`<material-icon>top_panel_close</material-icon>`:
+          html`<material-icon>top_panel_open</material-icon>`}</div>
       </section>
       <section class="transactions">
         ${cache(this.expanded ? html`

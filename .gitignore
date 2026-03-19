@@ -1,6 +1,7 @@
 appinfo
 client/libs
 db/**
+backup/**
 node_modules
 .DS_Store
 npm-debug.log

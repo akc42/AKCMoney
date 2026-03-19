@@ -18,7 +18,7 @@
 #   along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-FROM nginx:mainline-alpine-slim AS Client
+FROM nginx:mainline-alpine-slim AS client
 LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
 RUN --mount=type=cache,target=/var/cache/apk apk add tzdata
 ENV TZ=Europe/London
@@ -30,7 +30,7 @@ COPY package.json ./
 RUN --mount=type=cache,target=/var/cache/apk apk add tzdata vim
 RUN --mount=type=cache,target=~.npm npm install --omit=dev
 
-FROM node:lts-alpine AS ServerBase
+FROM node:lts-alpine AS serverbase
 LABEL uk.org.chandlerfamily.maintainer="Alan Chandler <alan@chandlerfamily.org.uk>"
 RUN --mount=type=cache,target=/var/cache/apk apk add tzdata
 ENV TZ Europe/London
@@ -42,13 +42,13 @@ RUN mkdir -p appinfo
 ## Allows for coloured output (https://stackoverflow.com/questions/33493456/docker-bash-prompt-does-not-display-color-output)
 ENV TERM xterm-256color
 
-FROM ServerBase AS Server
+FROM serverbase AS server
 WORKDIR /app
 RUN mkdir -p server
 EXPOSE 2010
 CMD ["node", "server/server.js"]
 
-FROM ServerBase AS Timer
+FROM serverbase AS timer
 RUN mkdir -p /db-backup
 WORKDIR /etc/crontabs
 COPY crontab-root ./root

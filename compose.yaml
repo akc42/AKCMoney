@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
     networks:
       - moneynet
-    env-file:
+    env_file:
       - ./common.env
     volumes:
       - /home/alan/dev/money/timer:/app/timer

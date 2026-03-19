@@ -32,9 +32,6 @@ import button from '../styles/button.js';
 class ZeroDialog extends LitElement {
   static get styles() {
     return [button,css`
-      :host {
-        margin: 5px;
-      }
       dialog-box {
         background-color: transparent!important;
       }

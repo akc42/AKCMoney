@@ -320,7 +320,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
 
     // Get the scrollbar width
     const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-    this.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
+    this.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`); //negative as we want to leak into margin space
 
     // Delete the DIV
     this.shadowRoot.removeChild(scrollDiv);
@@ -488,7 +488,6 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       </header>
       <section>
         <error-manager
-
           @error-status=${this._errorChanged};
           @auth-changed=${this._authChanged}></error-manager>
         <session-manager

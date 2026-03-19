@@ -27,7 +27,6 @@ export default async function(user, params, responder) {
 
   await mdb.transactionAsync(async db => {
     const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.name}`??{dversion:0}
-    const v = getVersion.get(params.name);
     if (params.dversion === dversion) {
       db.run`UPDATE account SET dversion = dversion + 1, archived = ${params.archive ? 1:0} WHERE name = ${params.name}`;
       responder.addSection('accounts');

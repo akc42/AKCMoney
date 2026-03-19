@@ -29,21 +29,19 @@ import page from '../styles/page.js';
      <error-manager>: a page which handles errors.
 */
 class ErrorManager extends LitElement {
-  static get styles() {
-    return [button, css`
-      .forbidden {
-        color: red;
-        font-weight: bold;
-      }
-    `, page];
-  }
-  static get properties() {
-    return {
-      anError: {type: Boolean},
-      forbidden: {type: Boolean},
-      serverDown: {type: Boolean}
-    };
-  }
+  static styles = [page, button, css`
+    .forbidden {
+      color: red;
+      font-weight: bold;
+    }
+  `];
+
+  static properties = {
+    anError: {type: Boolean},
+    forbidden: {type: Boolean},
+    serverDown: {type: Boolean}
+  };
+
 
   constructor() {
     super();

@@ -37,245 +37,243 @@ const debug = Debug('account');
      <account-transaction>
 */
 class AccountTransaction extends LitElement {
-  static get styles() {
-    return [button,error, tooltip, css`
-      :host {
-        background-color: transparent;
-      }
-      .wrapper {
-        padding: 2px;
-        display: grid;
-        grid-gap: 1px;
-        grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
-        grid-template-areas:
-          "date ref . amount balance code"
-          "description description description description description description";
+  static styles = [button,error, tooltip, css`
+    :host {
+      background-color: transparent;
+    }
+    .wrapper {
+      padding: 2px;
+      display: grid;
+      grid-gap: 1px;
+      grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+      grid-template-areas:
+        "date ref . amount balance code"
+        "description description description description description description";
 
+    }
+    .wrapper.depreciate {
+      grid-template-columns: 94px 70px 1fr repeat(3, var(--amount-width)) 20px;
+      grid-template-areas:
+        "date ref . amount depreciate balance ."
+        "description description description description description description .";       
+    }
+    .container {
+      padding: 2px;
+      cursor: normal;
+      background-color: var(--form-background-color);
+      display: grid;
+      grid-gap: 1px;
+      grid-template-columns: 94px repeat(2,35px) 6fr 9fr 1fr 8fr repeat(2, var(--amount-width)) 20px;
+      grid-template-areas:
+        "date date dstsrc currency currency currency currency amount setrate setrate"
+        "cleared . rate acurrency acurrency acurrency acurrency accamount setrate setrate"
+        "lref ref ref repeat repeat repeat repeat repeat setrate setrate"
+        "description description description description description description description description description description"
+        "- accode accode accode accode accode accode accode accode code"
+        "srcdst account account account account account account account account account"
+        "switch switch . . move move move move balance ."
+        "cancel . . save save save save save delete delete";
+    }
+    .wrapper[data-tooltip] {
+      display: grid;
+      cursor: pointer;
+    }
+    .date, calendar-input {
+      grid-area: date;
+      cursor: pointer;
+    }
+    .date.reconciled {
+      text-decoration: line-through;
+    }
+    .date.passed {
+      background-color: var(--old-transaction);
+    }
+    .date.cleared {
+      background-color: var(--cleared-transaction);
+    }
+    .date.selected {
+      background-color: var(--selected-for-unclear);
+    }
+    .date.cleared.selected {
+      background-color: var(--selected-for-clear);
+    }
+    .date.repeating {
+      background-color: var(--repeating-transaction);
+    }
+    .lref {
+      grid-area: lref;
+      text-align: right;
+    }
+    .ref, input[name="rno"] {
+      grid-area: ref;
+    }
+    .description, #description {
+      grid-area: description;
+    }
+
+    .currency {
+      grid-area: currency;
+    }     
+    label[for="cleared"] {
+      grid-area: cleared;
+    }
+    .amount {
+      text-align: right;
+      grid-area: amount;
+    }
+    .amount.currency {
+      background-color: var(--currency-difference-color);
+    }
+    .amount.asset {
+      color: var(--asset-value-color);
+    }
+    .amount.error {
+      background-color: var(--input-error-color)
+    }
+    .setrate {
+      grid-area: setrate;
+    }
+    .balance {
+      text-align: right;
+      grid-area: balance;
+    }
+    div.code {
+      grid-area: code;
+      margin: 0;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      background:transparent url(codes.png) no-repeat 0 0;
+    }
+
+    div.code.C {
+        background:transparent url(/images/codes.png) no-repeat 0 -20px;
+    }
+    div.code.R {
+        background:transparent url(/images/codes.png) no-repeat 0 -40px;
+    }
+    div.code.A {
+        background:transparent url(/images/codes.png) no-repeat 0 -60px;
+    }
+    div.code.B {
+        background:transparent url(/images/codes.png) no-repeat 0 -80px;
+    }
+    div.code.O {
+        background:transparent url(/images/codes.png) no-repeat 0 -100px;
+    }
+    .acurrency {
+      grid-area: acurrency;
+    }
+    .dual {
+      font-weight: bold;
+    }
+    #accountamount {
+      grid-area: accamount;
+    }
+    .rate {
+      grid-area: rate;
+    }
+    .repeat {
+      grid-area: repeat;
+    }
+    .accode {
+      grid-area: accode;
+    }
+    .srcdst {
+      grid-area: srcdst;
+      text-align: right;
+    }
+    .dstsrc {
+      grid-area: dstsrc;
+      text-align: right;
+    }
+    .account {
+      grid-area: account;
+    }
+    .switch {
+      grid-area: switch;
+    }
+    .cancel {
+      grid-area: cancel;
+    }
+    .save {
+      grid-area: save;
+    }
+    .move {
+      grid-area: move;
+    }
+    .delete {
+      grid-area: delete
+    }
+    .depreciation {
+      grid-area: depreciate;
+      text-align: right;
+    }
+    @media (min-width: 500px) {
+      .wrapper {
+        grid-template-areas:
+          "date ref description amount balance code";
       }
       .wrapper.depreciate {
-        grid-template-columns: 94px 70px 1fr repeat(3, var(--amount-width));
         grid-template-areas:
-          "date ref . amount depreciate balance"
-          "description description description description description description";       
+          "date ref description amount depreciate balance .";
       }
       .container {
-        padding: 2px;
-        cursor: normal;
-        background-color: var(--form-background-color);
-        display: grid;
-        grid-gap: 1px;
-        grid-template-columns: 94px repeat(2,35px) 6fr 9fr 1fr 8fr repeat(2, var(--amount-width)) 20px;
         grid-template-areas:
-          "date date dstsrc currency currency currency currency amount setrate setrate"
-          "cleared . rate acurrency acurrency acurrency acurrency accamount setrate setrate"
-          "lref ref ref repeat repeat repeat repeat repeat setrate setrate"
-          "description description description description description description description description description description"
-          "- accode accode accode accode accode accode accode accode code"
-          "srcdst account account account account account account account account account"
-          "switch switch . . move move move move balance ."
-          "cancel . . save save save save save delete delete";
-      }
-      .wrapper[data-tooltip] {
-        display: grid;
-        cursor: pointer;
-      }
-      .date, calendar-input {
-        grid-area: date;
-        cursor: pointer;
-      }
-      .date.reconciled {
-        text-decoration: line-through;
-      }
-      .date.passed {
-        background-color: var(--old-transaction);
-      }
-      .date.cleared {
-        background-color: var(--cleared-transaction);
-      }
-      .date.selected {
-        background-color: var(--selected-for-unclear);
-      }
-      .date.cleared.selected {
-        background-color: var(--selected-for-clear);
-      }
-      .date.repeating {
-        background-color: var(--repeating-transaction);
+          "date date dstsrc description description description description amount currency ."
+          ". . . . setrate setrate rate accamount acurrency ."
+          "cleared ref ref repeat accode accode accode accode accode code"
+          "switch switch srcdst account account account move . balance ."
+          "cancel . save save . . lref . delete delete";
       }
       .lref {
-        grid-area: lref;
-        text-align: right;
+        display: none;
       }
-      .ref, input[name="rno"] {
-        grid-area: ref;
-      }
-      .description, #description {
-        grid-area: description;
-      }
+    }
+  
+  `];
 
-      .currency {
-        grid-area: currency;
-      }     
-      label[for="cleared"] {
-        grid-area: cleared;
-      }
-      .amount {
-        text-align: right;
-        grid-area: amount;
-      }
-      .amount.currency {
-        background-color: var(--currency-difference-color);
-      }
-      .amount.asset {
-        color: var(--asset-value-color);
-      }
-      .amount.error {
-        background-color: var(--input-error-color)
-      }
-      .setrate {
-        grid-area: setrate;
-      }
-      .balance {
-        text-align: right;
-        grid-area: balance;
-      }
-      div.code {
-        grid-area: code;
-        margin: 0;
-        padding: 0;
-        width: 20px;
-        height: 20px;
-        background:transparent url(codes.png) no-repeat 0 0;
-      }
+  static properties = {
+    amount: { type: Number },
+    currency: { type: String },
+    date: { type: Number },
+    description: { type: String },
+    dst: { type: String },
+    dstamount: { type: Number },
+    dstclear: { type: Boolean },
+    dstcode: { type: String },
+    tid: {type: Number},
+    reconciled: { type: Boolean },
+    repeat: { type: Number },
+    rno: { type: String },
+    src: {type: String},
+    srcamount: { type: Number },
+    srcclear: {type: Boolean},
+    srccode: {type: String},
+    trate: {type: Number},
+    version: { type: Number },
+    sameDomain: {type: Boolean},
+    index: { type: Number },
+    balance: {type: Number},
+    cumulative: {type: Number},
+    edit: {type: Boolean},
+    amountEdit: {type: Boolean},
+    account: {type: String}, //Name of account (should match src or dst of transaction)
+    acurrency: {type: String},
+    arate: {type: Number},
+    codes: {type: Array},
+    repeats: {type: Array},
+    accounts: {type: Array},
+    inputError: {type: Boolean},
+    accountAmountError: {type: Boolean},
+    readonly: {type: Boolean}, //set if context (domain/offsheet) doesn't allow editing (also cleared/reconcilled ignored)
+    accounting: {type: Boolean}, //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
+    selected: {type: Boolean}, //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
+    code: {type: String},
+    depreciation: {type: Number}, //If accounting and code = 'A' This is the amount of depreciation associated with the year being accounted.
+    register: {type: Boolean}
+  };
 
-      div.code.C {
-          background:transparent url(/images/codes.png) no-repeat 0 -20px;
-      }
-      div.code.R {
-          background:transparent url(/images/codes.png) no-repeat 0 -40px;
-      }
-      div.code.A {
-          background:transparent url(/images/codes.png) no-repeat 0 -60px;
-      }
-      div.code.B {
-          background:transparent url(/images/codes.png) no-repeat 0 -80px;
-      }
-      div.code.O {
-          background:transparent url(/images/codes.png) no-repeat 0 -100px;
-      }
-      .acurrency {
-        grid-area: acurrency;
-      }
-      .dual {
-        font-weight: bold;
-      }
-      #accountamount {
-        grid-area: accamount;
-      }
-      .rate {
-        grid-area: rate;
-      }
-      .repeat {
-        grid-area: repeat;
-      }
-      .accode {
-        grid-area: accode;
-      }
-      .srcdst {
-        grid-area: srcdst;
-        text-align: right;
-      }
-      .dstsrc {
-        grid-area: dstsrc;
-        text-align: right;
-      }
-      .account {
-        grid-area: account;
-      }
-      .switch {
-        grid-area: switch;
-      }
-      .cancel {
-        grid-area: cancel;
-      }
-      .save {
-        grid-area: save;
-      }
-      .move {
-        grid-area: move;
-      }
-      .delete {
-        grid-area: delete
-      }
-      .depreciation {
-        grid-area: depreciate;
-        text-align: right;
-      }
-      @media (min-width: 500px) {
-        .wrapper {
-          grid-template-areas:
-            "date ref description amount balance code";
-        }
-        .wrapper.depreciate {
-          grid-template-areas:
-            "date ref description amount depreciate balance";
-        }
-        .container {
-          grid-template-areas:
-            "date date dstsrc description description description description amount currency ."
-            ". . . . setrate setrate rate accamount acurrency ."
-            "cleared ref ref repeat accode accode accode accode accode code"
-            "switch switch srcdst account account account move . balance ."
-            "cancel . save save . . lref . delete delete";
-        }
-        .lref {
-          display: none;
-        }
-      }
-    
-    `];
-  }
-  static get properties() {
-    return {
-      amount: { type: Number },
-      currency: { type: String },
-      date: { type: Number },
-      description: { type: String },
-      dst: { type: String },
-      dstamount: { type: Number },
-      dstclear: { type: Boolean },
-      dstcode: { type: String },
-      tid: {type: Number},
-      reconciled: { type: Boolean },
-      repeat: { type: Number },
-      rno: { type: String },
-      src: {type: String},
-      srcamount: { type: Number },
-      srcclear: {type: Boolean},
-      srccode: {type: String},
-      trate: {type: Number},
-      version: { type: Number },
-      sameDomain: {type: Boolean},
-      index: { type: Number },
-      balance: {type: Number},
-      cumulative: {type: Number},
-      edit: {type: Boolean},
-      amountEdit: {type: Boolean},
-      account: {type: String}, //Name of account (should match src or dst of transaction)
-      acurrency: {type: String},
-      arate: {type: Number},
-      codes: {type: Array},
-      repeats: {type: Array},
-      accounts: {type: Array},
-      inputError: {type: Boolean},
-      accountAmountError: {type: Boolean},
-      readonly: {type: Boolean}, //set if context (domain/offsheet) doesn't allow editing (also cleared/reconcilled ignored)
-      accounting: {type: Boolean}, //set if transaction is in context of domain accounting, so amount is ALWAYS +ve (forces RO)
-      selected: {type: Boolean}, //Set if transaction is awaiting so shift click another transaction to clear or unclear multiple transactions.
-      code: {type: String},
-      depreciation: {type: Number}, //If accounting and code = 'A' This is the amount of depreciation associated with the year being accounted.
-      register: {type: Boolean}
-    };
-  }
   constructor() {
     super();
     this.amount = 0;

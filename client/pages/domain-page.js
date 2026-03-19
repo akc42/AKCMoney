@@ -27,6 +27,7 @@ import menu from '../styles/menu.js';
 import '../elements/dialog-box.js';
 import '../elements/list-selector.js';
 import '../elements/domain-code.js';
+import '../elements/material-icon.js';
 
 /*
      <domain-page>: Displays a yealy accounts for the domain
@@ -34,26 +35,23 @@ import '../elements/domain-code.js';
 class DomainPage extends LitElement {
   static get styles() {
     return [page, menu,css`
-        section.page {
-          max-width: 800px;
-        }
         .header, .footer {     
           padding: 2px;
           display: grid;
           grid-gap: 1px;
           color: var(--table-text-color);
-          grid-template-columns: 40px 1fr repeat(2, var(--amount-width)) 70px;
+          grid-template-columns: 32px 1fr repeat(2, var(--amount-width)) 20px;
           grid-template-areas:
             "type code amount balance show";
+          margin: 0px 5px;
+          margin-right: var(--scrollbar-width)
         }
         .header {
-          margin: 0px 5px;
           background-color: var(--table-heading-background);
           font-weight: bold;
         }
         .footer {
           background-color: white;
-          margin: 0px 5px;
           font-weight: bold;
           padding: 5px 8px;
           grid-gap: 0px;
@@ -88,7 +86,7 @@ class DomainPage extends LitElement {
         #codes {
           background-color: white;
           color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 0px 5px;
+          margin: 0px calc( - var(--scrollbar-width)) 0px 5px;
           display: flex;
           flex-direction: column;
 
@@ -102,7 +100,6 @@ class DomainPage extends LitElement {
             grid-template-areas:
               "type code amount balance show";    
           }
-
         }    
     `];
   }
@@ -201,7 +198,7 @@ class DomainPage extends LitElement {
             <div class="code">Account Code</div>
             <div class="amount">Totals</div>
             <div class="balance">Profit</div>
-            <div class="show">Show/Hide</div>
+            <div class="show"><material-icon>expand</material-icon></div>
         </div>
         <section id=codes class="scrollable">
           ${this.codes.map((code,i) => html`
@@ -215,15 +212,15 @@ class DomainPage extends LitElement {
               .codes=${this.codes}
               data-index=${i}></domain-code>
           `)}
+
         </section>
-        <div class="footer">
+          <div class="footer">
             <div class="type"></div>
             <div class="code">Profit</div>
             <div class="amount"></div>
             <div class="balance">${(this.profit/100).toFixed(2)}</div>
             <div class="show"></div>
-        
-        </div>
+          </div>        
       </section>
     `;
   }
