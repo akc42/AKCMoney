@@ -19,11 +19,8 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {cache} from '../libs/cache.js';
-import Debug from '../libs/debug.js';
-import api from '../libs/post-api.js';
-import AppKeys from '../libs/app-keys.js';
-import config from '../libs/config.js';
-import {switchPath} from '../libs/switch-path.js';
+
+import { Debug, api, AppKeys,switchPath, config } from '../libs/app-utils.js';
 
 import '../elements/alert-dialog.js';
 import '../elements/material-icon.js';
@@ -39,13 +36,11 @@ import './error-manager.js';
 import csv from '../modules/csv.js';
 import pdf from '../modules/pdf.js';
 
-
 import tooltip from '../styles/tooltip.js';
 import menu from '../styles/menu.js';
 import './session-manager.js';
 
-sessionStorage.setItem('debug', config.debug); //set up the debug module to define it config 
-const debug=Debug('mainApp');
+const debug = Debug('mainApp');
 
 /*
      <main-app>: Main Page of the Application
@@ -72,14 +67,7 @@ class MainApp extends LitElement {
       align-items: center;
       color: lightgrey;
 background: #0073bf;
-background: -moz-linear-gradient(top, #e2e5e6 0%, #e2e5e6 4%, #388fcb 7%, #0073bf 50%, #388fcb 100%);
-background: -webkit-gradient(left top, left bottom, color-stop(0%, #e2e5e6), color-stop(4%, #e2e5e6), color-stop(7%, #388fcb), color-stop(50%, #0073bf), color-stop(100%, #388fcb));
-background: -webkit-linear-gradient(top, #e2e5e6 0%, #e2e5e6 4%, #388fcb 7%, #0073bf 50%, #388fcb 100%);
-background: -o-linear-gradient(top, #e2e5e6 0%, #e2e5e6 4%, #388fcb 7%, #0073bf 50%, #388fcb 100%);
-background: -ms-linear-gradient(top, #e2e5e6 0%, #e2e5e6 4%, #388fcb 7%, #0073bf 50%, #388fcb 100%);
 background: linear-gradient(to bottom, #e2e5e6 0%, #e2e5e6 4%, #388fcb 7%, #0073bf 50%, #388fcb 100%);
--webkit-box-shadow: 0px -5px 31px 4px var(--shadow-color);;
--moz-box-shadow: 0px -5px 31px 4px var(--shadow-color);
 box-shadow: 0px -5px 31px 4px var(--shadow-color);
     }
     section {
@@ -94,8 +82,6 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
       color: var(--button-text-color);
       border: none;
       border-radius: 5px;
-      -webkit-box-shadow: 0px 3px 20px 2px var(--shadow-color);
-      -moz-box-shadow: 0px 3px 20px 2px var(--shadow-color);
       box-shadow: 0px 3px 20px 2px var(--shadow-color);
       cursor: pointer;
     }
@@ -232,14 +218,8 @@ box-shadow: 0px -5px 31px 4px var(--shadow-color);
       }
       header {
 
-background: -moz-linear-gradient(top,  #388fcb 0%, #0073bf 50%, #388fcb 93%, #e2e5e6 96%, #e2e5e6 100%);
-background: -webkit-gradient(left top, left bottom, color-stop(0%, #388fcb), color-stop(50%, #0073bf), color-stop(93%, #388fcb), color-stop(96%, #e2e5e6), color-stop(100%, #e2e5e6));
-background: -webkit-linear-gradient(top,#388fcb 0%, #0073bf 50%, #388fcb 93%, #e2e5e6 96%, #e2e5e6 100%);
-background: -o-linear-gradient(top,#388fcb 0%, #0073bf 50%, #388fcb 93%, #e2e5e6 96%, #e2e5e6 100%);
-background: -ms-linear-gradient(top,#388fcb 0%, #0073bf 50%, #388fcb 93%, #e2e5e6 96%, #e2e5e6 100%);
+
 background: linear-gradient(to bottom,#388fcb 0%, #0073bf 50%, #388fcb 93%, #e2e5e6 96%, #e2e5e6 100%);
--webkit-box-shadow: -1px 5px 31px 4px var(--shadow-color);;
--moz-box-shadow: 0px 5px 31px 4px var(--shadow-color);
 box-shadow: 0px 5px 31px 4px var(--shadow-color);
       }
       #currentdomain {
@@ -340,7 +320,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
 
     // Get the scrollbar width
     const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-    this.style.setProperty('--scrollbar-width', `-${scrollbarWidth}px`);
+    this.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`); //negative as we want to leak into margin space
 
     // Delete the DIV
     this.shadowRoot.removeChild(scrollDiv);
@@ -357,7 +337,7 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
           this.currencies = response.currencies;
         })
       } else {
-        this.user = {uid: 0};
+        this.user = {uid: 0, isAdmin: false, account: '', domain: ''}
       }
     }
     if (changed.has('user')) {
@@ -508,7 +488,6 @@ box-shadow: 0px 5px 31px 4px var(--shadow-color);
       </header>
       <section>
         <error-manager
-
           @error-status=${this._errorChanged};
           @auth-changed=${this._authChanged}></error-manager>
         <session-manager

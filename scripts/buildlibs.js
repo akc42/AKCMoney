@@ -37,16 +37,7 @@ const inputOptions = {
     'node_modules/lit/directives/template-content.js',
     'node_modules/lit/directives/unsafe-html.js',
     'node_modules/lit/directives/until.js',
-    'node_modules/@akc42/app-utils/config.js',
-    'node_modules/@akc42/app-utils/route.js',
-    'node_modules/@akc42/app-utils/location.js',
-    'node_modules/@akc42/app-utils/app-keys.js',
-    'node_modules/@akc42/app-utils/csv.js',
-    'node_modules/@akc42/app-utils/debug.js',
-    'node_modules/@akc42/app-utils/dom-host.js',
-    'node_modules/@akc42/app-utils/post-api.js',
-    'node_modules/@akc42/app-utils/submit-function.js',
-    'node_modules/@akc42/app-utils/switch-path.js'
+    'node_modules/@akc42/app-utils/app-utils.js'
   ],
   plugins: [nodeResolve()]
 };

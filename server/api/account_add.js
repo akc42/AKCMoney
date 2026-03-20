@@ -17,28 +17,24 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
+import mdb from '@akc42/sqlite-db';
+import {Logger} from '@akc42/server-utils';
 
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('accountadd');
+const logger = Logger('accountadd', 'error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-  const insertAccount = db.prepare(`INSERT INTO account(currency,domain,name) VALUES(?,?,?)`);
-  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
-  db.transaction(() => {
-    const v = getVersion.get(params.name);
-    if (v === undefined) {
-      insertAccount.run(params.currency, params.domain, params.name);
-      responder.addSection('status','OK');
-      responder.addSection('accounts', getAccounts.all());
-
+  await mdb.transactionAsync(async db => {
+    const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.name}`??{dversion:0}
+    if (dversion === 0) {
+      db.run`INSERT INTO account(currency,domain,name) VALUES(${params.currenct},${params.domain},${params.name}})`;
+      responder.addSection('accounts');
+      for(const account of db.iterate`SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name`) {
+        await responder.write(account);
+      }
+      responder.addSection('status', 'OK');
     } else {
       responder.addSection('status', `Name already in use ${params.name}`)
+      logger('Name already in use', params.name);
     }
-  })();
-  debug('request complete')
+  });
 };

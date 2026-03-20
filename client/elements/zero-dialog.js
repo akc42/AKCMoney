@@ -18,7 +18,9 @@
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
-import domHost from '../libs/dom-host.js';
+
+import {domHost} from '../libs/app-utils.js';
+
 import './dialog-box.js';
 import './material-icon.js';
 
@@ -30,9 +32,6 @@ import button from '../styles/button.js';
 class ZeroDialog extends LitElement {
   static get styles() {
     return [button,css`
-      :host {
-        margin: 5px;
-      }
       dialog-box {
         background-color: transparent!important;
       }

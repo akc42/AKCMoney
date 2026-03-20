@@ -17,12 +17,9 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
 import path from 'node:path';
 import { dbDateToString,blankIfNull } from '../utils.js';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-const debug = Debug('pdfaccount');
+import mdb from '@akc42/sqlite-db';
 
 const LEFT_EDGE = 72;
 const RIGHT_EDGE = 523;
@@ -49,21 +46,13 @@ const PAGE_BOTTOM = 769;
 const PAGE_POSITION = 793;
 const DATE_AREA_WIDTH = DATE_REF_LINE - 1 - LEFT_EDGE;
 const AMOUNT_AREA_WIDTH = AMOUNT_WIDTH + 2 * (TEXT_MARGIN-1);
-debug('DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', DATE_POSITION, REF_POSITION, DESC_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
 
 
 export default async function(user, params, doc) {
-  debug('new request from', user.name, 'with params', params );
-  const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
-  const getAccount = db.prepare('SELECT startdate, currency, balance, date FROM account WHERE name = ?');
-  const xactionsByDate = db.prepare(`SELECT t.*, sc.type AS stype, dc.type AS dtype
-    FROM xaction t LEFT JOIN code sc ON t.srccode = sc.id LEFT JOIN code dc ON t.dstcode = dc.id 
-  WHERE (src = ? OR dst = ? ) AND date >= ? ORDER BY date`);
-  const xactionsUnReconciled = db.prepare(`SELECT t.*, sc.type AS stype, dc.type AS dtype
-    FROM xaction t LEFT JOIN code sc ON t.srccode = sc.id LEFT JOIN code dc ON t.dstcode = dc.id
-    WHERE (src = ? AND srcclear = 0) OR (dst = ? AND dstclear = 0) ORDER BY date`);  
-  db.transaction(() => {
-    const {startdate, currency, balance, date: balanceDate} = getAccount.get(params.account);
+  
+  mdb.transaction(db => {
+    const {startdate, currency, balance, date: balanceDate} = db.get`SELECT startdate, currency, balance, date FROM account WHERE name = ${params.account
+      }`??{startdate:0, currency:'',balance:0,date:''};
     const now = new Date();
     doc.fontSize(14).text(`Account: ${params.account}`, {align: 'center'});
     doc.fontSize(8).text(`Created: ${dbDateToString(Math.floor(now.getTime()/1000))}`, {align: 'center'});
@@ -75,15 +64,16 @@ export default async function(user, params, doc) {
     let transactions;
 
     if (startdate === null) {
-      debug('add unreconciled transactions');
-      transactions = xactionsUnReconciled.bind(params.account, params.account);
+      transactions = db.prepare(`SELECT t.*, sc.type AS stype, dc.type AS dtype
+    FROM xaction t LEFT JOIN code sc ON t.srccode = sc.id LEFT JOIN code dc ON t.dstcode = dc.id
+    WHERE (src = '${params.account}' AND srcclear = 0) OR (dst = '${params.account}' AND dstclear = 0) ORDER BY date`);  
       doc.text('Unreconciled Transactions only');
     } else {
       let start;
       const startDate = new Date();
       startDate.setHours(3, 0, 0, 0);
       if (startdate === 0) {
-        const yearEnd = s.get('year_end');
+        const {yearEnd} = db.get`SELECT value AS yearEnd FROM settings WHERE name = 'year_end'`??{yearEnd:1231};
         const monthEnd = Math.floor(yearEnd / 100) - 1; //Range 0 to 11 for Dates
         const dayEnd = yearEnd % 100;
         if (startDate.getMonth() > monthEnd) {
@@ -105,11 +95,11 @@ export default async function(user, params, doc) {
         doc.text(`Transactions From Date: ${startDate.toLocaleDateString()}`)
       }
 
-      debug('add transactions from startdate', startDate.toLocaleString());
-      transactions = xactionsByDate.bind(params.account,params.account, start);
+      transactions = db.prepare(`SELECT t.*, sc.type AS stype, dc.type AS dtype
+    FROM xaction t LEFT JOIN code sc ON t.srccode = sc.id LEFT JOIN code dc ON t.dstcode = dc.id 
+  WHERE (src = '${params.account}' OR dst = '${params.account}' ) AND date >= ${start} ORDER BY date`);
     }
     doc.font('Helvetica').fontSize(10).moveDown();
-    debug('amount width', doc.widthOfString('-99999.99'));
     let y = doc.y
     //make grey header panel at top
     doc.rect(LEFT_EDGE,y,RIGHT_EDGE-LEFT_EDGE, 24).fillAndStroke('gainsboro');
@@ -151,7 +141,6 @@ export default async function(user, params, doc) {
       const ht = doc.heightOfString(transaction.description, { width: DESC_WIDTH })
       const h = Math.max(Math.ceil(ht), 12) + 4;
       const dy = (h - ht)/2;
-      if (h !== 16) debug('height of transaction', ht, 'Desc', transaction.description.substring(0,20));
       if (even) {
         doc.rect(LEFT_EDGE, y, RIGHT_EDGE-LEFT_EDGE, h).fillAndStroke('aliceblue')
         doc.moveTo(DATE_REF_LINE, y).lineTo(DATE_REF_LINE, y + h).stroke('white');
@@ -218,6 +207,5 @@ export default async function(user, params, doc) {
     doc.y = PAGE_POSITION;
     doc.text(`Page: ${pageNo}`, { align: 'center' });
     
-  })();
-  debug('request complete')
+  });
 };

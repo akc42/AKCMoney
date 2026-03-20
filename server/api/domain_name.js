@@ -17,33 +17,30 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('domainname');
+const logger = Logger('domainname', 'error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
-  const updateName = db.prepare('UPDATE domain SET version = version + 1, name = ? WHERE name = ?');
-  const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-  db.transaction(() => {
-    //first check new name does not exist
-    const v = getVersion.get(params.new);
-    if (v === undefined) {
-      const v = getVersion.get(params.old);
-      if (v === params.version) {
-        updateName.run(params.new, params.old);
+  await mdb.transactionAsync(async db => {
+    const {nversion} = db.get`SELECT version AS nversion FROM domain WHERE name = ${params.new}`??{nversion: 0};
+    if (nversion === 0) {
+      const {version} = db.get`SELECT version FROM domain WHERE name = ${params.old}`??{version: 0};
+      if (version !== params.version) {
+        db.run`UPDATE domain SET version = version + 1, name = ${params.new} WHERE name = ${params.old}`;
+        responder.addSection('domains');
+        for (const domain of db.iterate`SELECT * FROM domain ORDER BY name`) {
+          await responder.write(domain);
+        }
         responder.addSection('status', 'OK');
-        responder.addSection('domains', getDomains.all());
       } else {
-        responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-        logger('error', `Domain Name Version Error Disk:${v}, Param:${params.version}`)
+        responder.addSection('status', `Version Error Disk:${version}, Param:${params.version}`);
+        logger(`Version Error Disk:${version}, Param:${params.version}`)
       }
     } else {
       responder.addSection('status', 'Duplicate Name Error')
     }
-  })();
-  debug('request complete')
+  });
+  
 };

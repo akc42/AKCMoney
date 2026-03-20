@@ -21,18 +21,15 @@
 
 import { LitElement } from '../libs/lit-element.js';
 
-import domHost from '../libs/dom-host.js';
-import Route from '../libs/route.js';
+import {domHost,Route} from '../libs/app-utils.js';
 
 
 export default class RouteManager extends  LitElement {
-  static get properties() {
-    return {
-      route: {type: Object},
-      subRoute: {type: Object},
-      page: {type: String},
-    };
-  }
+  static properties = {
+    route: {type: Object},
+    subRoute: {type: Object},
+    page: {type: String},
+  };
   constructor() {
     super();
     this._closeRequest = this._closeRequest.bind(this);

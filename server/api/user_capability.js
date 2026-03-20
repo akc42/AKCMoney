@@ -17,39 +17,33 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('usercapability');
+const logger = Logger('usercapability','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
-  const getCapability = db.prepare('SELECT COUNT(*) FROM capability WHERE uid = ? AND domain = ?').pluck();
-  const insertCapability = db.prepare('INSERT INTO capability(uid, domain) VALUES(?,?)');
-  const deleteCapability = db.prepare('DELETE FROM capability WHERE uid = ? AND domain = ?');
-  const deletePriority = db.prepare('DELETE FROM priority WHERE uid = ? AND domain = ?');
-  const getUsers = db.prepare(`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u LEFT JOIN capability c ON u.uid = c.uid
-  ORDER BY u.name, u.uid`);
-  db.transaction(() => {
-    const v = getVersion.get(params.uid);
-    if (v === params.version) {
-      const hasCapability = getCapability.get(params.uid, params.domain);
+  
+  await mdb.transactionAsync(async db => {
+    const {version} = db.get`SELECT version FROM user WHERE uid = ${params.uid}`??{version:0}
+    if (version === params.version) {
+      const {hasCapability} = db.get`SELECT COUNT(*) as hasCapability FROM capability WHERE uid = ${params.uid} AND domain = ${params.domain}`??{hasCapability:0}
       if (params.state && hasCapability === 0) {
-        insertCapability.run(params.uid, params.domain);
+        db.run`INSERT INTO capability(uid, domain) VALUES(${params.uid},${params.domain})`;
       } else if (!params.state) {
-        deleteCapability.run(params.uid,params.domain);
-        deletePriority.run(params.uid, params.domain);
+        db.run`DELETE FROM capability WHERE uid = ${params.uid} AND domain = ${params.domain}`;
+        db.run`DELETE FROM priority WHERE uid = ${params.uid} AND domain = ${params.domain}`;
+      }
+      responder.addSection('users')
+      for(const user of db.iterate`SELECT u.uid, u.version, u.name, u.isAdmin, u.domain AS defaultdomain, c.domain FROM user u 
+        LEFT JOIN capability c ON u.uid = c.uid ORDER BY u.name, u.uid`) {
+        await responder.write(user);
       }
       responder.addSection('status', 'OK');
-      responder.addSection('users', getUsers.all());
-
     } else {
-      responder.addSection('status', `User Capability version Error Disk:${v}, Param:${params.version}`);
-      logger('error',`User Capability Version Error Disk:${v}, Param:${params.version}`);
+      responder.addSection('status', `User Capability version Error Disk:${version}, Param:${params.version}`);
+      logger(`Version Error Disk:${version}, Param:${params.version}`);
     }
     
-  })();
-  debug('request complete')
+  });
 };

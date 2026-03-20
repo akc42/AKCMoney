@@ -17,27 +17,24 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('domainadd');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
   const getVersion = db.prepare('SELECT version FROM domain WHERE name = ?').pluck();
   const insertDomain = db.prepare(`INSERT INTO domain(name, description) VALUES(?,?)`);
   const getDomains = db.prepare('SELECT * FROM domain ORDER BY name');
-  db.transaction(() => {
-    const v = getVersion.get(params.name);
-    if (v === undefined) {
-      insertDomain.run(params.name, params.description);
+  await mdb.transactionAsync(async db => {
+    const {version} = db.get`SELECT version FROM domain WHERE name = ${params.name}`??{version:0};
+    if (version === 0) {
+      db.run`INSERT INTO domain(name, description) VALUES(${params.name},${params.description})`;
+      
+      responder.addSection('domains');
+      for (const domain of db.iterate`SELECT * FROM domain ORDER BY name`) {
+        await responder.write(domain);
+      }
       responder.addSection('status','OK');
-      responder.addSection('domains', getDomains.all());
-
     } else {
       responder.addSection('status', `Name already in use ${params.name}`)
     }
-  })();
-  debug('request complete')
+  });
 };

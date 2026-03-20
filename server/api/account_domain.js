@@ -17,29 +17,29 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('accountdomain');
+const logger = Logger('accountdomain', 'error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
   const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
   const updateDomain = db.prepare('UPDATE account SET dversion = dversion + 1, domain = ? WHERE name = ?');
   const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
-  db.transaction(() => {
+  await mdb.transactionAsync(async db => {
     //first version is still the same
-    const v = getVersion.get(params.name);
-    if (v === params.dversion) {
-      updateDomain.run(params.domain, params.name);
+    const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.name}`??{dversion:0};
+    if (dversion === params.dversion) {
+      db.run`UPDATE account SET dversion = dversion + 1, domain = ${params.domain} WHERE name = ${params.name}`
+      responder.addSection('accounts');
+      for(const account of db.iterate`SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name`) {
+        await responder.write(account);
+      }
       responder.addSection('status', 'OK');
-      responder.addSection('accounts', getAccounts.all())
     } else {
-      responder.addSection('status',`Version Error Disk:${v}, Param:${params.dversion}`)
-      logger('error', `Account Domain Version Error Disk:${v}, Param:${params.dversion}`)
+      responder.addSection('status',`Version Error Disk:${dversion}, Param:${params.dversion}`)
+      logger('Versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
     }
   
-  })();
-  debug('request complete')
+  });
 };

@@ -17,26 +17,23 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('userpassword');
+const logger = Logger('userpassword','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
   const getVersion = db.prepare('SELECT version FROM user WHERE uid = ?').pluck();
   const updateUser = db.prepare('UPDATE user SET password = NULL WHERE uid = ?');
-  db.transaction(() => {
-    const v = getVersion.get(params.uid);
-    if (v === params.version) {
-      updateUser.run(params.uid);
+  mdb.transaction(db => {
+    const {version} = db.get`SELECT version FROM user WHERE uid = ${params.uid}`??{version:0}
+    if (version === params.version) {
+      db.run`UPDATE user SET password = NULL WHERE uid = ${user.uid}`
       responder.addSection('status', 'OK');
     } else {
       responder.addSection('status', `User Name version Error Disk:${v}, Param:${params.version}`);
-      logger('error', `User Password Version Error Disk:${v}, Param:${params.version}`);
+      logger(`Version Error Disk:${v}, Param:${params.version}`);
     }
     
-  })();
-  debug('request complete')
+  });
 };

@@ -20,8 +20,9 @@
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
 import { classMap } from '../libs/class-map.js';
-import domHost from '../libs/dom-host.js';
-import api from '../libs/post-api.js';
+
+import {api,domHost} from '../libs/app-utils.js';
+
 import './material-icon.js';
 import './dialog-box.js';
 
@@ -31,30 +32,24 @@ import list from '../styles/list.js';
      <years-dialog>
 */
 class YearsDialog extends LitElement {
-  static get styles() {
-    return [list,css`
-      button[role="menuitem"].selected {
-        background-color: royalblue;
-        color: white;
-      }
-    `];
-  }
-  static get properties() {
-    return {
-      years: {type: Array},
-      domain: {type: String},
-      year: {type: Number}
-    };
-  }
+  static styles = [list,css`
+    button[role="menuitem"].selected {
+      background-color: royalblue;
+      color: white;
+    }
+  `];
+  static properties = {
+    years: {type: Array},
+    domain: {type: String},
+    year: {type: Number}
+  };
   constructor() {
     super();
     this.years = [];
     this.year = new Date().getFullYear();
     this.domain = '';
     this._gotRequest = this._gotRequest.bind(this);
-    this.eventLocked = true;
-    
-
+    this.eventLocked = true;  
   }
   connectedCallback() {
     super.connectedCallback();
@@ -106,8 +101,7 @@ class YearsDialog extends LitElement {
             <span>${year}</span>
           </button>
         `))}
-      </dialog-box>
-    `;
+      </dialog-box>`;
   }
   _closing(e) {
     e.stopPropagation();

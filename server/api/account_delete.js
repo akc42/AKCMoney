@@ -17,27 +17,27 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-const debug = Debug('accountdelete');
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
+
+const logger = Logger('accountdelete','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-  const deleteAccount = db.prepare('DELETE FROM account WHERE name = ?');
-  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
-  db.transaction(() => {
-    const v = getVersion.get(params.name);
-    if (v === params.dversion) {
-      deleteAccount.run(params.name);
+
+  await mdb.transactionAsync(async db => {
+    const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.name}`??{dversion:0}
+    if (dversion === params.dversion) {
+      db.run`DELETE FROM account WHERE name = ${params.name}`
+      responder.addSection('accounts');
+      for(const account of db.iterate`SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name`) {
+        await responder.write(account);
+      }
       responder.addSection('status', 'OK');
-      responder.addSection('accounts', getAccounts.all());
+
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`);
-      logger('error', `Account delete Version Error Disk:${v}, Param:${params.dversion}`)
+      responder.addSection('status', `Version Error Disk:${dversion}, Param:${params.dversion}`);
+      logger('Versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
     }
     
-  })();
-  debug('request complete')
+  });
 };

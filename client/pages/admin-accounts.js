@@ -19,15 +19,15 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 
+import {api, Route, Debug} from '../libs/app-utils.js';
 
-import Route from '../libs/route.js';
-import api from '../libs/post-api.js';
 import '../elements/material-icon.js';
 import '../elements/list-selector.js';
+
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import input from '../styles/error.js';
-import Debug from '../libs/debug.js';
+import tooltip from '../styles/tooltip.js';
 
 const debug = Debug('adminaccounts');
 
@@ -35,119 +35,122 @@ const debug = Debug('adminaccounts');
      <admin-accounts>: Edit the list of accounts and assign them to correct domain and currency
 */
 class AdminAccounts extends LitElement {
-  static get styles() {
-    return [page,button, input,css`
-        h3 {
-          text-align: center;
-        }
-        .header {
-          margin: 0px -5px 2px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
-        }
-        .header > * {
-          border: 1px solid white;
-          text-align: center;
-        }
-        .account, .header {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 1fr var(--domain-selector-width) var(--currency-selector-width) 20px 80px;
-        }
-        .account {
-          grid-template-areas:
-            "name name name name name"
-            ". domain currency archive action";
-        }
-        .header {
-           grid-template-areas:
-            "name name name name name"
-            ". domain currency archive archive";
-         
-        }
-        .name {
-          grid-area: name;
-        }
-        .domain {
-          grid-area: domain;
-        }
-        .currency {
-          grid-area: currency;
-        }
-        .archive, .unarchive {
-          grid-area: archive;
-          margin-top: 1px;
-          cursor: pointer;
-          align-self:start;
-          justify-self:center;
-          box-shadow: 0px 0px 5px 1px rgba(0,0,0,0.48);
-          border-radius:2px;
-        }
-        .archive:active, .archive:hover, .unarchive:active, .unarchive:hover {
-          box-shadow: none;
-        }
+  static styles = [page,button, input, tooltip,css`
+    h3 {
+      text-align: center;
+    }
+    .header {
+      margin: 0px var(--scrollbar-width) 2px 5px;
+      background-color: var(--table-heading-background);
+      font-weight: bold;
+    }
+    .header > * {
+      border: 1px solid white;
+      text-align: center;
+    }
+    .account {
+      margin-left: 5px;
+    }
+    .account, .header {     
+      padding: 2px;
+      display: grid;
+      grid-gap: 1px;
+      color: var(--table-text-color);
+      grid-template-columns: 1fr var(--domain-selector-width) var(--currency-selector-width) 40px 80px;
 
-        .archive {
-          color:var(--unarchived-icon-color);
-        }
-        .header .archive {
-          color: var(--table-text-color);
-          justify-self: start;
-          box-shadow: none;
-          cursor: default;
-        }
-        .unarchive {
-          color: var(--archived-icon-color);
-        }
-        .action {
-          grid-area: action;
-        }
-        #newa >material-icon {
-          color: var(--add-icon-color);
-        }
-        .dela >material-icon {
-          color:var(--delete-icon-color);
-        }
-        .scrollable {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-          padding-right: var(--scrollbar-width);
-        }
-        #newaccount {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin-left: 5px;
-        }
-        #domainselector.error {
-          background-color: var(--input-error-color);
-        }
-        @media (min-width: 500px) {
-          .header {
-            grid-template-areas: 
-              "name domain currency archive archive"
 
-          } 
-          .account {
-            grid-template-areas: 
-              "name domain currency archive action"
-          }
-        }    
-    `];
-  }
-  static get properties() {
-    return {
-      accounts: {type: Array},
-      name: {type: String},
-      domain: {type: String},
-      currency: {type: String},
-      route: {type: Object}
-    };
-  }
+    }
+    .account {
+      background-color: var(--table-odd-color);
+      grid-template-areas:
+        "name name name name name"
+        ". domain currency archive action";
+    }
+    .header {
+        grid-template-areas:
+        "name name name name name"
+        ". domain currency archive archive";
+      
+    }
+    .name {
+      grid-area: name;
+    }
+    .domain {
+      grid-area: domain;
+    }
+    .currency {
+      grid-area: currency;
+    }
+    .archive, .unarchive {
+      grid-area: archive;
+      margin-top: 1px;
+      cursor: pointer;
+      align-self:start;
+      justify-self:center;
+      box-shadow: 0px 0px 5px 1px rgba(0,0,0,0.48);
+      border-radius:2px;
+    }
+    .archive:active, .archive:hover, .unarchive:active, .unarchive:hover {
+      box-shadow: none;
+    }
+
+    .archive {
+      color:var(--unarchived-icon-color);
+    }
+    .header .archive {
+      color: var(--table-text-color);
+      justify-self: start;
+      box-shadow: none;
+      cursor: default;
+    }
+    .unarchive {
+      color: var(--archived-icon-color);
+    }
+    .action {
+      grid-area: action;
+    }
+    #newa >material-icon {
+      color: var(--add-icon-color);
+    }
+    .dela >material-icon {
+      color:var(--delete-icon-color);
+    }
+    section.scrollable {
+      color: var(--table-text-color);
+      display: flex;
+      flex-direction: column;
+      margin-right: calc(0 - var(--scrollbar-width));
+    }
+    #newaccount {
+      background-color: var(--table-odd-color);
+      color: var(--table-text-color);
+      margin-left: 5px;
+      margin-right: var(--scrollbar-width)
+    }
+    #domainselector.error {
+      background-color: var(--input-error-color);
+    }
+    @media (min-width: 500px) {
+      .header {
+        grid-template-areas: 
+          "name domain currency archive archive"
+
+      } 
+      .account {
+        grid-template-areas: 
+          "name domain currency archive action"
+      }
+    }    
+  `];
+
+  static properties = {
+    accounts: {type: Array},
+    name: {type: String},
+    domain: {type: String},
+    currency: {type: String},
+    route: {type: Object}
+  };
+
   constructor() {
     super();
     this.accounts = [];
@@ -183,8 +186,7 @@ class AdminAccounts extends LitElement {
           <div class="name">Name</div>
           <div class="domain">Domain</div>
           <div class="currency">Currency</div>
-          <div class="archive">Archive</div>
-          <div class="action"></div>          
+          <div class="archive">Archive</div>       
         </div>
         <div id="newaccount" class="account">
           <input 
@@ -224,9 +226,9 @@ class AdminAccounts extends LitElement {
                 data-index="${i}"
                 @item-selected=${this._accountCurrencyChanged}></list-selector>
               ${account.archived === 0 ? html`
-                <material-icon class="archive" @click=${this._archive} data-index="${i}">archive</material-icon>
+                <material-icon class="archive" @click=${this._archive} data-index="${i}" data-tooltip="Archive Account">archive</material-icon>
               `:html`
-                <material-icon class="unarchive" @click=${this._unarchive} data-index="${i}">unarchive</material-icon>
+                <material-icon class="unarchive" @click=${this._unarchive} data-index="${i}" data-tooltip="Unarchive Account">unarchive</material-icon>
               `}
               <button 
                 class="dela action"
@@ -305,7 +307,7 @@ class AdminAccounts extends LitElement {
   }
   _archiveChanged(index,archive){
     api('account_archive',{name: this.accounts[index].name, dversion: this.accounts[index].dversion, archive: archive} ).then(response => {
-      if (response.status !== 'OK') throw new Error(`api status: ${response.status}`);
+      if (response.status !== 'OK') throw new Error(response.status)
       this.accounts = response.accounts;
     })
   }

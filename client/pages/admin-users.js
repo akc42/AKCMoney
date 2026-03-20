@@ -20,15 +20,13 @@
 import { LitElement, html, css } from '../libs/lit-element.js';
 import {live} from '../libs/live.js';
 
-import '../elements/material-icon.js';
+import {api,Route} from '../libs/app-utils.js';
 
+import '../elements/material-icon.js';
 
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
-import api from '../libs/post-api.js';
-import Route from '../libs/route.js';
-
 
 /*
      <admin-users>: Edits the list of users

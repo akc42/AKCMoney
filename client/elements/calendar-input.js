@@ -56,41 +56,37 @@ class CalendarRequest extends Event {
 
 */
 class CalendarInput extends LitElement {
-  static get styles() {
-    return css`
-      :host {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        --icon-size:20px;
-      }
-      #input {
-        display: flex;
-        flex-direction: row;
-        justify-content:space-evenly;
-        align-items: center;
-        background-color: var(--panel-background-color);
-        border: 2px solid var(--panel-border-color);
-        cursor: pointer;
-      } 
-    `;
-  }
+  static styles = [css`
+    :host {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      --icon-size:20px;
+    }
+    #input {
+      display: flex;
+      flex-direction: row;
+      justify-content:space-evenly;
+      align-items: center;
+      background-color: var(--panel-background-color);
+      border: 2px solid var(--panel-border-color);
+      cursor: pointer;
+    } 
+  `];
 
-  static get properties() {
-    return {
-      value: {type: Number}, //seconds since 1970 - provided by the outside
-      name: {type: String, reflect: true},  //can be used in forms.
-      withTime: {type: Boolean},  //should it display time as well
-      label: {type: String}
-    };
-  }
+
+  static properties = {
+    value: {type: Number}, //seconds since 1970 - provided by the outside
+    name: {type: String, reflect: true},  //can be used in forms.
+    label: {type: String}
+  };
+
   constructor() {
     super();
     const d = new Date();
     this.value = Math.floor(d.getTime()/1000);
     this._calendarReply = this._calendarReply.bind(this);
-    this.withTime = false;
     this.label = '';
   }
   connectedCallback() {
@@ -101,23 +97,12 @@ class CalendarInput extends LitElement {
     super.disconnectedCallback();
     this.removeEventListener('calendar-reply', this._calendarReply);
   }
-  update(changed) {
-/*    if (changed.has('value')) {
-      if (this.value === null) this.value = 0;
-      this.dispatchEvent(new ValueChanged(this.value));
-    } 
-*/
-    super.update(changed);
-  }
-
+  
   render() {
     return html`
-    <style>
-
-    </style>
     <label for="input">${this.label}</label>
     <div id="input" class="input" @click=${this._show}>
-      <date-format .date=${this.value}  .withTime=${this.withTime}></date-format><material-icon>date_range</material-icon>
+      <date-format .date=${this.value}></date-format><material-icon>date_range</material-icon>
     </div>
 
     `;

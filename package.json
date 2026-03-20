@@ -27,23 +27,24 @@
   },
   "homepage": "https://github.com/akc42/AKCMoney#readme",
   "dependencies": {
-    "@akc42/app-utils": "^4.2.2",
-    "@akc42/server-utils": "^3.4.2",
-    "@akc42/sqlite-db": "2.1.2",
+    "@akc42/app-utils": "^5.0.17",
+    "@akc42/server-utils": "^4.0.13",
+    "@akc42/sqlite-db": "3.0.12",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "bcrypt": "^6.0.0",
-    "body-parser": "^2.2.0",
+    "body-parser": "^2.2.1",
     "content-disposition": "^0.5.4",
     "finalhandler": "^2.1.0",
     "jwt-simple": "^0.5.6",
     "lit": "^3.3.1",
     "pdfkit": "^0.17.2",
-    "rollup": "^4.42.4",
     "router": "^2.2.0",
     "server-destroy": "^1.0.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "playwright": "^1.56.0"
+    "playwright": "^1.56.0",
+    "rollup": "^4.53.0",
+    "@rollup/plugin-node-resolve": "^16.0.3"
   }
 }

@@ -19,11 +19,12 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
 
+import  {submit}  from '../libs/app-utils.js';
+
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import error from '../styles/error.js';
 
-import  submit  from '../libs/submit-function.js';
 
 /*
      <login-page>: Manages a user login.

@@ -21,194 +21,194 @@ import { LitElement, html, css } from '../libs/lit-element.js';
 import {classMap} from '../libs/class-map.js';
 import {cache} from '../libs/cache.js';
 
-import Route from '../libs/route.js';
-import api from '../libs/post-api.js';
+import {api, Debug, Route} from '../libs/app-utils.js';
+
 import '../elements/material-icon.js'
 import '../elements/account-transaction.js';
 import '../elements/calendar-dialog.js';
 import '../elements/calendar-input.js';
 import '../elements/date-format.js';
+
 import page from '../styles/page.js';
 import button from '../styles/button.js';
 import menu from '../styles/menu.js';
 import error from '../styles/error.js';
 
-import Debug from '../libs/debug.js';
 const debug = Debug('account');
+
 /*
      <account-page>: Displays the transaction so an account
 */
 class AccountPage extends LitElement {
-  static get styles() {
-    return [page, button, menu, error, css`
+  static styles = [page, button, menu, error, css`
+    .info {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      align-items: flex-start;
+    }
+    .currency > .name {
+      font-weight: bold;
+    }
+    .currency > .name > span {
+      color: var(--currency-designator-color)
+    }
+    .currency > .description {
+      font-style: italic;
+    }
+    #newt >material-icon {
+      color: var(--add-icon-color);
+    }
+    #recon > material-icon {
+      color: var(--balance-icon-color);
+    }
+    .action {
+      margin: 5px;
+      display: grid;
+      grid-gap: 5px;
+      grid-template-columns: 3fr 1fr 4fr;
+      justify-items: flex-start;
+      align-items: flex-start;
+      grid-template-areas:
+        "newt recon recon"
+        "U U U"
+        "F F F"
+        "D D cal";
+    }
 
-        .info {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-around;
-          align-items: flex-start;
-        }
-        .currency > .name {
-          font-weight: bold;
-        }
-        .currency > .name > span {
-          color: var(--currency-designator-color)
-        }
-        .currency > .description {
-          font-style: italic;
-        }
-        #newt >material-icon {
-          color: var(--add-icon-color);
-        }
-        #recon > material-icon {
-          color: var(--balance-icon-color);
-        }
-        .action {
-          margin: 5px;
-          display: grid;
-          grid-gap: 5px;
-          grid-template-columns: 3fr 1fr 4fr;
-          justify-items: flex-start;
-          align-items: flex-start;
-          grid-template-areas:
-            "newt recon recon"
-            "U U U"
-            "F F F"
-            "D D cal";
-        }
+    #newt {
+      grid-area: newt;
+    }
+    #recon {
+      grid-area: recon;
+    }
+    #U {
+      grid-area: U;
+    }
+    #F {
+      grid-area: F;
+    }
+    #D {
+      grid-area: D;
+    }
+    calendar-input {
+      grid-area: cal;
+    }
+    .header, .panel {     
+      padding: 2px;
+      display: grid;
+      grid-gap: 1px;
+      color: var(--table-text-color);
+      grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+      grid-template-areas:
+        "date ref . amount balance ."
+        "description description description description description description";
+      margin: 0px 5px ;
+      margin-right: var(--scrollbar-width);
+    }
+    .header {
+      background-color: var(--table-heading-background);
+      font-weight: bold;
 
-        #newt {
-          grid-area: newt;
-        }
-        #recon {
-          grid-area: recon;
-        }
-        #U {
-          grid-area: U;
-        }
-        #F {
-          grid-area: F;
-        }
-        #D {
-          grid-area: D;
-        }
-        calendar-input {
-          grid-area: cal;
-        }
-        .header, .panel {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
-          grid-template-areas:
-            "date ref . amount balance ."
-            "description description description description description description";
-        }
-        .header {
-          margin: 0px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
+    }
 
-        }
+    .header > *, .panel > * {
+      border: 1px solid white;
+    }
+    .panel {
+      background-color: var(--table-panel-background);
+      
+    }
+    .date {
+      grid-area: date;
+    }
+    .ref {
+      grid-area: ref;
+    }
+    .description {
+      text-align: center;
+      grid-area: description;
+    }
+    .amount {
+      text-align: right;
+      grid-area: amount;
+    }
+    .balance {
+      text-align: right;
+      grid-area: balance;
+    }
+    #transactions {
+      background-color: var(--table-odd-color);
+      color: var(--table-text-color);
+      margin: 0px calc( - var(--scrollbar-width)) 10px 5px;
+      display: flex;
+      flex-direction: column;
 
-        .header > *, .panel > * {
-          border: 1px solid white;
-        }
-        .panel {
-          background-color: var(--table-panel-background);
-          margin: 0px 5px ;
-        }
-        .date {
-          grid-area: date;
-        }
-        .ref {
-          grid-area: ref;
-        }
-        .description {
-          text-align: center;
-          grid-area: description;
-        }
-        .amount {
-          text-align: right;
-          grid-area: amount;
-        }
-        .balance {
-          text-align: right;
-          grid-area: balance;
-        }
-        #transactions {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-
-        }
-        #transactions > div {
-          margin:0;
-          padding: 0;
-        
-        }
-        #transactions > div:nth-child(even):not(.over){
-          background-color: var(--table-even-color);
-        }
+    }
+    #transactions > div {
+      margin:0;
+      padding: 0;
+    
+    }
+    #transactions > div:nth-child(even):not(.over){
+      background-color: var(--table-even-color);
+    }
 
 
-        [draggable] {
-          cursor: pointer;
-        }
-        [draggable].dragging {
-          opacity: 0.4;
-          cursor: move;
-        }
-        [draggable].over:not(.dragging) {
-          background-color: var(--drag-over-color);
-        }
-        #dragim {
-          --icon-size:24px;
-          color: var(--accounts-icon-color);
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          background-color: white;
-          border: 2px solid navy;
-          border-radius: 5px;
-          height: 50px;
-          width: 50px;
-          position: absolute;
-          transform: translate(-100px,-100px);
-        }
-        #parallel {
-          max-width: 600px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
+    [draggable] {
+      cursor: pointer;
+    }
+    [draggable].dragging {
+      opacity: 0.4;
+      cursor: move;
+    }
+    [draggable].over:not(.dragging) {
+      background-color: var(--drag-over-color);
+    }
+    #dragim {
+      --icon-size:24px;
+      color: var(--accounts-icon-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: white;
+      border: 2px solid navy;
+      border-radius: 5px;
+      height: 50px;
+      width: 50px;
+      position: absolute;
+      transform: translate(-100px,-100px);
+    }
+    #parallel {
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-        }
-        @media (min-width: 500px) {
-          .action {
-            grid-template-columns: 4fr 5fr 4fr 2fr;
-            grid-template-areas:
-              "newt recon U U"
-              "newt recon F F"
-              ". . D ."
-              ". . D cal";
-            margin-right: 0px;
-          }
-          .header, .panel {
-            grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
-            grid-template-areas:
-              "date ref description amount balance .";
-          }
-          .header {
-            margin-top: 20px;
-          }
-          
-        }    
-    `];
-  }
+    }
+    @media (min-width: 500px) {
+      .action {
+        grid-template-columns: 4fr 5fr 4fr 2fr;
+        grid-template-areas:
+          "newt recon U U"
+          "newt recon F F"
+          ". . D ."
+          ". . D cal";
+        margin-right: 20px;
+      }
+      .header, .panel {
+        grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
+        grid-template-areas:
+          "date ref description amount balance .";
+      }
+      .header {
+        margin-top: 20px;
+      }
+      
+    }    
+  `];
+
   static get properties() {
     return {
       accounts: {type:Array},  //order list
