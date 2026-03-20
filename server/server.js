@@ -23,7 +23,7 @@ import fs from 'node:fs/promises';
 import { setTimeout} from 'node:timers/promises';
 import { existsSync,readFileSync } from 'node:fs';
 import {fileURLToPath } from 'node:url';
-import {Logger,Debug, Responder, logWriter, close as debugClose, DebugLog, getDebugLog} from '@akc42/server-utils';
+import {Logger,Debug, Responder, logWriter, close as debugClose,  getDebugLog} from '@akc42/server-utils';
 import chalk from 'chalk';
 import bodyParser  from 'body-parser';
 import  Router from 'router';
@@ -38,10 +38,6 @@ import url from 'node:url';
 import CSVResponder from './csvresponder.js';
 
 
-function dlog(message) {
-  console.log(message);
-}
-DebugLog.on('log-write', dlog); 
 
 const debug = Debug('server');
 const debugapi = Debug('api');
@@ -605,7 +601,6 @@ async function close() {
     logger('app', 'Starting money Server ShutDown Sequence');
     let badExit = false;
     try {
-      DebugLog.off('log-write', dlog); 
       const tmp = server;
       server = null;
       //we might have to stop more stuff later, so leave as a possibility

@@ -36,7 +36,7 @@ services:
     networks:
       - moneynet
     restart: unless-stopped
-    env_file:
+    env-file:
       - ./common.env
     volumes:
       - /volume1/docker/money/appinfo:/app/appinfo
@@ -49,12 +49,12 @@ services:
     restart: unless-stopped
     networks:
       - moneynet
-    env_file:
+    env-file:
       - ./common.env
     volumes:
-      - /home/alan/dev/money/timer:/app/timer
-      - /home/alan/dev/money/db:/db
-      - /home/alan/dev/money/backup:/db-backup
+      - /volume1/money/timer:/app/timer
+      - /volume1/docker/money/db:/db
+      - /volume1/moneydbbackup:/db-backup
     tty: true
 networks:
   moneynet:
