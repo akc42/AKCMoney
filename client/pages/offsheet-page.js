@@ -31,9 +31,7 @@ import page from '../styles/page.js';
 class OffsheetPage extends LitElement {
   static get styles() {
     return [page, css`
-      section.page {
-        max-width: 800px;
-      }
+
       .header {     
         padding: 2px;
         display: grid;
@@ -44,7 +42,7 @@ class OffsheetPage extends LitElement {
           "date ref . amount balance ."
           "description description description description description description";
   
-        margin: 0px 5px;
+        margin: 0px var(--scrollbar-width) 2px 5px;
         background-color: var(--table-heading-background);
         font-weight: bold;
 
@@ -71,7 +69,7 @@ class OffsheetPage extends LitElement {
       #transactions {
         background-color: var(--table-odd-color);
         color: var(--table-text-color);
-        margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
+        margin: 0px calc(0 - var(--scrollbar-width)) 10px 5px;
         display: flex;
         flex-direction: column;
 
@@ -91,7 +89,7 @@ class OffsheetPage extends LitElement {
           grid-template-columns: 94px 70px 1fr repeat(2, var(--amount-width)) 20px;
           grid-template-areas:
             "date ref description amount balance .";
-          margin-top: 20px;
+          margin-top: 10px;
         }
       }
     `];

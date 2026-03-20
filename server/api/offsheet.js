@@ -22,10 +22,8 @@ import mdb from '@akc42/sqlite-db';
 export default async function(user, params, responder) {
   
   await mdb.transactionAsync(async db => {
-    responder.addSection('description');
-    for(const code of db.iterate`SELECT description FROM code WHERE id = ${params.code}`) {
-      await responder.write(code);
-    }
+    const {description} = db.get`SELECT description FROM code WHERE id = ${params.code}`??{description:''};
+    responder.addSection('description', description);
     responder.addSection('transactions');
     for (const xaction of db.iterate`SELECT t.id,t.date,t.version, t.description, t.rno, t.repeat, cur.name AS currency, dfamount AS amount, 
           t.src,t.srccode, t.dst, t.dstcode, 0 as srcclear, 0 as dstclear, 0 AS reconciled, 1 AS trate FROM  

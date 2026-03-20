@@ -457,18 +457,15 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
   */
   debug('Setting up to Check Auth Cookie');
   api.use((req, res, next) => {
-    debugauth('Check Auth Cookie');
     const cookies = req.headers.cookie;
     const authTester = new RegExp(`^(.*; +)?${serverConfig.authCookie}=([^;]+)(.*)?$`);
     const matches = cookies.match(authTester);
     if (matches) {
-      debugauth('Cookie found');
       const token = matches[2];
       try {
         const payload = jwt.decode(token, serverConfig.tokenKey);  //this will throw if the cookie is expired
         req.user = payload;
         res.setHeader('Set-Cookie', generateCookie(payload, serverConfig.authCookie, payload.remember ? serverConfig.tokenExpires: false)); //refresh cookie to the new value 
-        debugauth('Cookie Check Complete')
         next();
       } catch (error) {
         if (error.constructor.name === 'Token expired') {
@@ -479,12 +476,10 @@ document.cookie = '${serverConfig.trackCookie}=${token}; expires=0; Path=/';
           */
           res.end();
         } else {
-          debugauth('invalid auth cookie');
           forbidden(req, res, 'Invalid Auth Token: Error: ' + error.toString());
         }
       }
     } else {
-      debugauth('no cookie matching auth type');
       forbidden(req, res, 'Invalid Cookie');
     }
   });

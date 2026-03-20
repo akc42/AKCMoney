@@ -45,7 +45,7 @@ class AdminCurrencies extends LitElement {
         margin-left: 20px;
       }
       .header {
-        margin: 0px -5px 2px 5px;
+        margin: 0px var(--scrollbar-width) 2px 5px;
         background-color: var(--table-heading-background);
         font-weight: bold;
       }
@@ -58,7 +58,7 @@ class AdminCurrencies extends LitElement {
         display: grid;
         grid-gap: 1px;
         color: var(--table-text-color);
-        grid-template-columns: 1fr var(--currency-selector-width) 60px 100px;
+        grid-template-columns: 1fr var(--currency-selector-width) 60px 200px;
         grid-template-areas:
           "description description description description" 
           ". name show rate";
@@ -71,23 +71,29 @@ class AdminCurrencies extends LitElement {
       }
       .name {
         grid-area: name;
+        text-align: center;
       }
       .show {
         grid-area: show;
+        text-align: center;
       }
       .rate {
         grid-area: rate;
       }
 
 
-      .scrollable {
-        background-color: var(--table-odd-color);
+      section.scrollable {
         color: var(--table-text-color);
-        margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
+        margin-right: calc(0 - var(--scrollbar-width));
         display: flex;
         flex-direction: column;
       }
-
+      .wrapper {
+        margin-left: 5px;
+      }
+      .wrapper:nth-child(odd) {
+        background-color: var(--table-odd-color);
+      }
       .wrapper:nth-child(even) {
         background-color: var(--table-even-color);
       }
@@ -339,18 +345,16 @@ class AdminCurrencies extends LitElement {
       this.currencies[curIndex].version++;
     } else if (curIndex < this.sorted) {
       if (curIndex < this.selected) {
-        this.currencies[curIndex].priority = this.selected;
         for(let i = curIndex; i < this.selected; i++) {
-          this.currencies[i].priority--;
+          if (i === curIndex)  this.currencies[i].priority = this.selected; else this.currencies[i].priority--;
           const response = await api('currency_priority', this.currencies[i]);
           if (response.status !== 'OK') throw new Error(response.status);
           this.currencies[i].version++;
         }
         this.selected--;
       } else {
-        this.currencies[curIndex].priority = this.selected;
-        for(let i = this.selected; i < curIndex; i++) {
-          this.currencies[i].priority++;
+        for(let i = this.selected; i <= curIndex; i++) {
+          if (i === curIndex)  this.currencies[i].priority = this.selected; else this.currencies[i].priority++;
           const response = await api('currency_priority', this.currencies[i]);
           if (response.status !== 'OK') throw new Error(response.status);
           this.currencies[i].version++;

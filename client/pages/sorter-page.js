@@ -31,18 +31,65 @@ import button from '../styles/button.js';
      <sorter-page>: Sorting Accounts
 */
 class SorterPage extends LitElement {
-  static get styles() {
-    return [page, button, css``];
-  }
-  static get properties() {
-    return {
-      domain: {type: String}, //domain we are working on 
-      accounts: {type: Array}, //Array of accounts
-      selected: {type: Number}, //Index of account which means we insert items above (lower index)
-      sorted: {type: Number}, //How many of the top accounts in the current list are now sorted
-      route: { type: Object }, //
-    };
-  }
+  static styles = [page, button, css`
+
+    section.scrollable {
+      background-color: var(--table-odd-color);
+      color: var(--table-text-color);
+      margin: 0px calc(0 - var(--scrollbar-width)) 10px 5px;
+      display: flex;
+      flex-direction: column;
+    }
+    .wrapper:nth-child(even) {
+      background-color: var(--table-even-color);
+    }
+    .selector {
+      height: 10px;
+      width: 100%;
+      background-color: lightslategrey;
+      cursor: pointer;
+    }
+    .selector.selected {
+      background-color: pink;
+      cursor: default;
+    }
+    hr {
+      width:100%;
+      border-top: 1px -solid var(--menu-separator);
+    }
+    .account {
+      display: flex;
+      flex-direction: row;
+      cursor: pointer;
+    }
+    .name {
+      width: 240px;
+    }
+    .domain {
+      margin-left: 1em;
+      width: 50px;
+    }
+    .sorting {
+      margin-left: 4em;
+    }
+    .actions {
+      display: flex;
+      flex-direction: row;
+      margin: 0 0 30px 20px;
+    }
+    #save {
+      margin-left: 20px;
+    }
+  `];
+  
+  static properties = {
+    domain: {type: String}, //domain we are working on 
+    accounts: {type: Array}, //Array of accounts
+    selected: {type: Number}, //Index of account which means we insert items above (lower index)
+    sorted: {type: Number}, //How many of the top accounts in the current list are now sorted
+    route: { type: Object }, //
+  };
+
   constructor() {
     super();
     this.domain = '';
@@ -66,56 +113,7 @@ class SorterPage extends LitElement {
   render() {
     return html`
       <style>
-        section.page {
-          max-width: 450px;
-        }
-        .scrollable {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-        }
-        .wrapper:nth-child(even) {
-          background-color: var(--table-even-color);
-        }
-        .selector {
-          height: 10px;
-          width: 100%;
-          background-color: lightslategrey;
-          cursor: pointer;
-        }
-        .selector.selected {
-          background-color: pink;
-          cursor: default;
-        }
-        hr {
-          width:100%;
-          border-top: 1px -solid var(--menu-separator);
-        }
-        .account {
-          display: flex;
-          flex-direction: row;
-          cursor: pointer;
-        }
-        .name {
-          width: 240px;
-        }
-        .domain {
-          margin-left: 1em;
-          width: 50px;
-        }
-        .sorting {
-          margin-left: 4em;
-        }
-        .actions {
-          display: flex;
-          flex-direction: row;
-          margin: 0 0 30px 20px;
-        }
-        #save {
-          margin-left: 20px;
-        }
+        
       </style>
       <section class="page">
         <header>
@@ -193,7 +191,7 @@ class SorterPage extends LitElement {
       
       if (accountIndex < this.selected) {
         this.accounts[accountIndex].sort = this.selected;
-        for(let i = accountIndex; i < this.selected; i++) {
+        for(let i = accountIndex + 1; i < this.selected; i++) {
           this.accounts[i].sort--;
         }
         this.selected--;

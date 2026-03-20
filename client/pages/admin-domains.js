@@ -29,17 +29,68 @@ import input from '../styles/error.js';
      <admin-domains>: Manages Domains
 */
 class AdminDomains extends LitElement {
-  static get styles() {
-    return [page, button, input, css``];
-  }
-  static get properties() {
-    return {
-      domains: {type: Array},
-      name: {type: String},
-      description: {type: String},
-      route: {type: Object}
-    };
-  }
+  static styles = [page, button, input, css`
+    h3 {
+      text-align: center;
+    }
+    .header {
+      margin: 0px var(--scrollbar-width) 2px 5px;
+      background-color: var(--table-heading-background);
+      font-weight: bold;
+    }
+    .header > * {
+      border: 1px solid white;
+      text-align: center;
+    }
+    .domain {
+      margin-left: 5px;
+      background-color: var(--table-odd-color)
+    }
+    .domain, .header {     
+      padding: 2px;
+      display: grid;
+      grid-gap: 1px;
+      color: var(--table-text-color);
+      grid-template-columns: var(--domain-selector-width) 1fr 80px;
+      grid-template-areas: "name description action";
+    }
+    .name {
+      grid-area: name;
+    }
+    .description {
+      grid-area: description
+    }
+    .action {
+      grid-area: action
+    }
+    #newd >material-icon {
+      color: var(--add-icon-color);
+    }
+    .deld >material-icon {
+      color:var(--delete-icon-color);
+    }
+    section.scrollable {
+
+      color: var(--table-text-color);
+      display: flex;
+      flex-direction: column;
+      margin-right: calc(0 - var(--scrollbar-width));
+    }
+    #newdomain {
+      background-color: var(--table-odd-color);
+      color: var(--table-text-color);
+      margin-left: 5px;
+      margin-right: var(--scrollbar-width)
+    }
+  `];
+
+  static properties =  {
+    domains: {type: Array},
+    name: {type: String},
+    description: {type: String},
+    route: {type: Object}
+  };
+
   constructor() {
     super();
     this.domains = [];
@@ -74,56 +125,6 @@ class AdminDomains extends LitElement {
   }
   render() {
     return html`
-      <style>
-        h3 {
-          text-align: center;
-        }
-        .header {
-          margin: 0px -5px 2px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
-        }
-        .header > * {
-          border: 1px solid white;
-          text-align: center;
-        }
-        .domain, .header {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: var(--domain-selector-width) 1fr 80px;
-          grid-template-areas: "name description action";
-        }
-        .name {
-          grid-area: name;
-        }
-        .description {
-          grid-area: description
-        }
-        .action {
-          grid-area: action
-        }
-        #newd >material-icon {
-          color: var(--add-icon-color);
-        }
-        .deld >material-icon {
-          color:var(--delete-icon-color);
-        }
-        .scrollable {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-          padding-right: var(--scrollbar-width);
-        }
-        #newdomain {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin-left: 5px;
-        }
-      </style>
        <section class="page">
         <h1>Domain Manager</h1>
         <h3>Domain List</h3>

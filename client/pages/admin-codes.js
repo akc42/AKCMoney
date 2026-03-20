@@ -33,83 +33,86 @@ import input from '../styles/error.js';
      <admin-codes>: Edit the list of accounting codes and assign them to correct type
 */
 class AdminCodes extends LitElement {
-  static get styles() {
-    return [page,button, input,css`
-        h3 {
-          text-align: center;
-        }
-        .header {
-          margin: 0px -5px 2px 5px;
-          background-color: var(--table-heading-background);
-          font-weight: bold;
-        }
-        .header > * {
-          border: 1px solid white;
-          text-align: center;
-        }
-        .code, .header {     
-          padding: 2px;
-          display: grid;
-          grid-gap: 1px;
-          color: var(--table-text-color);
-          grid-template-columns: 1fr var(--codetype-selector-width) 40px 80px;
-          grid-template-areas:
-            "description description description" 
-            ". type dep action";
-        }
-        .description {
-          grid-area: description;
-        }
-        .type {
-          grid-area: type;
-        }
-        .dep {
-          grid-area: dep;
-        }
-        .action {
-          grid-area: action;
-        }
-        #newc >material-icon {
-          color: var(--add-icon-color);
-        }
-        .delc >material-icon {
-          color:var(--delete-icon-color);
-        }
-        .scrollable {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin: 0px calc(var(--scrollbar-width) + 5px) 10px 5px;
-          display: flex;
-          flex-direction: column;
-          padding-right: var(--scrollbar-width);
-        }
-        #newcode {
-          background-color: var(--table-odd-color);
-          color: var(--table-text-color);
-          margin-left: 5px;
-        }
-        #typeselector.error {
-          background-color: var(--input-error-color);
-        }
-        @media (min-width: 500px) {
-          .code, .header {
-            grid-template-areas:
-              "description type dep action";
+  static styles = [page,button, input,css`
+      h3 {
+        text-align: center;
+      }
+      .header {
+        margin: 0px var(--scrollbar-width) 2px 5px;
+        background-color: var(--table-heading-background);
+        font-weight: bold;
+      }
+      .header > * {
+        border: 1px solid white;
+        text-align: center;
+      }
+      .code {
+        margin-left: 5px;
+        background-color: var(--table-odd-color)
+      }
 
-          }
-        }    
-    `];
-  }
-  static get properties() {
-    return {
-      codes: {type: Array},
-      types: {type: Array},
-      description: {type: String},
-      type: {type: String},
-      typeDescription: {type: String},
-      route: {type: Object}
-    };
-  }
+      .code, .header {     
+        padding: 2px;
+        display: grid;
+        grid-gap: 1px;
+        color: var(--table-text-color);
+        grid-template-columns: 1fr var(--codetype-selector-width) 40px 80px;
+        grid-template-areas:
+          "description description description" 
+          ". type dep action";
+      }
+      .description {
+        grid-area: description;
+      }
+      .type {
+        grid-area: type;
+      }
+      .dep {
+        grid-area: dep;
+      }
+      .action {
+        grid-area: action;
+      }
+      #newc >material-icon {
+        color: var(--add-icon-color);
+      }
+      .delc >material-icon {
+        color:var(--delete-icon-color);
+      }
+      section.scrollable {
+
+        color: var(--table-text-color);
+        margin: 0px calc(0 - var(--scrollbar-width)) 10px 5px;
+        display: flex;
+        flex-direction: column;
+      }
+      #newcode {
+        background-color: var(--table-odd-color);
+        color: var(--table-text-color);
+        margin-left: 5px;
+        margin-right: var(--scrollbar-width)
+      }
+      #typeselector.error {
+        background-color: var(--input-error-color);
+      }
+      @media (min-width: 500px) {
+        .code, .header {
+          grid-template-areas:
+            "description type dep action";
+
+        }
+      }    
+  `];
+
+  static properties = {
+    codes: {type: Array},
+    types: {type: Array},
+    description: {type: String},
+    type: {type: String},
+    typeDescription: {type: String},
+    route: {type: Object}
+  };
+
   constructor() {
     super();
     this.codes = [];
