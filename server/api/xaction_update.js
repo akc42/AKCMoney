@@ -82,7 +82,7 @@ export default async function(user, params, responder) {
       let altAmount = null;
       if (altAccount !== null) {
         const {currency: acurrency} = getAccount.get(altAccount);
-        console('have other account, so we need to worry about currency of', acurrency);
+        console.log('have other account, so we need to worry about currency of', acurrency);
         if (acurrency === params.currency) {
             altAmount = nullOrAmount(params.amount)
         } else if (acurrency === currency) {
