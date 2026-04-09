@@ -23,8 +23,7 @@ import mdb from '@akc42/sqlite-db';
 const logger = Logger('xactiondelete','error');
 
 export default async function(user, params, responder) {
-  const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
-  const deleteXaction = db.prepare('DELETE FROM xaction WHERE id = ?');
+
   mdb.transaction(db => {
     const {version} = db.get`SELECT version FROM xaction WHERE id = ${params.tid}`??{version:0};
     if (version === params.version) {

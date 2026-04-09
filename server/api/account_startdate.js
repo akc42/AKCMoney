@@ -26,7 +26,7 @@ export default async function(user, params, responder) {
   mdb.transaction(db => {
     const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.account}`??{dversion:0}
     if (dversion === params.dversion) {
-      db.run`UPDATE account SET dversion = dversion + 1, startdate = ${params.startdate}} WHERE name = ${params.account}`;
+      db.run`UPDATE account SET dversion = dversion + 1, startdate = ${params.startdate} WHERE name = ${params.account}`;
       responder.addSection('status', 'OK');
     } else {
       logger('Versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
