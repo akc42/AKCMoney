@@ -17,28 +17,22 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('xactiondelete');
+const logger = Logger('xactiondelete','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name );
   const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
   const deleteXaction = db.prepare('DELETE FROM xaction WHERE id = ?');
-  db.transaction(() => {
-    const v = getXactionVersion.get(params.tid);
-    debug('db version', v, 'params version', params.version, 'xaction', params.tid);
-    if (v === params.version) {
-      const {changes} = deleteXaction.run(params.tid);
-      debug('delete count', changes);
+  mdb.transaction(db => {
+    const {version} = db.get`SELECT version FROM xaction WHERE id = ${params.tid}`??{version:0};
+    if (version === params.version) {
+      const {changes} = db.run`DELETE FROM xaction WHERE id = ${params.tid}`;
       if (changes === 1) responder.addSection('status', 'OK'); else responder.addSection('status', 'Wrong Count');
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      logger('error', `Xaction Delete Version Error Disk:${v}, Param:${params.version}`)
+      responder.addSection('status', `Version Error Disk:${version}, Param:${params.version}`);
+      logger(`Version Error Disk:${version}, Param:${params.version}`)
     }
-  })();
-  debug('request complete');
-  
+  });
 };

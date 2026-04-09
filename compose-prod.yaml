@@ -36,17 +36,25 @@ services:
     networks:
       - moneynet
     restart: unless-stopped
-    environment:
-      - DEBUG_CACHE_SIZE=50
-      - DATABASE_DB=/db/money.db
-      - DATABASE_DB_VERSION=2
-      - DATABASE_INIT_DIR=db-init
-      - MONEY_TRACKING=no
-      - MONEY_VERSION_FILE=../appinfo/version
+    env-file:
+      - ./common.env
     volumes:
       - /volume1/docker/money/appinfo:/app/appinfo
       - /volume1/money/server:/app/server
       - /volume1/docker/money/db:/db
+    tty: true
+  moneytimer:
+    image: docker.chandlerfamily.org.uk/moneytimer
+    container_name: moneytimer
+    restart: unless-stopped
+    networks:
+      - moneynet
+    env-file:
+      - ./common.env
+    volumes:
+      - /volume1/money/timer:/app/timer
+      - /volume1/docker/money/db:/db
+      - /volume1/moneydbbackup:/db-backup
     tty: true
 networks:
   moneynet:

@@ -19,7 +19,9 @@
 */
 import { LitElement, html, css } from '../libs/lit-element.js'
 import {cache} from '../libs/cache.js';
-import domHost from '../libs/dom-host.js';
+
+import {domHost} from '../libs/app-utils.js';
+
 import './material-icon.js';
 import './dialog-box.js';
 

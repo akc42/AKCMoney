@@ -19,6 +19,7 @@
 */
 import {html, css } from '../libs/lit-element.js';
 import { cache } from '../libs/cache.js';
+
 import RouteManager from '../elements/route-manager.js';
 
 
@@ -26,22 +27,21 @@ import RouteManager from '../elements/route-manager.js';
      <admin-page>: Controls the admin functions
 */
 class AdminPage extends RouteManager {
-  static get properties() {
-    return {
-      domains: {type: Array} //array of domains
-    };
-  }
+  static styles = [css`
+    :host {
+      height: 100%
+    }
+  `];
+  static properties = {
+    domains: {type: Array} //array of domains
+  };
+
   constructor() {
     super();
     this.domains = [];
   }
   render() {
     return html`
-      <style>
-      :host {
-        height: 100%
-      }
-      </style>
       ${cache({
         home: html`<admin-home managed-page></admin-home>`,
         accounts: html`<admin-accounts managed-page .route=${this.subRoute}></admin-accounts>`,

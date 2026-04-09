@@ -17,21 +17,14 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import mdb from '@akc42/sqlite-db';
 
- const debug = Debug('domainrange');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const range = db.prepare(`SELECT MAX(t.date) as maxdate, MIN(t.date) As mindate FROM xaction t
+
+  const {mindate, maxdate} = mdb.get`SELECT MAX(t.date) as maxdate, MIN(t.date) As mindate FROM xaction t
     LEFT JOIN account sa ON sa.name = t.src LEFT JOIN account da ON sa.name = t.dst  
-    WHERE sa.domain = ? OR da.domain = ?`);
-  db.transaction(() => {
-    const {mindate, maxdate} = range.get(params.domain, params.domain);
-    responder.addSection('min', mindate);
-    responder.addSection('max', maxdate);
-  })();
-  debug('request complete')
+    WHERE sa.domain = ${params.domain} OR da.domain = ${params.domain}`?? {mindate: 0, maxdate: 0};
+  responder.addSection('min', mindate);
+  responder.addSection('max', maxdate);
 };

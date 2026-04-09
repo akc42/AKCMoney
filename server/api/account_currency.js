@@ -17,28 +17,19 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('accountcurrency');
+const logger = Logger('accountcurrency', 'error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getAccount = db.prepare('SELECT dversion, currency, balance, bversion FROM account WHERE name = ?');
-  const updateAccount = db.prepare(`WITH items (rate, name, currency) AS (
-    SELECT CASE 
-        WHEN d.name = c.name AND d.name <> a.currency THEN 1/ac.rate
-        WHEN d.name <> c.name AND d.name <> a.currency THEN  c.rate/ac.rate
-        WHEN d.name <> c.name AND d.name = a.currency THEN c.rate
-        ELSE 1
-    END As Rate, a.name, c.name as currency
-    FROM Currency c, Account a, Currency d, Currency ac 
-    WHERE a.name = ? AND c.name = ? AND d.priority = 0 AND ac.name = a.currency)
-    UPDATE account SET dversion = dversion + 1, currency = items.currency , balance = balance * items.rate, bversion = bversion + 1 FROM items WHERE account.name = items.name`);
-  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name'); 
-  //we can update all the transactions in the account with the following sql
-  const updateXactions = db.prepare(`WITH items (rate, name, acurrency, ncurrency) AS (
+  
+  await mdb.transactionAsync(async db => {
+    //first version is still the same
+    const {dversion,currency, balance, bversion} = db.get`SELECT dversion, currency, balance, bversion FROM account 
+      WHERE name = ${params.name}`??{dversion:0,currency:'',balance:0,bversion:0};
+    if (dversion === params.dversion) {
+      db.run`WITH items (rate, name, acurrency, ncurrency) AS (
     SELECT CASE 
         WHEN d.name = c.name AND d.name <> a.currency THEN 1/ac.rate
         WHEN d.name <> c.name AND d.name <> a.currency THEN  c.rate/ac.rate
@@ -46,7 +37,7 @@ export default async function(user, params, responder) {
         ELSE 1
     END As Rate, a.name, a.currency AS acurrency, c.name AS ncurrency
     FROM Currency c, Account a, Currency d, Currency ac 
-    WHERE a.name = ? AND c.name = ? AND d.priority = 0 AND ac.name = a.currency
+    WHERE a.name = ${params.name} AND c.name = ${params.currency} AND d.priority = 0 AND ac.name = a.currency
 )
 UPDATE xaction AS t  
     SET srcamount = 
@@ -63,21 +54,26 @@ UPDATE xaction AS t
 FROM items, currency c 
 WHERE 
     (items.name = t.src OR items.name = t.dst)
-    AND t.currency = c.name ;`);
-
-  db.transaction(() => {
-    //first version is still the same
-    const {dversion,currency, balance, bversion} = getAccount.get(params.name);
-    if (dversion === params.dversion) {
-      updateXactions.run(params.name, params.currency);
-      updateAccount.run(params.name, params.currency);
+    AND t.currency = c.name ;`
+      db.run`WITH items (rate, name, currency) AS (
+    SELECT CASE 
+        WHEN d.name = c.name AND d.name <> a.currency THEN 1/ac.rate
+        WHEN d.name <> c.name AND d.name <> a.currency THEN  c.rate/ac.rate
+        WHEN d.name <> c.name AND d.name = a.currency THEN c.rate
+        ELSE 1
+    END As Rate, a.name, c.name as currency
+    FROM Currency c, Account a, Currency d, Currency ac 
+    WHERE a.name = ${params.name} AND c.name = ${params.currency} AND d.priority = 0 AND ac.name = a.currency)
+    UPDATE account SET dversion = dversion + 1, currency = items.currency , balance = balance * items.rate, bversion = bversion + 1 FROM items WHERE account.name = items.name`;
+      responder.addSection('accounts');
+      for(const account of db.iterate`SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name`) {
+        await responder.write(account);
+      }
       responder.addSection('status', 'OK');
-      responder.addSection('accounts', getAccounts.all())
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.dversion}`)
-      logger('error', ` Account Currency Version Error Disk:${v}, Param:${params.dversion}`)
+      responder.addSection('status', `Version Error Disk:${dversion}, Param:${params.dversion}`)
+      logger('Versions do not match, param dversion:',params.dversion, 'database dversion', dversion);
     }
   
-  })();
-  debug('request complete')
+  })
 };

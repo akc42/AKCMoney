@@ -17,31 +17,26 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('codedescription');
+const logger = Logger('codedescription','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name, 'with params', params );
-  const getVersion = db.prepare('SELECT version FROM code WHERE id = ?').pluck();
-  const updateDescription = db.prepare('UPDATE code SET version = version + 1, description = ? WHERE id = ?');
-  const getCodes = db.prepare(`SELECT * FROM code 
-    ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
-    description COLLATE NOCASE ASC`);
-  db.transaction(() => {
 
-    const v = getVersion.get(params.id);
-    if (v === params.version) {
-      updateDescription.run(params.description, params.id);
+  await mdb.transactionAsync(async db => {
+    const {version} = db.get`SELECT version FROM code WHERE id = ${params.id}`??{version:0};
+    if (version === params.version) {
+      db.run`UPDATE code SET version = version + 1, description = ${params.description} WHERE id = ${params.id}`;     
+      responder.addSection('codes');
+      for (const code of db.iterate`SELECT * FROM code ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+        description COLLATE NOCASE ASC`) {
+        await responder.write(code);
+      }
       responder.addSection('status', 'OK');
-      responder.addSection('codes', getCodes.all());
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      logger('error',`Code Description Version Error Disk:${v}, Param:${params.version}` )
+      responder.addSection('status', `Version Error Disk:${version}, Param:${params.version}`);
+      logger(`Version Error Disk:${version}, Param:${params.version}` )
     }
-
-  })();
-  debug('request complete')
+  });
 };

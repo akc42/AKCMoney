@@ -17,21 +17,19 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-
-const debug = Debug('codes');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user,p ,responder) {
-  debug('new request from', user.name);
-  const getTypes = db.prepare('SELECT * FROM codetype ORDER BY type');
-  const getCodes = db.prepare(`SELECT * FROM code 
-    ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
-    description COLLATE NOCASE ASC`);
-  db.transaction(() => {
-    responder.addSection('codes', getCodes.all());
-    responder.addSection('types', getTypes.all());
-  })();
-  debug('request complete')
+
+  await mdb.transactionAsync(async db => {
+    responder.addSection('types');
+    for(const type of db.iterate`SELECT * FROM codetype ORDER BY type`) {
+      await responder.write(type);
+    }
+    responder.addSection('codes');
+    for(const code of db.iterate`SELECT * FROM code ORDER BY CASE type WHEN 'A' THEN 2 WHEN 'B' THEN 0 WHEN 'C' THEN 3 WHEN 'R' THEN 1 ELSE 4 END,
+      description COLLATE NOCASE ASC`) {
+      await responder.write(code);
+    }
+  });
 };

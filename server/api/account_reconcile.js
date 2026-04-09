@@ -20,36 +20,29 @@
 
 
 
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('accountreconcile');
+const logger = Logger('accountreconcile', 'error');
 
 export default async function(user, params, responder) {
-  const getVersion = db.prepare('SELECT bversion FROM account WHERE name = ?').pluck();
-  const updateBalance = db.prepare(`UPDATE account SET bversion = bversion + 1, balance = ?, 
-    date = (strftime('%s','now')) WHERE name = ?`);
   
-  const getXactionVersion = db.prepare(`SELECT version FROM xaction WHERE id = ?`).pluck();
-  const updateXaction = db.prepare(`WITH a(name) AS (SELECT ?) UPDATE xaction AS t SET version = t.version + 1, 
-    srcclear = CASE WHEN a.name = t.src THEN 1 ELSE t.srcclear END,
-    dstclear = CASE WHEN a.name = t.dst THEN 1 ELSE t.dstclear END   
-    FROM a WHERE t.id = ?`);
   try {
-    db.transaction(() => {
-      const bversion = getVersion.get(params.account);
+    mdb.transaction(db => {
+      const {bversion} = db.get`SELECT bversion FROM account WHERE name = ${params.account}`??{bversion:0};
       if (params.bversion !== bversion) throw new Error(`Account ${params.account} has version ${bversion}, send ${params.bversion}, Stopping Reconciliation`)
       for (const transaction of params.transactions) {
-        const version = getXactionVersion.get(transaction[0]);
+        const {version} = db.get`SELECT version FROM xaction WHERE id = ${transaction[0]}`??{version:0};
         if (version !== transaction[1]) throw new Error(`Transaction ${transaction[0]} has version ${version}, sent ${transaction[1]}. Stopping Reconciliation`)
-        updateXaction.run(params.account,transaction[0]);    
+        db.run`WITH a(name) AS (SELECT ${params.account}) UPDATE xaction AS t SET version = t.version + 1, 
+          srcclear = CASE WHEN a.name = t.src THEN 1 ELSE t.srcclear END, dstclear = CASE WHEN a.name = t.dst THEN 1 ELSE t.dstclear END   
+          FROM a WHERE t.id = ${transaction[0]}`;
       }
-      updateBalance.run(params.balance, params.account);
-    })();
+      db.run`UPDATE account SET bversion = bversion + 1, balance = ${params.balance},  date = (strftime('%s','now')) WHERE name = ${params.account}`;
+    });
     responder.addSection('status','OK'); 
   } catch(e) {
-    logger('error',e.message);
+    logger('Transaction failed with',e);
     responder.addSection('status',e.message); 
   }
 };

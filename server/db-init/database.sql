@@ -315,7 +315,8 @@ CREATE TABLE xaction (
     dstcode integer REFERENCES code (id) ON UPDATE CASCADE ON DELETE SET NULL, -- if set, an account code to account for this transaction
     description character varying,      -- details of the transaction
     rno character varying,              -- reference number for the transaction
-    repeat integer DEFAULT 0 NOT NULL REFERENCES repeat(rkey) -- if the transaction is repeating
+    repeat integer DEFAULT 0 NOT NULL REFERENCES repeat(rkey), -- if the transaction is repeating
+    xadate DATETIME AS (datetime(date,'unixepoch')) VIRTUAL
 );
 
 
@@ -390,12 +391,7 @@ INSERT INTO settings (name,value) VALUES('version',2), --version of this configu
 ('track_cookie', 'm_user'), --cookie name for tracking cookie
 ('auth_cookie', 'm_auth'), --authcookie name
 ('null_account', '-- Select (Optional) Other Account --'), --NUll account text (dst or src)
-('null_code', '-- Select (Optional) Account Code --'), --NULL code text
-('debug',''), --this should be a colon separated list of client debug topics to actually log
-('server_debug',''), -- this should be a colon separated list of server debug topics to actually log
-('debug_cache',50); --size of server side debug cache
-
-
+('null_code', '-- Select (Optional) Account Code --'); --NULL code text
 
 CREATE VIEW dfxaction AS
     WITH df(name) AS (SELECT name FROM currency WHERE priority = 0 )
@@ -419,7 +415,4 @@ CREATE VIEW dfxaction AS
 
 
 END TRANSACTION;
-
--- set it all up as Write Ahead Log for max performance and minimum contention with other users.
-PRAGMA journal_mode=WAL;
 

@@ -17,34 +17,28 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug, logger} from '@akc42/server-utils';
-import DB from '@akc42/sqlite-db';
-const db = DB();
+import {Logger} from '@akc42/server-utils';
+import mdb from '@akc42/sqlite-db';
 
-const debug = Debug('xactiondate');
+const logger = Logger('xactiondate','error');
 
 export default async function(user, params, responder) {
-  debug('new request from', user.name );
-  const getXactionVersion = db.prepare('SELECT version FROM xaction WHERE id = ?').pluck();
-  const updateXaction = db.prepare('UPDATE xaction SET version = version + 1, date = ? WHERE id = ?');
-  const getUpdatedXaction = db.prepare(`SELECT t.*, tc.rate AS trate, 
-  CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
-  CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
-  FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
-  LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
-  LEFT JOIN currency tc ON tc.name = t.currency
-  WHERE t.id = ? AND a.name = ?`)
-  db.transaction(() => {
-    const v = getXactionVersion.get(params.id);
-    if (v === params.version) {
-      updateXaction.run(params.date, params.id);
-      responder.addSection('status', 'OK');
-      responder.addSection('transaction', getUpdatedXaction.get(params.id, params.account));
-    } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      logger('error', `Xaction Date Version Error Disk:${v}, Param:${params.version}`)
-    }
-  })();
-  debug('request complete');
   
+  mdb.transaction(db => {
+    const {version} = db.get`SELECT version FROM xaction WHERE id = ${params.id}`??{version:0};
+    if (version === params.version) {
+      db.run`UPDATE xaction SET version = version + 1, date = ${params.date} WHERE id = ${params.id}`
+      responder.addSection('transaction', db.get`SELECT t.*, tc.rate AS trate, 
+        CASE WHEN a.name = t.src AND t.srcclear = 1 THEN 1 WHEN a.name = t.dst AND t.dstclear = 1 THEN 1 ELSE 0 END AS reconciled,
+        CASE WHEN aa.domain = a.domain THEN 1 ELSE 0 END AS samedomain
+        FROM account a JOIN xaction t ON(t.src = a.name OR t.dst = a.name)
+        LEFT JOIN account aa ON (t.src = aa.name OR t.dst = aa.name) AND aa.name <> a.name
+        LEFT JOIN currency tc ON tc.name = t.currency
+        WHERE t.id = ${params.id} AND a.name = ${params.account}`);
+      responder.addSection('status', 'OK');
+    } else {
+      responder.addSection('status', `Version Error Disk:${version}, Param:${params.version}`);
+      logger(`Version Error Disk:${version}, Param:${params.version}`)
+    }
+  });
 };

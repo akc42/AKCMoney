@@ -17,17 +17,10 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
 import bcrypt from 'bcrypt';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-const debug = Debug('profile');
+import mdb from '@akc42/sqlite-db';
 
 export default async function(user, params, responder, genCook) {
-  debug('new request from', user.name );
-  const checkName = db.prepare('SELECT COUNT(*) FROM user WHERE name = ?').pluck();
-  const getUser = db.prepare('SELECT * FROM user WHERE uid = ?');
-  const updateUser = db.prepare('UPDATE user SET name = ?, password = ?, account = ?, domain = ?, version = ? WHERE uid = ?');
   let status = 'OK'; //start out as all good
   let hashedPassword = null;
   if (params.password.length > 0 ) {
@@ -38,23 +31,18 @@ export default async function(user, params, responder, genCook) {
     }
   }
   if (status === 'OK') {
-    db.transaction(() => {
-      const dbUser = getUser.get(user.uid);
+    mdb.transaction(db => {
+      const dbUser = db.get`SELECT * FROM user WHERE uid = ${user.uid}`;
       if (dbUser.version === user.version) {
         let no = 0;
         if (dbUser.name.toLowerCase() !== params.name.toLowerCase()) {
           //user has changed is name (other than just the case), so check its not already in use
-          no = checkName.run(params.name);
+          const {count} = db.get`SELECT COUNT(*) AS count FROM user WHERE name = ${params.name}`??{count: 0};
+          no = count;
         }
         if (no === 0) {
-          updateUser.run(
-            params.name, 
-            hashedPassword === null ? dbUser.password: hashedPassword, 
-            params.account, 
-            params.domain, 
-            dbUser.version + 1,
-            user.uid
-          );
+          db.run`UPDATE user SET name = ${params.name}}, password = ${hashedPassword === null ? dbUser.password: hashedPassword}, 
+            account = ${params.account}, domain = ${params.domain}, version = ${dbUser.version + 1} WHERE uid = ${user.uid}`;
           dbUser.name = params.name;
           dbUser.password = hashedPassword === null ? !!dbUser.password : true;
           dbUser.account = params.account;
@@ -69,7 +57,7 @@ export default async function(user, params, responder, genCook) {
       } else {
         status = 'parallel'; //there hasbeen a parallel update
       }
-    })();
+    });
   } 
   responder.addSection('status', status);
   

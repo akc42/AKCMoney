@@ -41,9 +41,9 @@
 
 import { LitElement, html, css } from '../libs/lit-element.js';
 
-import './material-icon.js';
-
 import { ValueChanged } from '../modules/events.js';
+
+import './material-icon.js';
 
 /**
  * Define key codes to help with handling keyboard events.

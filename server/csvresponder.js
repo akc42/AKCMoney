@@ -17,14 +17,11 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
 import contentDisposition from 'content-disposition';
 
-const debug = Debug('responder');
 
 export default class CSVResponder {
   constructor(response) {
-    debug('Starting responder');
     this.response = response;
     this._setName = false;
     this.headerLength = 0;
@@ -35,12 +32,10 @@ export default class CSVResponder {
     return '"' + value.toString().replace('"', '""') + '"';
   }
   defineFields(fields) {
-    debug('setting Field Names');
     this.fields = fields.split(':');
   }
   makeHeader(hstring) {
     if (this.headerLength === 0) {
-      debug('setting headers');
       const headers = hstring.split(':');
       this.headerLength = headers.length;
       let line = '';
@@ -50,21 +45,16 @@ export default class CSVResponder {
       });
       line += '\r\n';
       this.response.write(line);
-    } else {
-      debug('already set headers');
     }
   }
   setName(name) {
     if (!this._setName) {
-      debug('setting name');
       this._setName = true;
       this.response.setHeader(
         'Content-Disposition', 
         contentDisposition(`${ name.replace(' ', '_') }.csv`)
       )
       
-    } else {
-      debug('name already setting');
     }
   }
   write(row) {
@@ -83,31 +73,25 @@ export default class CSVResponder {
       if (reply) {
         return Promise.resolve();
       }
-      debug('False reply from write so need return the promise of a drain');
       if (!this.awaitingDrain) {
         this.awaitingDrain = true;
         const self = this;
-        debug('create a drain promise as we do not have one');
         this.drainPromise = new Promise(resolve => {
           this.response.once('drain', () => {
             this.awaitingDrain = false;
-            debug('drained so resolve promise of drain');
             resolve();
           });
         });
       }
       return this.drainPromise;
     }
-    debug('reject promise');
     return Promise.reject(); //mark as blocked      }
   }
   end() {
     if (!this.ended) {
-      debug('end')
       this.response.end();
       this.ended = true;
-    } else {
-      debug('already ended');
+   
     }
   }
 }

@@ -17,12 +17,9 @@
     You should have received a copy of the GNU General Public License
     along with AKCMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
-import {Debug} from '@akc42/server-utils';
 import path from 'node:path';
 import  { insertRepeats, dbDateToString, blankIfNull } from '../utils.js';
-import DB from '@akc42/sqlite-db';
-const db = DB();
-const debug = Debug('pdfdomain');
+import mdb from '@akc42/sqlite-db';
 
 const LEFT_EDGE = 72;
 const RIGHT_EDGE = 523;
@@ -49,13 +46,8 @@ const PAGE_POSITION = 793;
 const DATE_AREA_WIDTH = DATE_REF_LINE - 1 - LEFT_EDGE;
 const DEPRECIATION_POSITION = AMOUNT_POSITION - AMOUNT_WIDTH - TEXT_MARGIN;
 
-debug('DATE_POSITION, REF_POSITION, DESC_POSITION, DEPRECIATION_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION', 
-  DATE_POSITION, REF_POSITION, DESC_POSITION, DEPRECIATION_POSITION, AMOUNT_POSITION, TOTAL_POSITION, CODE_POSITION);
-
-
 const codeHeader = (code, doc, profit) => {
   let y = doc.y
-  debug('in code header with code ', code.description, 'and profit', profit);
   const ht = doc.heightOfString(code.description, { width: DESC_WIDTH })
   const h = Math.max(Math.ceil(ht), 12) + 6;
 
@@ -97,71 +89,19 @@ const codeHeader = (code, doc, profit) => {
 
 export default async function(user, params, doc) {
 
-  debug('new request from', user.name, 'with params', params);
-  debug('date width', doc.widthOfString('28 Aug 2028'));
-  const s = db.prepare('SELECT value FROM settings WHERE name = ?').pluck();
-  const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
-    repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
-  debug('prepared repeat insert');
-  const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
-  debug('prepared repeat update');
-  const getCodes = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Enddate)
-SELECT
-      c.id AS id, 
-      c.type AS type, 
-      c.description AS description,
-      CAST(sum(CASE WHEN c.type='A' THEN (CAST(t.dfamount AS REAL) / c.depreciateyear) *
-        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
-            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
-        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
-            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
-        ELSE 1 END 
-        WHEN c.type = 'B' AND c.id = t.srccode THEN -t.dfamount ELSE t.dfamount END) AS INTEGER) AS tamount           
-  FROM 
-      dfxaction AS t, account AS a, code AS c, p
-  WHERE
-      t.date + (CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END) >= p.startdate AND t.date <= p.enddate AND
-      c.type <> 'O' AND
-      a.domain = ? AND (
-      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
-      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
-  GROUP BY
-      c.id, c.type, c.description,c.depreciateyear, p.startdate, p.enddate
-  ORDER BY 
-    CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END,
-    description COLLATE NOCASE ASC`);
-  const getXactions = db.prepare(`WITH p(startdate, endDate) AS (Select ? AS StartDate, ? AS Endate)
-SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
-    t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, 
-    0 as srcclear, 0 AS dstclear, 0 AS reconciled, 1 as trate, cu.name AS currency, 0 AS version,
-    CASE WHEN c.type = 'A' THEN CAST((CAST(t.dfamount AS REAL) / c.depreciateyear) *
-        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
-            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
-        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
-            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
-        ELSE 1 END 
-     AS INTEGER) ELSE 0 END As depreciation
-    FROM dfxaction t, currency cu, p, 
-    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) OR (a.name = t.dst AND t.dstcode = c.id)
-    WHERE cu.priority = 0 AND t.date BETWEEN p.startdate - CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END AND p.enddate
-    AND a.domain = ? AND c.id =  ? ORDER BY t.date`);
-  debug('prepared sql')
-  const yearEnd = s.get('year_end');
+  
+
+  const {yearEnd} = db.get`SELECT value FROM settings WHERE name = ${'year_end'}`??{yearEnd:1231};
   const monthEnd = Math.floor(yearEnd / 100) - 1 //Range 0 to 11 for Dates 
   const dayEnd = yearEnd % 100;
   const endDate = new Date();
   const today = endDate.getTime();
   endDate.setHours(23, 59, 59); //last possible time
-  debug('enddate setting time', endDate);
   endDate.setMonth(monthEnd);
-  debug('enddate, setting month', endDate)
   endDate.setDate(dayEnd);
-  debug('enddate, setting endDate', endDate)
   endDate.setFullYear(params.year);
-  debug('enddate, setting endDate', endDate);
   const startDate = new Date(endDate);
   startDate.setFullYear(startDate.getFullYear() - 1);
-  debug('startdate, setting startDate', startDate);
   const start = Math.floor(startDate.getTime() / 1000) + 1;
   const end = Math.ceil(endDate.getTime() / 1000);
   const now = new Date();
@@ -175,31 +115,46 @@ SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, 
 
   doc.font('Helvetica').fontSize(10).moveDown(2);
   let pageNo = 1;
-
-  debug('start and end are:', start, end);
-  const repeatCount = db.prepare(`SELECT COUNT(*) FROM xaction t, account a, code c   
-  WHERE
-      t.repeat <> 0 AND
-      t.date <= ? AND
-      c.type <> 'O' AND
-      a.domain = ? AND (
-      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
-      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))`)
-    .pluck().bind(end, params.domain);
-  const repeats = db.prepare(`SELECT t.* FROM xaction t, account a, code c WHERE
-      t.repeat <> 0 AND
-      t.date <= ? AND
-      c.type <> 'O' AND
-      a.domain = ? AND (
-      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
-      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))`).bind(end, params.domain);
   try {
-    db.transaction(() => {
+    mdb.transaction(db => {
+      const insertRepeat = db.prepare(`INSERT INTO xaction (date, src, dst, srcamount, dstamount, srccode,dstcode,  rno ,
+    repeat, currency, amount, description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`);
+      const updateRepeat = db.prepare('UPDATE xaction SET version = (version + 1) , repeat = 0 WHERE id = ? ;');
+
+    const repeatCount = db.prepare(`SELECT COUNT(*) AS count FROM xaction t, account a, code c   
+    WHERE
+      t.repeat <> 0 AND
+      t.date <= ${end} AND
+      c.type <> 'O' AND
+      a.domain = '${params.domain}' AND (
+      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
+      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))`);
+
+    const repeats = db.prepare(`SELECT t.* FROM xaction t, account a, code c WHERE
+      t.repeat <> 0 AND
+      t.date <= ${end} AND
+      c.type <> 'O' AND
+      a.domain = '${params.domain}' AND (
+      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
+      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))`);
+  
       insertRepeats(repeatCount, repeats, insertRepeat, updateRepeat);
       let even = false;
-      const codes = getCodes.all(start, end, params.domain);
       let profit = 0;
-      for(const code of codes) {
+      for(const code of db.iterate`WITH p(startdate, endDate) AS (Select ${start} AS StartDate, ${end} AS Enddate)
+SELECT c.id AS id, c.type AS type, c.description AS description,
+      CAST(sum(CASE WHEN c.type='A' THEN (CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate) ELSE 1 END 
+        WHEN c.type = 'B' AND c.id = t.srccode THEN -t.dfamount ELSE t.dfamount END) AS INTEGER) AS tamount           
+  FROM dfxaction AS t, account AS a, code AS c, p WHERE
+      t.date + (CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END) >= p.startdate AND t.date <= p.enddate AND
+      c.type <> 'O' AND a.domain = ${params.domain} AND (
+      (t.src IS NOT NULL AND t.src = a.name AND srccode IS NOT NULL AND t.srccode = c.id) OR
+      (t.dst IS NOT NULL AND t.dst = a.name AND t.dstcode IS NOT NULL AND t.dstcode = c.id))
+  GROUP BY c.id, c.type, c.description,c.depreciateyear, p.startdate, p.enddate
+  ORDER BY CASE c.type WHEN 'A' THEN 1 WHEN 'C' THEN 2 WHEN 'R' THEN 0 ELSE 3 END, description COLLATE NOCASE ASC`) {
         switch (code.type) {
           case 'R':
           case 'B':
@@ -213,13 +168,25 @@ SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, 
         }
 
         codeHeader(code, doc, profit);
-        const transactions = getXactions.all(start, end, params.domain, code.id);   
-        debug('read', transactions.length, 'transactions for code', code.id); 
         let even = false;
         let cumulative = 0;   
         let continueAdded = false;
         let transactionDone = false;
-        for(const transaction of transactions) {
+        for(const transaction of db.iterate`WITH p(startdate, endDate) AS (Select ${start} AS StartDate, ${end} AS Endate)
+SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, t.rno, t.repeat, 
+    t.dfamount * CASE WHEN c.type = 'B' AND c.id = t.srccode THEN -1 ELSE 1 END as amount, 
+    0 as srcclear, 0 AS dstclear, 0 AS reconciled, 1 as trate, cu.name AS currency, 0 AS version,
+    CASE WHEN c.type = 'A' THEN CAST((CAST(t.dfamount AS REAL) / c.depreciateyear) *
+        CASE WHEN t.date BETWEEN  p.startdate AND p.enddate 
+            THEN CAST((p.enddate - t.date)AS REAL)/(p.enddate - p.startdate)
+        WHEN t.date + (c.depreciateyear * (p.enddate - p.startdate)) BETWEEN p.startdate AND p.enddate 
+            THEN CAST((t.date + (c.depreciateyear * (p.enddate - p.startdate)) - p.startdate) AS REAL)/ (p.enddate - p.startdate)
+        ELSE 1 END 
+     AS INTEGER) ELSE 0 END As depreciation
+    FROM dfxaction t, currency cu, p, 
+    code c JOIN account a ON (a.name = t.src AND t.srccode = c.id) OR (a.name = t.dst AND t.dstcode = c.id)
+    WHERE cu.priority = 0 AND t.date BETWEEN p.startdate - CASE WHEN c.type = 'A' THEN (c.depreciateyear * (p.enddate - p.startdate)) ELSE 0 END AND p.enddate
+    AND a.domain = ${params.domain} AND c.id =  ${code.id} ORDER BY t.date`) {
           doc.x = LEFT_EDGE;
 
           if (doc.y > PAGE_BOTTOM && transactionDone) {
@@ -243,8 +210,8 @@ SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, 
           const ht = doc.heightOfString(transaction.description, { width: DESC_WIDTH })
           const h = Math.max(Math.ceil(ht), 12) + 4;
           const dy = (h - ht) / 2;
-          if (h !== 16) debug('height of transaction', ht, 'Desc', transaction.description.substring(0, 20));
           if (even) {
+
             doc.rect(LEFT_EDGE, y, RIGHT_EDGE - LEFT_EDGE, h).fillAndStroke('aliceblue')
             doc.moveTo(DATE_REF_LINE, y).lineTo(DATE_REF_LINE, y + h).stroke('white');
             doc.moveTo(REF_DESC_LINE, y).lineTo(REF_DESC_LINE, y + h).stroke();
@@ -289,10 +256,9 @@ SELECT t.id,t.date,t.version, t.src, t.srccode, t.dst, t.dstcode,t.description, 
   } catch (e) {
     //expected - rollback
     if (e.message !== 'Rollback') {
-      debug('Rollback error', e);
       throw e;
     }
   }
-  debug('request complete')
+
 
 };

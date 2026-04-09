@@ -18,15 +18,13 @@
     along with AKMMoney.  If not, see <http://www.gnu.org/licenses/>.
 */
 import { LitElement, html, css } from '../libs/lit-element.js';
-import domHost from '../libs/dom-host.js';
+
+import {domHost} from '../libs/app-utils.js';
 
 import button from '../styles/button.js';
 
 import './material-icon.js';
 import './dialog-box.js';
-
-
-
 
 /*
      <comment-dialog>
