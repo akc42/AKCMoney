@@ -40,7 +40,7 @@
     "pdfkit": "^0.17.2",
     "router": "^2.2.0",
     "server-destroy": "^1.0.1",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "playwright": "^1.56.0",
