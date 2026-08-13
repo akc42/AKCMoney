@@ -23,16 +23,14 @@ import mdb from '@akc42/sqlite-db';
 const logger = Logger('currencypriority');
 
 export default async function(user, params, responder) {
-  const getVersion = db.prepare('SELECT version FROM currency WHERE name = ?').pluck();
-  const updateCurrency = db.prepare('UPDATE currency SET version = version + 1, priority = ? WHERE name = ?');
-  db.transaction(() => {
-    const v = getVersion.get(params.name);
-    if (v === params.version) {
+  mdb.transaction(db => {
+    const {version} = db.get`SELECT version FROM currency WHERE name = ${params.name}`?? {version:0};
+    if (version === params.version) {
+      db.run`UPDATE currency SET version = version + 1, priority = ${params.priority} WHERE name = ${params.name}`
       responder.addSection('status', 'OK');
-      updateCurrency.run(params.priority, params.name);
     } else {
-      responder.addSection('status', `Version Error Disk:${v}, Param:${params.version}`);
-      logger('error', `Currency Priority Version Error Disk:${v}, Param:${params.version}`)
+      responder.addSection('status', `Version Error Disk:${version}, Param:${params.version}`);
+      logger('error', `Currency Priority Version Error Disk:${version}, Param:${params.version}`)
     }
     
   });
