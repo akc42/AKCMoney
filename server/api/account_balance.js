@@ -21,7 +21,7 @@
 import { Logger} from '@akc42/server-utils';
 import mdb from '@akc42/sqlite-db';
 
-const logger = Logger('accountbalance','rrror');
+const logger = Logger('accountbalance','error');
 
 export default async function(user, params, responder) {
 
@@ -31,7 +31,7 @@ export default async function(user, params, responder) {
       if (params.date === 0) {
         db.run`UPDATE account SET bversion = bversion + 1, balance = ${params.balance}, date = (strftime('%s','now')) WHERE name = ${params.account}`;
       } else {
-        db.run`UPDATE account SET bversion = bversion + 1, balance = ${params.balance}}, date = ${params.date} WHERE name = ${params.account}`;
+        db.run`UPDATE account SET bversion = bversion + 1, balance = ${params.balance}, date = ${params.date} WHERE name = ${params.account}`;
       }
       responder.addSection('status', 'OK');
       responder.addSection('bversion', bversion + 1);
