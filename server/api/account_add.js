@@ -26,7 +26,7 @@ export default async function(user, params, responder) {
   await mdb.transactionAsync(async db => {
     const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.name}`??{dversion:0}
     if (dversion === 0) {
-      db.run`INSERT INTO account(currency,domain,name) VALUES(${params.currenct},${params.domain},${params.name}})`;
+      db.run`INSERT INTO account(currency,domain,name) VALUES(${params.currency},${params.domain},${params.name})`;
       responder.addSection('accounts');
       for(const account of db.iterate`SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name`) {
         await responder.write(account);
