@@ -23,16 +23,14 @@ import mdb from '@akc42/sqlite-db';
 const logger = Logger('accountname','error');
 
 export default async function(user, params, responder) {
-  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-  const updateName = db.prepare('UPDATE account SET dversion = dversion + 1, name = ? WHERE name = ?');
-  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+
   await mdb.transactionAsync(async db => {
     //first check new name does not exist
     const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.new}`??{dversion:0};
     if (dversion === 0) {
       const {oldversion} = db.get`SELECT dversion AS oldversion FROM account WHERE name = ${params.old}`??{oldversion:0};
       if (oldversion === params.dversion) {
-        db,run`UPDATE account SET dversion = dversion + 1, name = ${params.new} WHERE name = ${params.old}'`
+        db.run`UPDATE account SET dversion = dversion + 1, name = ${params.new} WHERE name = ${params.old}`
         responder.addSection('accounts');
         for(const account of db.iterate`SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name`) {
           await responder.write(account);
