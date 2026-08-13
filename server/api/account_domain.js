@@ -23,9 +23,7 @@ import mdb from '@akc42/sqlite-db';
 const logger = Logger('accountdomain', 'error');
 
 export default async function(user, params, responder) {
-  const getVersion = db.prepare('SELECT dversion FROM account WHERE name = ?').pluck();
-  const updateDomain = db.prepare('UPDATE account SET dversion = dversion + 1, domain = ? WHERE name = ?');
-  const getAccounts = db.prepare('SELECT name, domain, currency, archived, dversion FROM account ORDER BY archived, domain, name');
+
   await mdb.transactionAsync(async db => {
     //first version is still the same
     const {dversion} = db.get`SELECT dversion FROM account WHERE name = ${params.name}`??{dversion:0};
